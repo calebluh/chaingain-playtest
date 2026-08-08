@@ -71,6 +71,17 @@ function GameState.init(config)
         if t.touchdownBonusCash then GameState.touchdownBonusCash = (GameState.touchdownBonusCash or 0) + t.touchdownBonusCash end
     end
 
+    -- 1. If roguelite mode, add MyPlayer first so their position slot is occupied
+    if _G.GAME_MODE == "roguelite" then
+        local myPlayerCard = PlayerCard.new(MyPlayerProfile.name, MyPlayerProfile.position .. "1", "Starter", MyPlayerProfile.baseMult, MyPlayerProfile.baseChips)
+        myPlayerCard.isMyPlayer = true
+        if MyPlayerProfile.hasNode("cmd_1") then GameState.touchdownBonusCash = (GameState.touchdownBonusCash or 0) + 2 end
+        if MyPlayerProfile.hasNode("pass_3") then GameState.bonusAudibles = (GameState.bonusAudibles or 0) + 2 end
+        if MyPlayerProfile.hasNode("cmd_2") then GameState.hasAnalyticsDept = true end
+        GameState.addRosterPlayer(myPlayerCard, MyPlayerProfile.position)
+    end
+
+    -- 2. Apply archetype rosters (adding starting players where slots aren't full)
     if GameState.config and GameState.config.archetype then
         local archId = GameState.config.archetype.id
         if archId == "air_raid" then
@@ -88,20 +99,16 @@ function GameState.init(config)
         end
     end
     
-    if _G.GAME_MODE == "roguelite" then
-        local myPlayerCard = PlayerCard.new(MyPlayerProfile.name, MyPlayerProfile.position .. "1", "Starter", MyPlayerProfile.baseMult, MyPlayerProfile.baseChips)
-        myPlayerCard.isMyPlayer = true
-        if MyPlayerProfile.hasNode("cmd_1") then GameState.touchdownBonusCash = (GameState.touchdownBonusCash or 0) + 2 end
-        if MyPlayerProfile.hasNode("pass_3") then GameState.bonusAudibles = (GameState.bonusAudibles or 0) + 2 end
-        if MyPlayerProfile.hasNode("cmd_2") then GameState.hasAnalyticsDept = true end
-        GameState.addRosterPlayer(myPlayerCard, MyPlayerProfile.position)
-    else
-        local pillar = RosterPlayersExpanded.getRandomPlayer("QB")
-        if GameState.config and GameState.config.team and GameState.config.team.superstarQB then
-            pillar.overall = 99
-            pillar.name = "Montana Brady"
+    -- 3. If standard mode, check if a QB is slot-occupied; if not, add one
+    if _G.GAME_MODE ~= "roguelite" then
+        if #GameState.rosterSlots.QB.cards == 0 then
+            local pillar = RosterPlayersExpanded.getRandomPlayer("QB")
+            if GameState.config and GameState.config.team and GameState.config.team.superstarQB then
+                pillar.overall = 99
+                pillar.name = "Montana Brady"
+            end
+            GameState.addRosterPlayer(pillar, "QB")
         end
-        GameState.addRosterPlayer(pillar, "QB")
     end
     
     DefenseManager.init()

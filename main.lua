@@ -81,8 +81,9 @@ function love.load(arg)
 
     local oldGetPosition = love.mouse.getPosition
     love.mouse.getPosition = function()
+        local winW, winH = love.graphics.getDimensions()
         local mx, my = oldGetPosition()
-        return mx / 2, my / 2
+        return mx / (winW / 960), my / (winH / 540)
     end
     
     StateManager.init(StateMenu)
@@ -164,7 +165,8 @@ function love.draw()
     if _G.CONFIG_ENABLE_CRT and crtShader then
         love.graphics.setShader(crtShader)
     end
-    love.graphics.draw(mainCanvas, 0, 0)
+    local winW, winH = love.graphics.getDimensions()
+    love.graphics.draw(mainCanvas, 0, 0, 0, winW / 1920, winH / 1080)
     love.graphics.setShader()
     
     if _G.CONFIG_SHOW_FPS then

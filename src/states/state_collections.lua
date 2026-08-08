@@ -15,6 +15,11 @@ local StateCollections = {}
 local C_SLATE_CONTAINER = {0.129, 0.149, 0.192} -- #212631
 local C_NEON_BORDER = {0.0, 0.76, 1.0} -- #00C3FF
 
+local function checkHover(x, y, w, h)
+    local mx, my = love.mouse.getPosition()
+    return mx >= x and mx <= (x + w) and my >= y and my <= (y + h)
+end
+
 local function drawShadowText(text, x, y, r, g, b, scale, align, limit)
     scale = scale or 1
     love.graphics.setColor(0, 0, 0, 0.95)
@@ -61,7 +66,13 @@ function StateCollections:draw()
     
     local activeTab = self.tabs[self.tabIndex]
     drawShadowText("COLLECTION GALLERY", 40, 15, 1, 0.84, 0, 1.4)
-    drawShadowText("Click tabs or press [A/D]/[←/→] to browse | [ESC] Main Menu", 440, 20, 0.7, 0.75, 0.8, 0.85)
+    drawShadowText("Click tabs or press [A/D]/[←/→] to browse | [ESC] Main Menu", 320, 20, 0.7, 0.75, 0.8, 0.85)
+    
+    -- Draw Back Button
+    local hoverBack = checkHover(830, 15, 90, 25)
+    love.graphics.setColor(hoverBack and {0.9, 0.3, 0.3} or {0.7, 0.2, 0.2})
+    love.graphics.rectangle("fill", 830, 15, 90, 25, 4, 4)
+    drawShadowText("BACK", 830, 19, 1, 1, 1, 0.8, "center", 90)
     
     -- Draw horizontal clickable tabs
     local tabLabels = {"ROSTER", "PLAYBOOK", "DEFENSES", "STAFF", "BONUSES", "DECALS"}
@@ -226,6 +237,13 @@ end
 
 function StateCollections:mousepressed(x, y, button)
     if button == 1 then
+        if checkHover(830, 15, 90, 25) then
+            local StateMenu = require("src.states.state_menu")
+            StateManager.switch(StateMenu)
+            SoundManager.playSFX("click")
+            return
+        end
+        
         local tabW = 120
         local tabH = 30
         local startX = 40

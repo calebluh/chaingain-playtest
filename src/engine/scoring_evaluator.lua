@@ -164,7 +164,13 @@ function ScoringEvaluator.update(dt)
                 zoneScale = 0.85
             end
             
-            local predictedYards = math.floor(ScoringEvaluator.currentChips * totalMult * zoneScale)
+            local rawYards = ScoringEvaluator.currentChips * totalMult * zoneScale
+            local predictedYards = 0
+            if ScoringEvaluator.playCard.type == "Run" then
+                predictedYards = math.floor(math.min(25, 3 + rawYards * 0.4))
+            else
+                predictedYards = math.floor(math.min(80, 5 + rawYards * 0.35))
+            end
             local DefenseManager = require("src.engine.defense_manager")
             if DefenseManager.activeBlind and DefenseManager.activeBlind.id == "blitz_heavy" and ScoringEvaluator.playCard.type == "Play Action" then
                 predictedYards = predictedYards - 3
@@ -319,7 +325,13 @@ function ScoringEvaluator.finalizeDriveSlam()
         zoneScale = 0.85
     end
     
-    local yardsGained = math.floor(ScoringEvaluator.currentChips * totalMult * zoneScale)
+    local rawYards = ScoringEvaluator.currentChips * totalMult * zoneScale
+    local yardsGained = 0
+    if ScoringEvaluator.playCard.type == "Run" then
+        yardsGained = math.floor(math.min(25, 3 + rawYards * 0.4))
+    else
+        yardsGained = math.floor(math.min(80, 5 + rawYards * 0.35))
+    end
     
     if DefenseManager.activeBlind and DefenseManager.activeBlind.id == "blitz_heavy" and ScoringEvaluator.playCard.type == "Play Action" then
         yardsGained = yardsGained - 3

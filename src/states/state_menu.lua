@@ -77,6 +77,7 @@ function StateMenu:enter()
     self.time = 0
     self.activeModal = nil
     self.hasSaveRun = SaveManager.hasActiveRun()
+    self.modalBackBtn = {id="MODAL_BACK", name="BACK", color=C_RED, x=420, y=430, w=120, h=38, wasHovered = false}
     
     self:rebuildButtons()
     SoundManager.playMusic("menu_theme")
@@ -191,7 +192,7 @@ function StateMenu:draw()
         local fpsStr = _G.CONFIG_SHOW_FPS and "ON" or "OFF"
         drawShadowText("[Toggle] Show FPS: " .. fpsStr, 290, 375, 1, 0.84, 0, 1.1)
         
-        drawChunkyPillButton({id="MODAL_BACK", name="BACK", color=C_RED, x=420, y=430, w=120, h=38})
+        drawChunkyPillButton(self.modalBackBtn)
     end
 end
 
@@ -260,9 +261,14 @@ function StateMenu:mousepressed(x, y, button, istouch, presses)
                 elseif btn.id == "CONTINUE" then
                     local ok = SaveManager.loadActiveRunIntoState(GameStateData)
                     if ok then
-                        DeckManager.drawHand()
-                        local StateGame = require("src.states.state_game")
-                        StateManager.switch(StateGame)
+                        if GameStateData.inShop then
+                            local StateShop = require("src.states.state_shop")
+                            StateManager.switch(StateShop)
+                        else
+                            DeckManager.drawHand()
+                            local StateGame = require("src.states.state_game")
+                            StateManager.switch(StateGame)
+                        end
                     end
                 elseif btn.id == "OPTIONS" then
                     self.activeModal = "OPTIONS"

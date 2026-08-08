@@ -183,6 +183,25 @@ function SaveManager.saveActiveRun(gameState)
         table.insert(consumablesData, cons.id)
     end
     
+    local shopItemsData = {}
+    if gameState.inShop then
+        local StateShop = require("src.states.state_shop")
+        if StateShop.shopItems then
+            for _, item in ipairs(StateShop.shopItems) do
+                table.insert(shopItemsData, {
+                    slot = item.slot,
+                    title = item.title,
+                    desc = item.desc,
+                    cost = item.cost,
+                    packType = item.packType,
+                    purchased = item.purchased or false,
+                    consumableId = item.consumable and item.consumable.id,
+                    voucherId = item.voucher and item.voucher.id
+                })
+            end
+        end
+    end
+    
     local runData = {
         profileIndex = SaveManager.activeProfileIndex,
         capCash = gameState.capCash,
@@ -210,7 +229,9 @@ function SaveManager.saveActiveRun(gameState)
         
         roster = rosterData,
         playbook = playbookData,
-        consumables = consumablesData
+        consumables = consumablesData,
+        inShop = gameState.inShop or false,
+        shopItems = shopItemsData
     }
     
     local function serialize(val)
@@ -365,6 +386,45 @@ function SaveManager.loadActiveRunIntoState(gameState)
                 end
             end
         end
+    end
+    
+    gameState.inShop = runData.inShop or false
+    if runData.shopItems and #runData.shopItems > 0 then
+        local StateShop = require("src.states.state_shop")
+        StateShop.shopItems = {}
+        local ConsumablesData = require("src.data.consumables")
+        local VouchersData = require("src.data.vouchers")
+        
+        for _, itemData in ipairs(runData.shopItems) do
+            local item = {
+                slot = itemData.slot,
+                title = itemData.title,
+                desc = itemData.desc,
+                cost = itemData.cost,
+                packType = itemData.packType,
+                purchased = itemData.purchased or false
+            }
+            if itemData.consumableId then
+                for _, cons in ipairs(ConsumablesData) do
+                    if cons.id == itemData.consumableId then
+                        item.consumable = cons
+                        break
+                    end
+                end
+            end
+            if itemData.voucherId then
+                for _, vouch in ipairs(VouchersData) do
+                    if vouch.id == itemData.voucherId then
+                        item.voucher = vouch
+                        break
+                    end
+                end
+            end
+            table.insert(StateShop.shopItems, item)
+        end
+    else
+        local StateShop = require("src.states.state_shop")
+        StateShop.shopItems = nil
     end
     
     return true

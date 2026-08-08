@@ -48,7 +48,15 @@ function StateShop:enter()
     self.shopMessage = "Welcome to the Front Office Shop!"
     self.pendingEquipment = nil
     self.pendingTraining = false
-    self:rerollShop()
+    
+    GameStateData.inShop = true
+    
+    local SaveManager = require("src.engine.save_manager")
+    if not self.shopItems or #self.shopItems == 0 then
+        self:rerollShop()
+    else
+        SaveManager.saveActiveRun(GameStateData)
+    end
     SoundManager.playMusic("shop_theme")
 end
 
@@ -78,9 +86,13 @@ function StateShop:rerollShop()
     
     local randomVoucher = VouchersData[math.random(#VouchersData)]
     table.insert(self.shopItems, { slot = 5, title = "STAFF UPGRADE", desc = randomVoucher.name .. ": " .. randomVoucher.description, cost = math.max(1, 10 - discount), voucher = randomVoucher })
+
+    local SaveManager = require("src.engine.save_manager")
+    SaveManager.saveActiveRun(GameStateData)
 end
 
 function StateShop:exit()
+    self.shopItems = nil
 end
 
 function StateShop:update(dt)
@@ -137,6 +149,16 @@ function StateShop:draw()
         drawShadowText("[" .. item.slot .. "] " .. item.title, x + 6, y + 12, 1, 1, 1, 0.9)
         drawShadowText(item.desc, x + 6, y + 45, 0.8, 0.8, 0.8, 0.8, "left", cardW - 12)
         drawShadowText(string.format(Loc.get("COST", item.cost), item.cost), x + 6, y + h - 30, 1, 0.84, 0, 1.05)
+        
+        if item.purchased then
+            love.graphics.setColor(0, 0, 0, 0.85)
+            love.graphics.rectangle("fill", x, y, cardW, h, 8, 8)
+            love.graphics.setColor(1.0, 0.3, 0.3)
+            love.graphics.setLineWidth(2)
+            love.graphics.rectangle("line", x, y, cardW, h, 8, 8)
+            love.graphics.setLineWidth(1)
+            drawShadowText("SOLD OUT", x, y + h / 2 - 10, 1.0, 0.3, 0.3, 1.3, "center", cardW)
+        end
     end
 
     -- Active Roster Display Bar
@@ -275,6 +297,7 @@ function StateShop:mousepressed(x, y, button, istouch, presses)
         
         if checkHover(40, 480, 300, 45) then
             local StateGame = require("src.states.state_game")
+            GameStateData.inShop = false
             if DefenseManager.activeBlind and DefenseManager.activeBlind.type == "standard" then
                 GameStateData.nextRound("boss")
             else
@@ -313,14 +336,24 @@ function StateShop:buyItem(slot)
     local item = self.shopItems[slot]
     if not item then return end
     
+    if item.purchased then
+        self.shopMessage = "This item has already been purchased!"
+        SoundManager.playSFX("click")
+        return
+    end
+    
     if GameStateData.capCash < item.cost then
         self.shopMessage = "Not enough Cap Space!"
         return
     end
     
+    local SaveManager = require("src.engine.save_manager")
     if item.packType then
         GameStateData.capCash = GameStateData.capCash - item.cost
+        item.purchased = true
         SoundManager.playSFX("coin")
+        
+        SaveManager.saveActiveRun(GameStateData)
         
         local StatePackOpening = require("src.states.state_pack_opening")
         StatePackOpening.packType = item.packType
@@ -336,12 +369,15 @@ function StateShop:buyItem(slot)
         GameStateData.addConsumable(item.consumable)
         SoundManager.playSFX("coin")
         self.shopMessage = "Purchased Sideline Perk: " .. item.consumable.name .. "!"
-        table.remove(self.shopItems, 4) -- Remove from shop after buy
+        item.purchased = true
+        SaveManager.saveActiveRun(GameStateData)
     elseif slot == 5 and item.voucher then
         GameStateData.capCash = GameStateData.capCash - item.cost
         item.voucher.apply(GameStateData)
         SoundManager.playSFX("coin")
         self.shopMessage = "Activated Staff Upgrade: " .. item.voucher.name .. "!"
+        item.purchased = true
+        SaveManager.saveActiveRun(GameStateData)
     end
 end
 
@@ -361,6 +397,7 @@ function StateShop:keypressed(key)
     elseif key == "5" then self:buyItem(5)
     elseif key == "space" then
         local StateGame = require("src.states.state_game")
+        GameStateData.inShop = false
         if DefenseManager.activeBlind and DefenseManager.activeBlind.type == "standard" then
             GameStateData.nextRound("boss")
         else
