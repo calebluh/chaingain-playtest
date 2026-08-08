@@ -151,6 +151,47 @@ function FieldAnimator.update(dt)
     FieldAnimator.timer = FieldAnimator.timer + dt
     local t = math.min(1.0, FieldAnimator.timer / FieldAnimator.duration)
     
+    -- Dynamic tackle contact check
+    local carrier = FieldAnimator.ball.carrier
+    if carrier and not FieldAnimator.completed then
+        local isPlayActive = false
+        if FieldAnimator.playType:match("Pass") then
+            -- Passes: check for tackle after ball is caught (t >= 0.9)
+            if t >= 0.9 then isPlayActive = true end
+        else
+            -- Runs: check for tackle after handoff (t >= 0.2)
+            if t >= 0.2 then isPlayActive = true end
+        end
+        
+        if isPlayActive then
+            local closestDef, minDist = nil, 999999
+            for _, def in ipairs(FieldAnimator.defense) do
+                local dx = def.x - carrier.x
+                local dy = def.y - carrier.y
+                local dist = math.sqrt(dx*dx + dy*dy)
+                if dist < minDist then
+                    minDist = dist
+                    closestDef = def
+                end
+            end
+            
+            -- Trigger physical tackle if defender makes contact and we are not past the goal line (1100px)
+            if minDist <= 15 and carrier.x < 1100 then
+                FieldAnimator.completed = true
+                local FxManager = require("src.engine.fx_manager")
+                FxManager.addBurstParticles(FieldAnimator.ball.x, FieldAnimator.ball.y, 35, 1.0, 1.0, 1.0)
+                local SoundManager = require("src.engine.sound_manager")
+                SoundManager.playSFX("tackle")
+                if _G.triggerScreenShake then _G.triggerScreenShake(20, 0.4) end
+                if _G.triggerHitStop then _G.triggerHitStop(0.15) end
+                
+                -- Force timer to the end of the duration so it completes on the next update
+                FieldAnimator.timer = FieldAnimator.duration
+                t = 1.0
+            end
+        end
+    end
+    
     if t >= 1.0 and not FieldAnimator.completed then
         FieldAnimator.completed = true
         local FxManager = require("src.engine.fx_manager")
@@ -219,7 +260,7 @@ function FieldAnimator.update(dt)
             end
         elseif p.role == "WR1" or p.role == "WR2" or p.role == "TE" then
             if FieldAnimator.playType:match("Pass") then
-                local wrT = math.min(1.0, t * 1.2)
+                local wrT = t
                 if wrT < 0.4 then
                     local bt = wrT / 0.4
                     p.x = PhysicsUtils.lerp(p.startX, p.breakX, bt)

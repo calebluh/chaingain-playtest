@@ -61,64 +61,64 @@ return {
     },
     {
         id = "enhancement_glass",
-        name = "Glass Cleats",
+        name = "High-Octane Spikes",
         type = "Consumable",
         cost = 4,
-        description = "Enhances 1 random Play Card in hand to GLASS (x2.0 MTM, 25% chance to shatter).",
+        description = "Enhances 1 random Play Card in hand to High-Octane (x2.0 MTM, 25% chance to bench card after play).",
         use = function(gameState)
             local DeckManager = require("src.engine.deck_manager")
             if #DeckManager.hand > 0 then
                 local card = DeckManager.hand[math.random(#DeckManager.hand)]
                 card.enhancement = "Glass"
-                return card.type .. " enhanced to GLASS!"
+                return card.type .. " enhanced to High-Octane!"
             end
             return "No cards in hand to enhance!"
         end
     },
     {
         id = "enhancement_steel",
-        name = "Steel Pads",
+        name = "Reinforced Pads",
         type = "Consumable",
         cost = 4,
-        description = "Enhances 1 random Play Card in hand to STEEL (+1.5 MTM passively while held).",
+        description = "Enhances 1 random Play Card in hand to Reinforced (+1.5 MTM passively while held).",
         use = function(gameState)
             local DeckManager = require("src.engine.deck_manager")
             if #DeckManager.hand > 0 then
                 local card = DeckManager.hand[math.random(#DeckManager.hand)]
                 card.enhancement = "Steel"
-                return card.type .. " enhanced to STEEL!"
+                return card.type .. " enhanced to Reinforced!"
             end
             return "No cards in hand to enhance!"
         end
     },
     {
         id = "enhancement_gold",
-        name = "Gold Chain",
+        name = "Sponsor Decal",
         type = "Consumable",
         cost = 4,
-        description = "Enhances 1 random Play Card in hand to GOLD (+$3 Cash if held at end of drive).",
+        description = "Enhances 1 random Play Card in hand to Franchise Gold (+$3 Cash if held at end of drive).",
         use = function(gameState)
             local DeckManager = require("src.engine.deck_manager")
             if #DeckManager.hand > 0 then
                 local card = DeckManager.hand[math.random(#DeckManager.hand)]
                 card.enhancement = "Gold"
-                return card.type .. " enhanced to GOLD!"
+                return card.type .. " enhanced to Franchise Gold!"
             end
             return "No cards in hand to enhance!"
         end
     },
     {
         id = "enhancement_stone",
-        name = "Stone Weights",
+        name = "Chunky Studs",
         type = "Consumable",
         cost = 4,
-        description = "Enhances 1 random Play Card in hand to STONE (+8 Base YDS, but 0 MTM).",
+        description = "Enhances 1 random Play Card in hand to Heavy Stud (+8 Base YDS, but 0 MTM).",
         use = function(gameState)
             local DeckManager = require("src.engine.deck_manager")
             if #DeckManager.hand > 0 then
                 local card = DeckManager.hand[math.random(#DeckManager.hand)]
                 card.enhancement = "Stone"
-                return card.type .. " enhanced to STONE!"
+                return card.type .. " enhanced to Heavy Stud!"
             end
             return "No cards in hand to enhance!"
         end

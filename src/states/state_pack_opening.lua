@@ -193,6 +193,9 @@ function StatePackOpening:draw()
         love.graphics.setColor(1, 1, 1)
         love.graphics.printf("Click Pack to Rip Open", 0, 480, 960, "center")
     else
+        self.hoveredCard = nil
+        local mx, my = love.mouse.getPosition()
+        
         for _, card in ipairs(self.cards) do
             love.graphics.push()
             love.graphics.translate(card.x, card.y)
@@ -229,10 +232,34 @@ function StatePackOpening:draw()
             end
             
             love.graphics.pop()
+            
+            -- Hover check (revealed cards only for tooltip)
+            if card.revealed and not self.drafted then
+                if mx >= card.x - 70 and mx <= card.x + 70 and my >= card.y - 100 and my <= card.y + 100 then
+                    self.hoveredCard = card.item
+                end
+            end
         end
         
         love.graphics.setColor(1, 1, 1)
-        love.graphics.printf("Click a card to reveal. Click a revealed card to Draft it.", 0, 480, 960, "center")
+        love.graphics.printf("Click a card to reveal. Click a revealed card to Draft it.", 0, 465, 960, "center")
+        
+        -- Draw SKIP PACK button
+        local isSkipHover = mx >= 420 and mx <= 540 and my >= 498 and my <= 524
+        love.graphics.setColor(isSkipHover and {0.9, 0.3, 0.3} or {0.7, 0.2, 0.2})
+        love.graphics.rectangle("fill", 420, 498, 120, 26, 6, 6)
+        love.graphics.setColor(0, 0.76, 1)
+        love.graphics.setLineWidth(1.5)
+        love.graphics.rectangle("line", 420, 498, 120, 26, 6, 6)
+        love.graphics.setLineWidth(1)
+        
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.printf("SKIP PACK", 420, 503, 120, "center")
+        
+        -- Draw hover tooltip if active
+        if self.hoveredCard then
+            CardRender.drawTooltip(mx, my, self.hoveredCard)
+        end
     end
 end
 
@@ -247,6 +274,17 @@ function StatePackOpening:mousepressed(x, y, button)
                 FxManager.addBurstParticles(480, 270, 50, 1, 0.84, 0)
             end
             return
+        end
+        
+        -- Check if Skip Pack button clicked
+        if not self.drafted then
+            if x >= 420 and x <= 540 and y >= 498 and y <= 524 then
+                SoundManager.playSFX("click")
+                local StateShop = require("src.states.state_shop")
+                StateShop.shopMessage = "Pack skipped!"
+                StateManager.switch(StateShop)
+                return
+            end
         end
         
         if self.drafted then return end

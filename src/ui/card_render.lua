@@ -154,7 +154,12 @@ function CardRender.drawPlayCard(x, y, card, isSelected, time)
         elseif card.enhancement == "Steel" then er, eg, eb = 0.7, 0.7, 0.8
         elseif card.enhancement == "Gold" then er, eg, eb = 1.0, 0.84, 0.0
         elseif card.enhancement == "Stone" then er, eg, eb = 0.6, 0.6, 0.6 end
-        drawShadowText(card.enhancement:upper() .. " CARD", cx + 10, frameY - 10, er, eg, eb, 0.9, "center", 100)
+        local dispName = card.enhancement:upper() .. " PLAY"
+        if card.enhancement == "Glass" then dispName = "HIGH-OCTANE"
+        elseif card.enhancement == "Steel" then dispName = "REINFORCED"
+        elseif card.enhancement == "Gold" then dispName = "SPONSOR"
+        elseif card.enhancement == "Stone" then dispName = "HEAVY STUD" end
+        drawShadowText(dispName, cx + 10, frameY - 10, er, eg, eb, 0.9, "center", 100)
     end
     
     if card.seal then
@@ -365,13 +370,13 @@ function CardRender.drawTooltip(mx, my, card)
     -- 2. Enhancement (Equipment Attribute)
     if card.enhancement then
         if card.enhancement == "Glass" then
-            table.insert(tips, { title = "GLASS DECAL", desc = "Grants x2.0 Drive Momentum (MTM), but 25% chance to destroy card after play." })
+            table.insert(tips, { title = "HIGH-OCTANE CLEATS", desc = "Grants x2.0 Drive Momentum (MTM), but 25% chance to bench card after play." })
         elseif card.enhancement == "Steel" then
-            table.insert(tips, { title = "STEEL PADDING", desc = "Grants x1.5 Drive Momentum (MTM) if held in hand at end of play." })
+            table.insert(tips, { title = "REINFORCED PADS", desc = "Grants x1.5 Drive Momentum (MTM) if held in hand at end of play." })
         elseif card.enhancement == "Gold" then
-            table.insert(tips, { title = "GOLD CONTRACT", desc = "Grants +$3 Cap Space if held in hand at end of play." })
+            table.insert(tips, { title = "SPONSOR DECAL", desc = "Grants +$3 Cap Space if held in hand at end of play." })
         elseif card.enhancement == "Stone" then
-            table.insert(tips, { title = "STONE WALL", desc = "Grants +50 Yards on play, but no Drive Momentum (MTM)." })
+            table.insert(tips, { title = "HEAVY STUDS", desc = "Grants +50 Yards on play, but no Drive Momentum (MTM)." })
         end
     end
     
