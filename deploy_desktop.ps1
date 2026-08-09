@@ -1,15 +1,15 @@
 # deploy_desktop.ps1
-Write-Host "Building Drive or Die Standalone EXE for Windows..." -ForegroundColor Cyan
+Write-Host "Building Chain Gain Standalone EXE for Windows..." -ForegroundColor Cyan
 
 # 1. Terminate any running game processes to release file locks
-Stop-Process -Name "DriveOrDie" -ErrorAction SilentlyContinue
+Stop-Process -Name "ChainGain" -ErrorAction SilentlyContinue
 Stop-Process -Name "love" -ErrorAction SilentlyContinue
 Start-Sleep -Milliseconds 500
 
 # 2. Clean old builds
 if (Test-Path "balatrofb.love") { Remove-Item "balatrofb.love" -Force }
 if (Test-Path "desktop_build") { Remove-Item "desktop_build" -Recurse -Force }
-if (Test-Path "DriveOrDie_Windows.zip") { Remove-Item "DriveOrDie_Windows.zip" -Force }
+if (Test-Path "ChainGain_Windows.zip") { Remove-Item "ChainGain_Windows.zip" -Force }
 
 # 3. Package resources into a .love archive
 Write-Host "Packaging resources into balatrofb.love..." -ForegroundColor Yellow
@@ -39,18 +39,18 @@ New-Item -ItemType Directory -Path "desktop_build" -Force | Out-Null
 Copy-Item "love_dist/extracted/love-11.5-win64/*.dll" "desktop_build/"
 Copy-Item "love_dist/extracted/love-11.5-win64/license.txt" "desktop_build/"
 
-# 7. Fuse love.exe + balatrofb.love -> DriveOrDie.exe
-Write-Host "Fusing binaries into DriveOrDie.exe..." -ForegroundColor Yellow
-cmd /c "copy /b love_dist\extracted\love-11.5-win64\love.exe+balatrofb.love desktop_build\DriveOrDie.exe" | Out-Null
+# 7. Fuse love.exe + balatrofb.love -> ChainGain.exe
+Write-Host "Fusing binaries into ChainGain.exe..." -ForegroundColor Yellow
+cmd /c "copy /b love_dist\extracted\love-11.5-win64\love.exe+balatrofb.love desktop_build\ChainGain.exe" | Out-Null
 
 # 8. Zip the folder for distribution
-Write-Host "Compressing standalone folder into DriveOrDie_Windows.zip..." -ForegroundColor Yellow
-Compress-Archive -Path "desktop_build" -DestinationPath "DriveOrDie_Windows.zip" -Force
+Write-Host "Compressing standalone folder into ChainGain_Windows.zip..." -ForegroundColor Yellow
+Compress-Archive -Path "desktop_build" -DestinationPath "ChainGain_Windows.zip" -Force
 
-Write-Host "Build complete! Standalone package created at DriveOrDie_Windows.zip" -ForegroundColor Green
-Write-Host "Your friends can extract DriveOrDie_Windows.zip and run DriveOrDie.exe to play!" -ForegroundColor Yellow
+Write-Host "Build complete! Standalone package created at ChainGain_Windows.zip" -ForegroundColor Green
+Write-Host "Your friends can extract ChainGain_Windows.zip and run ChainGain.exe to play!" -ForegroundColor Yellow
 Write-Host ""
-Write-Host "NOTE: If Windows Defender / Smart App Control blocks DriveOrDie.exe, tell your friends to:" -ForegroundColor Cyan
-Write-Host "  1. Right-click 'DriveOrDie.exe' -> Select 'Properties'." -ForegroundColor Cyan
+Write-Host "NOTE: If Windows Defender / Smart App Control blocks ChainGain.exe, tell your friends to:" -ForegroundColor Cyan
+Write-Host "  1. Right-click 'ChainGain.exe' -> Select 'Properties'." -ForegroundColor Cyan
 Write-Host "  2. Check the 'Unblock' box at the bottom -> Click Apply/OK." -ForegroundColor Cyan
 Write-Host "  3. Alternatively, install LÖVE 11.5 (love2d.org) and double-click the 'balatrofb.love' file directly to bypass Windows SmartScreen warnings completely." -ForegroundColor Cyan

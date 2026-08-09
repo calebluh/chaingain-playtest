@@ -1,9 +1,9 @@
 -- conf.lua
 function love.conf(t)
-    t.identity = "BalatroFB"
+    t.identity = "ChainGain"
     t.window.width = 960
     t.window.height = 540
-    t.window.title = "Gridiron Deck: Franchise Edition"
+    t.window.title = "Chain Gain"
     t.console = true
 end
 

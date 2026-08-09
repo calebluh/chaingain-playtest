@@ -34,7 +34,7 @@ function love.load(arg)
     end
 
     love.window.setMode(1920, 1080, {fullscreen = true, vsync = true})
-    love.window.setTitle("Drive or Die")
+    love.window.setTitle("Chain Gain")
     
     if love.filesystem and love.filesystem.getInfo and love.filesystem.getInfo("assets/icon.png") then
         local ok, iconData = pcall(love.image.newImageData, "assets/icon.png")

@@ -14,7 +14,7 @@ Rename-Item -Path "balatrofb.zip" -NewName "balatrofb.love"
 # 3. Compile to WebAssembly using love.js
 Write-Host "Compiling to WebAssembly via love.js (this may take a moment)..." -ForegroundColor Cyan
 # Using npx to automatically fetch and run Davidobot's love.js
-npx -y --package=love.js love.js.cmd balatrofb.love web_build -t "Drive or Die" -c
+npx -y --package=love.js love.js.cmd balatrofb.love web_build -t "Chain Gain" -c
 
 # 3.5 Inject game icon as browser tab favicon
 if (Test-Path "assets/icon.png") {

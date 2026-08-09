@@ -63,7 +63,7 @@ function GameState.init(config)
     if GameState.config and GameState.config.team then
         local t = GameState.config.team
         if t.bonusCash then GameState.capCash = GameState.capCash + t.bonusCash end
-        if t.extraTESlot then GameState.rosterSlots.TE.max = 2 end
+        if t.extraTESlot then GameState.rosterSlots.WR2.max = 2 end
         if t.bonusAudibles then GameState.bonusAudibles = (GameState.bonusAudibles or 0) + t.bonusAudibles end
         if t.passBonus then GameState.passBonus = t.passBonus end
         if t.multBonus then GameState.teamMultBonus = t.multBonus end
