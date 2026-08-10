@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#D32F2F"/>
+      <stop offset="100%" stop-color="#510000"/>
+    </linearGradient>
+    <linearGradient id="boltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF59D"/>
+      <stop offset="100%" stop-color="#FBC02D"/>
+    </linearGradient>
+  </defs>
+  <!-- Shield Badge -->
+  <path d="M 128,16 L 216,48 V 120 C 216,180 128,232 128,232 C 128,232 40,180 40,120 V 48 Z" fill="url(#shieldGrad)" stroke="#FFCDD2" stroke-width="8"/>
+  <path d="M 128,28 L 202,56 V 118 C 202,170 128,216 128,216 C 128,216 54,170 54,118 V 56 Z" fill="none" stroke="#B71C1C" stroke-width="4"/>
+  <!-- Lightning Bolt -->
+  <polygon points="140,40 84,130 124,130 100,216 180,110 136,110" fill="url(#boltGrad)" stroke="#FFF" stroke-width="3" stroke-linejoin="round"/>
+</svg>

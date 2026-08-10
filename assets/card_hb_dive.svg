@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 640" width="512" height="640">
+  <defs>
+    <linearGradient id="cardBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1b4332"/>
+      <stop offset="100%" stop-color="#081c15"/>
+    </linearGradient>
+    <pattern id="yardLines" width="512" height="80" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="40" x2="512" y2="40" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+      <line x1="0" y1="80" x2="512" y2="80" stroke="rgba(255,255,255,0.3)" stroke-width="4"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#FFD700"/>
+    </marker>
+  </defs>
+
+  <!-- Card Frame -->
+  <rect x="8" y="8" width="496" height="624" rx="32" fill="url(#cardBg)" stroke="#D4AF37" stroke-width="12"/>
+  <rect x="28" y="28" width="456" height="584" rx="20" fill="url(#yardLines)"/>
+
+  <!-- Play Title Header -->
+  <rect x="40" y="48" width="432" height="64" rx="12" fill="#111" stroke="#D4AF37" stroke-width="3"/>
+  <text x="256" y="92" font-family="'Impact', 'Arial Black', sans-serif" font-size="36" fill="#FFF" text-anchor="middle" letter-spacing="2">HB DIVE</text>
+  <text x="256" y="128" font-family="sans-serif" font-size="16" font-weight="bold" fill="#28a745" text-anchor="middle">RUN PLAY • INSIDE</text>
+
+  <!-- Playbook Diagram Area -->
+  <g transform="translate(0, 40)">
+    <!-- Line of Scrimmage -->
+    <line x1="80" y1="360" x2="432" y2="360" stroke="#00E676" stroke-width="4" stroke-dasharray="8,6"/>
+
+    <!-- Defense (X's) -->
+    <g stroke="#FF5252" stroke-width="6" stroke-linecap="round">
+      <!-- DT / DE -->
+      <path d="M 180,310 L 200,330 M 200,310 L 180,330"/>
+      <path d="M 310,310 L 330,330 M 330,310 L 310,330"/>
+      <path d="M 110,310 L 130,330 M 130,310 L 110,330"/>
+      <path d="M 380,310 L 400,330 M 400,310 L 380,330"/>
+    </g>
+
+    <!-- Offense (O's / Linemen Blocks) -->
+    <g fill="none" stroke="#FFF" stroke-width="5">
+      <!-- OL Blocks -->
+      <circle cx="120" cy="390" r="14"/>
+      <circle cx="180" cy="390" r="14"/>
+      <circle cx="256" cy="390" r="14"/>
+      <circle cx="330" cy="390" r="14"/>
+      <circle cx="390" cy="390" r="14"/>
+
+      <!-- Blocking Assignment Vectors -->
+      <path d="M 180,376 L 180,340" stroke="#FFF" stroke-width="4"/>
+      <path d="M 330,376 L 330,340" stroke="#FFF" stroke-width="4"/>
+      <path d="M 256,376 L 220,340" stroke="#FFF" stroke-width="4"/>
+    </g>
+
+    <!-- QB and RB -->
+    <circle cx="256" cy="450" r="14" fill="#00E676" stroke="#FFF" stroke-width="3"/>
+    <text x="256" y="455" font-family="sans-serif" font-size="14" font-weight="bold" fill="#000" text-anchor="middle">QB</text>
+
+    <square>
+      <circle cx="256" cy="510" r="16" fill="#FFD700" stroke="#FFF" stroke-width="3"/>
+      <text x="256" y="515" font-family="sans-serif" font-size="14" font-weight="bold" fill="#000" text-anchor="middle">HB</text>
+    </square>
+
+    <!-- Ball Carrier Route Arrow -->
+    <path d="M 256,490 Q 280,440 270,390 T 260,250" fill="none" stroke="#FFD700" stroke-width="8" stroke-linecap="round" marker-end="url(#arrow)"/>
+  </g>
+
+  <!-- Footer Stats -->
+  <rect x="40" y="560" width="432" height="44" rx="8" fill="#111" stroke="#333" stroke-width="2"/>
+  <text x="60" y="588" font-family="sans-serif" font-size="18" font-weight="bold" fill="#FFF">+4 YDS BASE</text>
+  <text x="450" y="588" font-family="sans-serif" font-size="18" font-weight="bold" fill="#FFD700" text-anchor="end">LOW RISK</text>
+</svg>

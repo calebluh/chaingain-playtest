@@ -14,12 +14,18 @@ function AssetManager.getImage(relativePath)
         return images[relativePath]
     end
     
-    local fullPath = "assets/images/" .. relativePath
-    if love.filesystem and love.filesystem.getInfo and love.filesystem.getInfo(fullPath) then
-        local ok, img = pcall(love.graphics.newImage, fullPath)
-        if ok and img then
-            images[relativePath] = img
-            return img
+    local candidatePaths = {
+        "assets/images/" .. relativePath,
+        "assets/" .. relativePath
+    }
+    
+    for _, fullPath in ipairs(candidatePaths) do
+        if love.filesystem and love.filesystem.getInfo and love.filesystem.getInfo(fullPath) then
+            local ok, img = pcall(love.graphics.newImage, fullPath)
+            if ok and img then
+                images[relativePath] = img
+                return img
+            end
         end
     end
     
