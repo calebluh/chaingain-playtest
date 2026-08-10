@@ -248,4 +248,111 @@ function AssetManager.drawBlindIcon(x, y, radius, blindName, isBoss)
     love.graphics.pop()
 end
 
+function AssetManager.drawRetroPlayer(x, y, jerseyColor, pantsColor, helmetColor, vx, vy, isOffense, time, isTackled, isMyPlayer, scaleOverride)
+    vx = vx or 0
+    vy = vy or 0
+    local speed = math.sqrt(vx*vx + vy*vy)
+    local isMoving = speed > 10 and not isTackled
+    
+    local PlayerVisualProfile = require("src.data.player_visual_profile")
+    local skinColor = {0.85, 0.65, 0.45}
+    local visorColor = {0.7, 0.85, 1.0, 0.5}
+    local torsoW, torsoH = 8, 10
+    
+    if isMyPlayer then
+        skinColor = PlayerVisualProfile.getSkinColor()
+        visorColor = PlayerVisualProfile.getVisorColor()
+        local scale = PlayerVisualProfile.getArchetypeScale()
+        torsoW = scale.torsoW
+        torsoH = scale.torsoH
+        jerseyColor = PlayerVisualProfile.primaryColor or jerseyColor
+        helmetColor = PlayerVisualProfile.shellColor or helmetColor
+    end
+    
+    love.graphics.push()
+    love.graphics.translate(x, y)
+    
+    if scaleOverride then
+        love.graphics.scale(scaleOverride, scaleOverride)
+    end
+    
+    if isTackled then
+        love.graphics.rotate(math.pi / 2)
+        love.graphics.translate(0, -6)
+    end
+    
+    local dir = 1
+    if isMoving then
+        dir = vx > 0 and 1 or -1
+    else
+        dir = isOffense and 1 or -1
+    end
+    love.graphics.scale(dir, 1)
+    
+    local legOffset = 0
+    local armOffset = 0
+    if isMoving then
+        legOffset = math.sin(time * 7) * 5
+        armOffset = math.cos(time * 7) * 3
+    end
+    
+    -- Shadow
+    love.graphics.setColor(0, 0, 0, 0.35)
+    love.graphics.ellipse("fill", 0, 12, torsoW * 0.75, 2)
+    
+    -- Legs (Pants / Socks)
+    love.graphics.setColor(pantsColor)
+    love.graphics.rectangle("fill", -math.floor(torsoW/2) + 1 + legOffset * 0.5, 4, 3, 6)
+    love.graphics.rectangle("fill", 1 - legOffset * 0.5, 4, 3, 6)
+    
+    -- Cleats / Shoes
+    local cleatColor = (isMyPlayer and PlayerVisualProfile.cleatsColor) or {1, 1, 1}
+    love.graphics.setColor(cleatColor)
+    love.graphics.rectangle("fill", -math.floor(torsoW/2) + 1 + legOffset * 0.5 + (dir > 0 and 1 or -1), 10, 3, 2)
+    love.graphics.rectangle("fill", 1 - legOffset * 0.5 + (dir > 0 and 1 or -1), 10, 3, 2)
+    
+    -- Torso (Jersey)
+    love.graphics.setColor(jerseyColor)
+    love.graphics.rectangle("fill", -math.floor(torsoW/2), -6, torsoW, torsoH)
+    
+    -- Arms
+    love.graphics.setColor(jerseyColor)
+    love.graphics.rectangle("fill", -math.floor(torsoW/2) - 2 - armOffset * 0.5, -4, 3, 6)
+    love.graphics.rectangle("fill", math.floor(torsoW/2) - 1 + armOffset * 0.5, -4, 3, 6)
+    
+    if isMyPlayer and PlayerVisualProfile.armGear ~= "none" then
+        love.graphics.setColor(PlayerVisualProfile.armGearColor or {1, 1, 1})
+        love.graphics.rectangle("fill", -math.floor(torsoW/2) - 2 - armOffset * 0.5, -2, 3, 2)
+        love.graphics.rectangle("fill", math.floor(torsoW/2) - 1 + armOffset * 0.5, -2, 3, 2)
+    end
+    
+    -- Hands / Gloves
+    if isMyPlayer and PlayerVisualProfile.handGear ~= "none" then
+        love.graphics.setColor(PlayerVisualProfile.handGearColor or {1, 1, 1})
+    else
+        love.graphics.setColor(skinColor)
+    end
+    love.graphics.rectangle("fill", -math.floor(torsoW/2) - 2 - armOffset * 0.5, 2, 3, 2)
+    love.graphics.rectangle("fill", math.floor(torsoW/2) - 1 + armOffset * 0.5, 2, 3, 2)
+    
+    -- Helmet
+    love.graphics.setColor(helmetColor)
+    love.graphics.rectangle("fill", -3.5, -13, 7, 7)
+    
+    -- Helmet stripe
+    if isMyPlayer and PlayerVisualProfile.stripeColor then
+        love.graphics.setColor(PlayerVisualProfile.stripeColor)
+        love.graphics.rectangle("fill", -1, -13, 2, 7)
+    end
+    
+    -- Facemask & Visor
+    love.graphics.setColor(isMyPlayer and PlayerVisualProfile.maskColor or {0.7, 0.7, 0.7})
+    love.graphics.rectangle("fill", 2, -10, 3, 3)
+    
+    love.graphics.setColor(visorColor)
+    love.graphics.rectangle("fill", 2, -12, 4, 3, 1, 1)
+    
+    love.graphics.pop()
+end
+
 return AssetManager

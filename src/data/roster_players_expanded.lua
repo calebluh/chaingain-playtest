@@ -136,10 +136,74 @@ local rosterCatalog = {
     -- Kickers (K)
     { name = "Golden Boot", pos = "K", rarity = "X-Factor", ovr = 98, chip = 0, mult = 0.0, tag = "CLUTCH", desc = "Automatic from anywhere." },
     { name = "Reliable Leg", pos = "K", rarity = "Gold", ovr = 85, chip = 0, mult = 0.0, tag = "KICKER", desc = "Solid kicker." },
-    { name = "Rookie Kicker", pos = "K", rarity = "Silver", ovr = 72, chip = 0, mult = 0.0, tag = "KICKER", desc = "Basic Kicker." }
+    { name = "Rookie Kicker", pos = "K", rarity = "Silver", ovr = 72, chip = 0, mult = 0.0, tag = "KICKER", desc = "Basic Kicker." },
+    
+    -- Additional Fake/Predetermined QBs
+    { name = "Gage Thunderbolt", pos = "QB", rarity = "Silver", ovr = 75, chip = 1, mult = 0.15, tag = "STARTER", desc = "Basic passing." },
+    { name = "Orion Steele", pos = "QB", rarity = "Gold", ovr = 82, chip = 2, mult = 0.2, tag = "GUNSLINGER", desc = "Strong arm." },
+    { name = "Dash Ironheart", pos = "QB", rarity = "X-Factor", ovr = 93, chip = 0, mult = 0.0, tag = "SCRAMBLER", desc = "x1.5 MTM on Runs." },
+    { name = "Zephyr Cross", pos = "QB", rarity = "Silver", ovr = 78, chip = 1, mult = 0.1, tag = "STARTER", desc = "+1 YDS." },
+    { name = "Ryker Stone", pos = "QB", rarity = "Gold", ovr = 87, chip = 2, mult = 0.25, tag = "FIELD GENERAL", desc = "+2 YDS on Short Passes." },
+    { name = "Corbin Swift", pos = "QB", rarity = "Silver", ovr = 74, chip = 1, mult = 0.1, tag = "STARTER", desc = "+1 YDS." },
+    { name = "Knox Voltage", pos = "QB", rarity = "Gold", ovr = 89, chip = 3, mult = 0.3, tag = "CLUTCH", desc = "Clutch player." },
+    { name = "Dax Maverick", pos = "QB", rarity = "Silver", ovr = 73, chip = 1, mult = 0.1, tag = "STARTER", desc = "Backup QB." },
+    { name = "Vance Storm", pos = "QB", rarity = "Gold", ovr = 81, chip = 2, mult = 0.2, tag = "STARTER", desc = "+2 YDS." },
+    { name = "Jace Falcon", pos = "QB", rarity = "Silver", ovr = 71, chip = 1, mult = 0.1, tag = "STARTER", desc = "Backup QB." },
+
+    -- Additional Fake/Predetermined RBs
+    { name = "Boomer Vance", pos = "RB", rarity = "Silver", ovr = 76, chip = 1, mult = 0.1, tag = "POWER BACK", desc = "+1 YDS." },
+    { name = "Jet Sterling", pos = "RB", rarity = "Gold", ovr = 85, chip = 2, mult = 0.25, tag = "SPEEDSTER", desc = "+2 YDS on Sweeps." },
+    { name = "Brick Wall", pos = "RB", rarity = "X-Factor", ovr = 95, chip = 0, mult = 0.0, tag = "WRECKING BALL", desc = "+5 YDS on Inside Runs." },
+    { name = "Zane Striker", pos = "RB", rarity = "Silver", ovr = 73, chip = 1, mult = 0.1, tag = "STARTER", desc = "Backup RB." },
+    { name = "Colton Rush", pos = "RB", rarity = "Gold", ovr = 83, chip = 2, mult = 0.2, tag = "ELUSIVE", desc = "+2 YDS." },
+    { name = "Drake Talon", pos = "RB", rarity = "Silver", ovr = 71, chip = 1, mult = 0.1, tag = "STARTER", desc = "Backup RB." },
+    { name = "Rex Hazard", pos = "RB", rarity = "Gold", ovr = 88, chip = 3, mult = 0.3, tag = "POWER BACK", desc = "+3 YDS on Dives." },
+    { name = "Flint Rider", pos = "RB", rarity = "Silver", ovr = 70, chip = 1, mult = 0.1, tag = "STARTER", desc = "Backup RB." },
+    { name = "Mack Rhino", pos = "RB", rarity = "Gold", ovr = 80, chip = 2, mult = 0.2, tag = "STARTER", desc = "+2 YDS." },
+    { name = "Jax Cannon", pos = "RB", rarity = "Silver", ovr = 68, chip = 1, mult = 0.1, tag = "STARTER", desc = "Practice Squad." },
+
+    -- Additional Fake/Predetermined WRs
+    { name = "Tyron Jet", pos = "WR", rarity = "Gold", ovr = 84, chip = 2, mult = 0.25, tag = "DEEP THREAT", desc = "+2 YDS." },
+    { name = "Silas Hawk", pos = "WR", rarity = "Silver", ovr = 75, chip = 1, mult = 0.15, tag = "STARTER", desc = "+1 YDS." },
+    { name = "Neo Blaze", pos = "WR", rarity = "X-Factor", ovr = 94, chip = 0, mult = 0.0, tag = "SLOT DEMON", desc = "x1.5 MTM on Quick Slants." },
+    { name = "Deacon Frost", pos = "WR", rarity = "Gold", ovr = 81, chip = 2, mult = 0.2, tag = "POSSESSION", desc = "+2 YDS." },
+    { name = "Blade Runner", pos = "WR", rarity = "Silver", ovr = 73, chip = 1, mult = 0.1, tag = "STARTER", desc = "Backup WR." },
+    { name = "Cash Diamond", pos = "WR", rarity = "Gold", ovr = 86, chip = 3, mult = 0.3, tag = "PLAYMAKER", desc = "+3 YDS on Red Zone." },
+    { name = "Titus Cross", pos = "WR", rarity = "Silver", ovr = 72, chip = 1, mult = 0.1, tag = "STARTER", desc = "Backup WR." },
+    { name = "Zion Flash", pos = "WR", rarity = "Gold", ovr = 89, chip = 3, mult = 0.35, tag = "DEEP THREAT", desc = "+3 YDS on Deep Passes." },
+    { name = "Axel Rose", pos = "WR", rarity = "Silver", ovr = 71, chip = 1, mult = 0.1, tag = "STARTER", desc = "Backup WR." },
+    { name = "Kylo Swift", pos = "WR", rarity = "Gold", ovr = 80, chip = 2, mult = 0.2, tag = "STARTER", desc = "+2 YDS." },
+
+    -- Additional Fake/Predetermined TEs
+    { name = "Grover Shield", pos = "TE", rarity = "Gold", ovr = 82, chip = 2, mult = 0.25, tag = "PANCAKE TE", desc = "+2 YDS on Runs." },
+    { name = "Diesel Iron", pos = "TE", rarity = "Silver", ovr = 75, chip = 1, mult = 0.1, tag = "STARTER", desc = "+1 YDS." },
+    { name = "Hulk Smash", pos = "TE", rarity = "X-Factor", ovr = 93, chip = 0, mult = 0.0, tag = "BLOCKER", desc = "x1.5 MTM on Runs." },
+    { name = "Cyrus Rock", pos = "TE", rarity = "Gold", ovr = 85, chip = 2, mult = 0.3, tag = "VERTICAL TE", desc = "+2 YDS on Medium Passes." },
+    { name = "Talon Grip", pos = "TE", rarity = "Silver", ovr = 72, chip = 1, mult = 0.1, tag = "STARTER", desc = "Backup TE." },
+    { name = "Brock Tower", pos = "TE", rarity = "Gold", ovr = 81, chip = 2, mult = 0.2, tag = "POSSESSION", desc = "+2 YDS." },
+    { name = "Max Block", pos = "TE", rarity = "Silver", ovr = 70, chip = 1, mult = 0.1, tag = "STARTER", desc = "Backup TE." },
+
+    -- Additional Defense / Special
+    { name = "Thor Hammer", pos = "DL", rarity = "Gold", ovr = 89, chip = 0, mult = 0.0, tag = "RUN STOPPER", desc = "DL" },
+    { name = "Viper Strike", pos = "LB", rarity = "X-Factor", ovr = 92, chip = 0, mult = 0.0, tag = "COVERAGE", desc = "LB" },
+    { name = "Hawk Eye", pos = "DB", rarity = "Gold", ovr = 85, chip = 0, mult = 0.0, tag = "BALL HAWK", desc = "DB" },
+    { name = "Legatron", pos = "K", rarity = "X-Factor", ovr = 95, chip = 0, mult = 0.0, tag = "CLUTCH", desc = "Kicker" }
 }
 
 local RosterPlayersExpanded = {}
+
+function RosterPlayersExpanded.getAllPlayers()
+    local all = {}
+    for _, template in ipairs(rosterCatalog) do
+        local player = PlayerCard.new(template.name, template.pos, template.rarity, template.mult, template.chip)
+        player.overall = template.ovr
+        player.archetypeTag = template.tag
+        player.abilityDesc = template.desc
+        player.ability = template.ability
+        table.insert(all, player)
+    end
+    return all
+end
 
 function RosterPlayersExpanded.getRandomPlayer(posFilter)
     local filtered = {}

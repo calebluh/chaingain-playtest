@@ -92,7 +92,7 @@ function StateMyPlayer:draw()
     
     -- Character Portrait Preview
     local AssetManager = require("src.engine.asset_manager")
-    AssetManager.drawPlayerPortrait(90, 140, 200, 260, self.creatorName, self.creatorPosition, false, true)
+    AssetManager.drawRetroPlayer(190, 290, PlayerVisualProfile.primaryColor or {0.13, 0.34, 0.13}, {0.9, 0.9, 0.9}, PlayerVisualProfile.shellColor or {0.07, 0.13, 0.27}, 0, 0, true, 0, false, true, 8.0)
     
     drawShadowText("OVR: " .. (MyPlayerProfile.ovr or 70) .. "  |  POSITION: " .. self.creatorPosition, 70, 415, 1, 0.84, 0, 0.95, "center", 240)
     

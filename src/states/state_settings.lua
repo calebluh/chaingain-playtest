@@ -1,6 +1,7 @@
 -- src/states/state_settings.lua
 local SettingsData = require("src.data.settings_data")
 local StateManager = require("src.states.state_manager")
+local SoundManager = require("src.engine.sound_manager")
 local StateSettings = {}
 
 StateSettings.activeTab = 1
@@ -73,6 +74,50 @@ function StateSettings.drawRow(label, value, y)
     love.graphics.print(value, 720, y)
     love.graphics.setColor(0.3, 0.3, 0.3, 0.5)
     love.graphics.line(140, y + 28, 810, y + 28)
+end
+
+local function checkHover(x, y, w, h)
+    local mx, my = love.mouse.getPosition()
+    return mx >= x and mx <= (x + w) and my >= y and my <= (y + h)
+end
+
+function StateSettings.mousepressed(x, y, button)
+    if button ~= 1 then return end
+    
+    -- Check tabs
+    for i, name in ipairs(StateSettings.tabs) do
+        local tx = 110 + (i - 1) * 180
+        if checkHover(tx, 75, 160, 32) then
+            StateSettings.activeTab = i
+            SoundManager.playSFX("click")
+            return
+        end
+    end
+    
+    -- Check rows
+    local rowY = 145
+    local function clickedRow(offset) return checkHover(140, rowY + offset * 40, 670, 30) end
+    
+    if StateSettings.activeTab == 1 then
+        if clickedRow(0) then SettingsData.stadiumPulseEnabled = not SettingsData.stadiumPulseEnabled; SoundManager.playSFX("click")
+        elseif clickedRow(1) then SettingsData.pulseCounterScaling = not SettingsData.pulseCounterScaling; SoundManager.playSFX("click")
+        elseif clickedRow(2) then SettingsData.rpoMinigameEnabled = not SettingsData.rpoMinigameEnabled; SoundManager.playSFX("click")
+        elseif clickedRow(3) then SettingsData.gameSpeed = (SettingsData.gameSpeed == 1.0) and 1.5 or 1.0; SoundManager.playSFX("click") end
+    elseif StateSettings.activeTab == 2 then
+        if clickedRow(0) then SettingsData.impactFx = (SettingsData.impactFx == "FULL") and "LOW" or "FULL"; SoundManager.playSFX("click")
+        elseif clickedRow(1) then SettingsData.weatherStains = not SettingsData.weatherStains; SoundManager.playSFX("click")
+        elseif clickedRow(2) then SettingsData.turnoverSequence = not SettingsData.turnoverSequence; SoundManager.playSFX("click")
+        elseif clickedRow(3) then SettingsData.reducedFlashing = not SettingsData.reducedFlashing; SoundManager.playSFX("click") end
+    elseif StateSettings.activeTab == 3 then
+        if clickedRow(0) then SettingsData.masterVolume = (SettingsData.masterVolume >= 1.0) and 0.0 or (SettingsData.masterVolume + 0.1); SoundManager.playSFX("click")
+        elseif clickedRow(1) then SettingsData.sfxVolume = (SettingsData.sfxVolume >= 1.0) and 0.0 or (SettingsData.sfxVolume + 0.1); SoundManager.playSFX("click")
+        elseif clickedRow(2) then SettingsData.musicVolume = (SettingsData.musicVolume >= 1.0) and 0.0 or (SettingsData.musicVolume + 0.1); SoundManager.playSFX("click")
+        elseif clickedRow(3) then SettingsData.soundSoftener = not SettingsData.soundSoftener; SoundManager.playSFX("click") end
+    elseif StateSettings.activeTab == 4 then
+        if clickedRow(0) then SettingsData.streamerMode = not SettingsData.streamerMode; SoundManager.playSFX("click")
+        elseif clickedRow(1) then SettingsData.profanityFilter = not SettingsData.profanityFilter; SoundManager.playSFX("click")
+        elseif clickedRow(2) then SettingsData.hideUserTag = not SettingsData.hideUserTag; SoundManager.playSFX("click") end
+    end
 end
 
 function StateSettings.keypressed(key)

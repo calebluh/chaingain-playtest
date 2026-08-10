@@ -203,100 +203,64 @@ function CardRender.drawPlayerCard(x, y, player, isHovered, dt)
     
     if (player.flipProgress or 0) < 0.5 then
         -- -------------------------------------------------------------
-        -- FRONT FACE: Madden Ultimate Team (MUT) Style
+        -- FRONT FACE: Retro Bowl Style
         -- -------------------------------------------------------------
-        if player.edition == "Negative" then
-            love.graphics.setColor(0.1, 0.1, 0.15, 1)
-            love.graphics.rectangle("fill", cx - 4, cy - 4, w + 8, h + 8, 10, 10)
-            love.graphics.setColor(0.9, 0.9, 1.0, 1)
-            love.graphics.setLineWidth(2)
-            love.graphics.rectangle("line", cx - 3, cy - 3, w + 6, h + 6, 9, 9)
-            love.graphics.setLineWidth(1)
-        elseif player.edition == "Polychrome" then
-            local r = (math.sin(love.timer.getTime() * 4) + 1) / 2
-            local g = (math.sin(love.timer.getTime() * 4 + 2) + 1) / 2
-            local b = (math.sin(love.timer.getTime() * 4 + 4) + 1) / 2
-            love.graphics.setColor(r, g, b, 1)
-            love.graphics.rectangle("fill", cx - 3, cy - 3, w + 6, h + 6, 9, 9)
-        elseif player.edition == "Holographic" then
-            love.graphics.setColor(0.7, 0.3, 1.0)
-            love.graphics.rectangle("fill", cx - 3, cy - 3, w + 6, h + 6, 9, 9)
-        elseif player.edition == "Foil" then
-            love.graphics.setColor(0.2, 0.8, 1.0)
-            love.graphics.rectangle("fill", cx - 3, cy - 3, w + 6, h + 6, 9, 9)
-        else
-            love.graphics.setColor(player.borderColor or C_BORDER_NORMAL)
-            love.graphics.rectangle("fill", cx - 2, cy - 2, w + 4, h + 4, 8, 8)
+        -- Thick White Border with Drop Shadow
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.rectangle("fill", cx - 4, cy - 4, w + 8, h + 8, 4, 4)
+        
+        -- Top Half Color Background
+        local topColor = {0.3, 0.7, 0.9} -- Default Light Blue
+        if player.position == "DB" or player.position == "LB" or player.position == "DL" then
+            topColor = {0.9, 0.2, 0.2} -- Red for defense
+        elseif player.position == "K" or player.position == "P" then
+            topColor = {0.2, 0.8, 0.3} -- Green for special teams
+        end
+        love.graphics.setColor(topColor)
+        love.graphics.rectangle("fill", cx, cy, w, h/2, 2, 2)
+        
+        -- Bottom Half Dark Grey
+        love.graphics.setColor(0.3, 0.3, 0.3)
+        love.graphics.rectangle("fill", cx, cy + h/2, w, h/2, 2, 2)
+        
+        -- Position Text (Top Left)
+        local font = AssetManager.getFont(14)
+        love.graphics.setFont(font)
+        drawShadowText(player.position, cx + 4, cy + 4, 1, 1, 1, 1.2)
+        
+        -- Morale Icon (Top Right)
+        love.graphics.setColor(1.0, 0.84, 0.0)
+        love.graphics.rectangle("fill", cx + w - 22, cy + 4, 18, 18, 2, 2)
+        love.graphics.setColor(0, 0, 0)
+        love.graphics.circle("fill", cx + w - 17, cy + 9, 2)
+        love.graphics.circle("fill", cx + w - 9, cy + 9, 2)
+        love.graphics.arc("line", cx + w - 13, cy + 12, 5, 0, math.pi)
+        
+        -- Player Sprite (Center Top Half)
+        local teamColors = { primary = {0.1, 0.1, 0.1}, secondary = {0.9, 0.9, 0.9} }
+        if _G.GameStateData and _G.GameStateData.config and _G.GameStateData.config.team then
+            teamColors.primary = _G.GameStateData.config.team.primaryColor or teamColors.primary
+            teamColors.secondary = _G.GameStateData.config.team.secondaryColor or teamColors.secondary
+        end
+        AssetManager.drawRetroPlayer(0, cy + 45, teamColors.primary, {0.9, 0.9, 0.9}, teamColors.secondary, 0, 0, true, 0, false, player.isMyPlayer, 4)
+        
+        -- Player Name (Center Bottom Half)
+        drawShadowText(player.name:sub(1, 12), cx + 5, cy + h/2 + 8, 1, 1, 1, 1.1, "center", w - 10)
+        
+        -- Star Rating
+        local stars = math.floor((player.overall or 70) / 18)
+        love.graphics.setColor(1.0, 0.84, 0.0)
+        local starW = 12
+        local startX = cx + (w - (stars * starW)) / 2
+        for i = 1, stars do
+            drawShadowText("*", startX + (i-1)*starW, cy + h/2 + 25, 1.0, 0.84, 0.0, 1.5)
         end
         
-        -- Card Base Body
-        love.graphics.setColor(player.cardColor or C_SLATE_CARD)
-        love.graphics.rectangle("fill", cx, cy, w, h, 6, 6)
-        
-        -- Top-Left Badge: [80 OVR - QB]
-        love.graphics.setColor(0, 0, 0, 0.75)
-        love.graphics.rectangle("fill", cx + 3, cy + 3, w - 6, 22, 4, 4)
-        drawShadowText(string.format("%d OVR - %s", player.overall, player.position), cx + 5, cy + 6, 1, 0.84, 0, 0.85)
-        
-        -- Edition Tag Badge if non-standard
-        if player.edition and player.edition ~= "Standard" then
-            drawShadowText(player.edition:upper(), cx + w - 46, cy + 6, 1, 1, 1, 0.7)
-        end
-        
-        -- Center Frame: Player Silhouette
-        local portraitX, portraitY = cx + 8, cy + 28
-        local portraitW, portraitH = w - 16, 60
-        love.graphics.setColor(0.06, 0.08, 0.12, 1)
-        love.graphics.rectangle("fill", portraitX, portraitY, portraitW, portraitH, 4, 4)
-        
-        AssetManager.drawPlayerPortrait(portraitX, portraitY, portraitW, portraitH, player.name, player.position, player.overall >= 90, player.isMyPlayer)
-        
-        -- Bottom Banner: Player Name + Archetype Tag
-        love.graphics.setColor(0.08, 0.1, 0.14, 0.95)
-        love.graphics.rectangle("fill", cx + 3, cy + h - 38, w - 6, 35, 4, 4)
-        
-        drawShadowText(player.name:sub(1, 13), cx + 5, cy + h - 35, 1, 1, 1, 0.8)
-        drawShadowText(player.archetypeTag or "STARTER", cx + 5, cy + h - 20, 0.2, 0.8, 1, 0.8)
-        
-        
-        -- Edition Shaders (Overlays)
-        if player.edition == "Foil" then
-            -- Glossy sweeping white sheen
-            local sweep = (love.timer.getTime() * 1.5) % 2.0
-            love.graphics.setColor(1, 1, 1, 0.15)
-            love.graphics.polygon("fill", cx, cy + (sweep * h) - 20, cx + w, cy + (sweep * h) - 60, cx + w, cy + (sweep * h) - 40, cx, cy + (sweep * h))
-        elseif player.edition == "Holographic" then
-            -- Shimmering scanline overlay
-            local time = love.timer.getTime()
-            for i = 0, h, 10 do
-                local alpha = 0.1 + 0.1 * math.sin(time * 5 + i * 0.5)
-                love.graphics.setColor(0.7, 0.3, 1.0, alpha)
-                love.graphics.rectangle("fill", cx, cy + i, w, 5)
-            end
-        elseif player.edition == "Polychrome" then
-            -- Animated rainbow diagonal overlay
-            local time = love.timer.getTime()
-            love.graphics.setBlendMode("add")
-            for i = 0, 5 do
-                local r = (math.sin(time * 2 + i) + 1) / 2
-                local g = (math.sin(time * 2 + i + 2) + 1) / 2
-                local b = (math.sin(time * 2 + i + 4) + 1) / 2
-                love.graphics.setColor(r, g, b, 0.15)
-                love.graphics.line(cx + i*15, cy, cx + w, cy + h - i*15)
-                love.graphics.line(cx, cy + i*15, cx + w - i*15, cy + h)
-            end
-            love.graphics.setBlendMode("alpha")
-        elseif player.edition == "Franchise" then
-            -- Dark pulsing ethereal glow
-            local time = love.timer.getTime()
-            love.graphics.setBlendMode("add")
-            for i = 0, h, 15 do
-                local alpha = 0.05 + 0.15 * math.sin(time * 4 + i * 0.1)
-                love.graphics.setColor(0.3, 0.1, 0.6, alpha)
-                love.graphics.rectangle("fill", cx, cy + i, w, 10)
-            end
-            love.graphics.setBlendMode("alpha")
-        end
+        -- Stamina/XP Bar at bottom
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.rectangle("fill", cx + 4, cy + h - 14, w - 8, 8, 2, 2)
+        love.graphics.setColor(0.2, 0.8, 0.2)
+        love.graphics.rectangle("fill", cx + 6, cy + h - 12, (w - 12) * 0.8, 4, 1, 1)
         
     else
         -- -------------------------------------------------------------

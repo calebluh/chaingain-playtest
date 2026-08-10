@@ -9,10 +9,10 @@ local FIELD_X = 480 - FIELD_WIDTH / 2
 local FIELD_Y = 80
 
 local C_BORDER = { 0.1, 0.1, 0.1 }
-local C_TURF = { 75 / 255, 139 / 255, 59 / 255 }
-local C_TURF_DARK = { 60 / 255, 120 / 255, 45 / 255 }
-local C_LOS = { 0.1, 0.2, 0.8, 0.8 }
-local C_FIRST = { 1.0, 0.8, 0.0, 0.8 }
+local C_TURF = { 94 / 255, 172 / 255, 68 / 255 }
+local C_TURF_DARK = { 80 / 255, 149 / 255, 59 / 255 }
+local C_LOS = { 0.1, 0.4, 0.8, 0.9 }
+local C_FIRST = { 1.0, 0.85, 0.1, 0.9 }
 
 FieldAnimator.active = false
 FieldAnimator.completed = true
@@ -443,107 +443,24 @@ function FieldAnimator.updateTurnover(dt)
     end
 end
 
-local function drawRetroPlayer(x, y, jerseyColor, pantsColor, helmetColor, vx, vy, isOffense, time, isTackled, isMyPlayer)
-    vx = vx or 0
-    vy = vy or 0
-    local speed = math.sqrt(vx*vx + vy*vy)
-    local isMoving = speed > 10 and not isTackled
-    
-    local PlayerVisualProfile = require("src.data.player_visual_profile")
-    local skinColor = {0.85, 0.65, 0.45}
-    local visorColor = {0.7, 0.85, 1.0, 0.5}
-    local torsoW, torsoH = 8, 10
-    
-    if isMyPlayer then
-        skinColor = PlayerVisualProfile.getSkinColor()
-        visorColor = PlayerVisualProfile.getVisorColor()
-        local scale = PlayerVisualProfile.getArchetypeScale()
-        torsoW = scale.torsoW
-        torsoH = scale.torsoH
-        jerseyColor = PlayerVisualProfile.primaryColor or jerseyColor
-        helmetColor = PlayerVisualProfile.shellColor or helmetColor
+local function drawDashedLine(x1, y1, x2, y2, dashLength, gapLength)
+    local dx = x2 - x1
+    local dy = y2 - y1
+    local dist = math.sqrt(dx*dx + dy*dy)
+    local numDashes = math.floor(dist / (dashLength + gapLength))
+    local nx = dx / dist
+    local ny = dy / dist
+    for i = 0, numDashes do
+        local startX = x1 + (i * (dashLength + gapLength)) * nx
+        local startY = y1 + (i * (dashLength + gapLength)) * ny
+        local endX = startX + dashLength * nx
+        local endY = startY + dashLength * ny
+        if i == numDashes then
+            endX = x2
+            endY = y2
+        end
+        love.graphics.line(startX, startY, endX, endY)
     end
-    
-    love.graphics.push()
-    love.graphics.translate(x, y)
-    
-    if isTackled then
-        love.graphics.rotate(math.pi / 2)
-        love.graphics.translate(0, -6)
-    end
-    
-    local dir = 1
-    if isMoving then
-        dir = vx > 0 and 1 or -1
-    else
-        dir = isOffense and 1 or -1
-    end
-    love.graphics.scale(dir, 1)
-    
-    local legOffset = 0
-    local armOffset = 0
-    if isMoving then
-        legOffset = math.sin(time * 7) * 5
-        armOffset = math.cos(time * 7) * 3
-    end
-    
-    -- Shadow
-    love.graphics.setColor(0, 0, 0, 0.35)
-    love.graphics.ellipse("fill", 0, 12, torsoW * 0.75, 2)
-    
-    -- Legs (Pants / Socks)
-    love.graphics.setColor(pantsColor)
-    love.graphics.rectangle("fill", -math.floor(torsoW/2) + 1 + legOffset * 0.5, 4, 3, 6)
-    love.graphics.rectangle("fill", 1 - legOffset * 0.5, 4, 3, 6)
-    
-    -- Cleats / Shoes
-    local cleatColor = (isMyPlayer and PlayerVisualProfile.cleatsColor) or {1, 1, 1}
-    love.graphics.setColor(cleatColor)
-    love.graphics.rectangle("fill", -math.floor(torsoW/2) + 1 + legOffset * 0.5 + (dir > 0 and 1 or -1), 10, 3, 2)
-    love.graphics.rectangle("fill", 1 - legOffset * 0.5 + (dir > 0 and 1 or -1), 10, 3, 2)
-    
-    -- Torso (Jersey)
-    love.graphics.setColor(jerseyColor)
-    love.graphics.rectangle("fill", -math.floor(torsoW/2), -6, torsoW, torsoH)
-    
-    -- Arms
-    love.graphics.setColor(jerseyColor)
-    love.graphics.rectangle("fill", -math.floor(torsoW/2) - 2 - armOffset * 0.5, -4, 3, 6)
-    love.graphics.rectangle("fill", math.floor(torsoW/2) - 1 + armOffset * 0.5, -4, 3, 6)
-    
-    if isMyPlayer and PlayerVisualProfile.armGear ~= "none" then
-        love.graphics.setColor(PlayerVisualProfile.armGearColor or {1, 1, 1})
-        love.graphics.rectangle("fill", -math.floor(torsoW/2) - 2 - armOffset * 0.5, -2, 3, 2)
-        love.graphics.rectangle("fill", math.floor(torsoW/2) - 1 + armOffset * 0.5, -2, 3, 2)
-    end
-    
-    -- Hands / Gloves
-    if isMyPlayer and PlayerVisualProfile.handGear ~= "none" then
-        love.graphics.setColor(PlayerVisualProfile.handGearColor or {1, 1, 1})
-    else
-        love.graphics.setColor(skinColor)
-    end
-    love.graphics.rectangle("fill", -math.floor(torsoW/2) - 2 - armOffset * 0.5, 2, 3, 2)
-    love.graphics.rectangle("fill", math.floor(torsoW/2) - 1 + armOffset * 0.5, 2, 3, 2)
-    
-    -- Helmet
-    love.graphics.setColor(helmetColor)
-    love.graphics.rectangle("fill", -3.5, -13, 7, 7)
-    
-    -- Helmet stripe
-    if isMyPlayer and PlayerVisualProfile.stripeColor then
-        love.graphics.setColor(PlayerVisualProfile.stripeColor)
-        love.graphics.rectangle("fill", -1, -13, 2, 7)
-    end
-    
-    -- Facemask & Visor
-    love.graphics.setColor(isMyPlayer and PlayerVisualProfile.maskColor or {0.7, 0.7, 0.7})
-    love.graphics.rectangle("fill", 2, -10, 3, 3)
-    
-    love.graphics.setColor(visorColor)
-    love.graphics.rectangle("fill", 2, -12, 4, 3, 1, 1)
-    
-    love.graphics.pop()
 end
 
 function FieldAnimator.draw()
@@ -624,12 +541,27 @@ function FieldAnimator.draw()
     love.graphics.print("TOUCHDOWN", -touchdownW/2, -8, 0, 1.2, 1.2)
     love.graphics.pop()
     
+    -- Field Logo
+    love.graphics.setColor(1, 1, 1, 0.08)
+    local font = love.graphics.getFont()
+    local logoW = font and font:getWidth("CHAIN GAIN") or 100
+    love.graphics.print("CHAIN GAIN", 600 - logoW * 2, FIELD_Y + FIELD_HEIGHT/2 - 20, 0, 4.0, 4.0)
+
     -- 3. Sidelines & Hash Marks
     love.graphics.setColor(1, 1, 1, 0.9)
     -- Top Sideline
     love.graphics.rectangle("fill", 100, FIELD_Y + 15, 1000, 3)
     -- Bottom Sideline
     love.graphics.rectangle("fill", 100, FIELD_Y + FIELD_HEIGHT - 18, 1000, 3)
+    
+    -- Pixel Sideline Crowd/Bench
+    love.graphics.setColor(0.3, 0.3, 0.35)
+    love.graphics.rectangle("fill", 100, FIELD_Y - 5, 1000, 20)
+    for px = 100, 1100, 15 do
+        love.graphics.setColor(math.random(), math.random(), math.random(), 0.8)
+        love.graphics.rectangle("fill", px, FIELD_Y - 2, 4, 6)
+        love.graphics.rectangle("fill", px+5, FIELD_Y + 4, 4, 6)
+    end
     
     -- Hash Marks
     love.graphics.setColor(1, 1, 1, 0.5)
@@ -646,17 +578,23 @@ function FieldAnimator.draw()
         local lx = 100 + yard * YARD_PX
         love.graphics.setColor(1, 1, 1, 0.8)
         love.graphics.setLineWidth(2)
-        love.graphics.line(lx, FIELD_Y + 15, lx, FIELD_Y + FIELD_HEIGHT - 18)
+        drawDashedLine(lx, FIELD_Y + 15, lx, FIELD_Y + FIELD_HEIGHT - 18, 6, 4)
         love.graphics.setLineWidth(1)
         
         -- Display yard number (10, 20, 30, 40, 50, 40, 30, 20, 10)
         local displayNum = yard > 50 and (100 - yard) or yard
         love.graphics.setColor(1, 1, 1, 0.6)
         
+        -- Directional arrow text
+        local numStr = tostring(displayNum)
+        if yard < 50 then numStr = numStr .. " >"
+        elseif yard > 50 then numStr = "< " .. numStr
+        end
+        
         -- Draw top yard number
-        love.graphics.print(tostring(displayNum), lx - 8, FIELD_Y + 25, 0, 0.9, 0.9)
-        -- Draw bottom yard number (rotated or default)
-        love.graphics.print(tostring(displayNum), lx - 8, FIELD_Y + FIELD_HEIGHT - 38, 0, 0.9, 0.9)
+        love.graphics.print(numStr, lx - 12, FIELD_Y + 30, 0, 1.2, 1.2)
+        -- Draw bottom yard number
+        love.graphics.print(numStr, lx - 12, FIELD_Y + FIELD_HEIGHT - 45, 0, 1.2, 1.2)
     end
     
     -- 5. Rain Ripple Splashes
@@ -674,12 +612,12 @@ function FieldAnimator.draw()
     -- 6. Line of Scrimmage & First Down Line
     local losX = (FieldAnimator.yardLine + 10) * YARD_PX
     love.graphics.setColor(C_LOS)
-    love.graphics.setLineWidth(3)
+    love.graphics.setLineWidth(2)
     love.graphics.line(losX, FIELD_Y + 15, losX, FIELD_Y + FIELD_HEIGHT - 18)
     
     local firstX = losX + FieldAnimator.distanceToFirst * YARD_PX
     love.graphics.setColor(C_FIRST)
-    love.graphics.setLineWidth(3)
+    love.graphics.setLineWidth(2)
     love.graphics.line(firstX, FIELD_Y + 15, firstX, FIELD_Y + FIELD_HEIGHT - 18)
     
     -- Target Spot Line (Neon Green Dotted Line)
@@ -779,9 +717,10 @@ function FieldAnimator.draw()
     local defJersey = {0.85, 0.15, 0.15}
     local defHelmet = {0.95, 0.95, 0.95}
     local defPants = {0.95, 0.95, 0.95}
+    local AssetManager = require("src.engine.asset_manager")
     for _, p in ipairs(FieldAnimator.defense) do
         local isTackled = FieldAnimator.completed and (FieldAnimator.ball.carrier == p)
-        drawRetroPlayer(p.x, p.y, defJersey, defPants, defHelmet, p.vx, p.vy, false, love.timer.getTime(), isTackled)
+        AssetManager.drawRetroPlayer(p.x, p.y, defJersey, defPants, defHelmet, p.vx, p.vy, false, love.timer.getTime(), isTackled)
     end
     
     -- 13. Draw Offense Players (Retro Bowl Pixel Art Style!)
@@ -792,7 +731,7 @@ function FieldAnimator.draw()
     
     for _, p in ipairs(FieldAnimator.offense) do
         local isTackled = FieldAnimator.completed and (FieldAnimator.ball.carrier == p)
-        drawRetroPlayer(p.x, p.y, offJersey, offPants, offHelmet, p.vx, p.vy, true, love.timer.getTime(), isTackled, p.isMyPlayer)
+        AssetManager.drawRetroPlayer(p.x, p.y, offJersey, offPants, offHelmet, p.vx, p.vy, true, love.timer.getTime(), isTackled, p.isMyPlayer)
     end
     
     -- 14. Draw Ball

@@ -383,6 +383,7 @@ function StateModeSelect:mousepressed(mx, my, button)
     local bmx, bmy = (960 - mw) / 2, (540 - mh) / 2 + 10
     
     local innerX, innerY = bmx + 20, bmy + 30
+    local innerW, innerH = 560, 280
     local botY = bmy + 325
     local actY = bmy + 375
     

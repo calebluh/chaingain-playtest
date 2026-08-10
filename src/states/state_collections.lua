@@ -39,20 +39,14 @@ end
 
 function StateCollections:enter()
     self.tabIndex = 1
-    self.scrollY = 0
+    self.currentPage = 1
     self.tabs = {"ROSTER PLAYERS", "PLAYBOOK", "DEFENSIVE SCHEMES", "STAFF UPGRADES", "STRATEGY BONUSES", "SIDELINE ADJUSTMENTS / DECALS"}
     if not DeckManager.playbook or #DeckManager.playbook == 0 then
         DeckManager.init()
     end
     
-    -- Generate static gallery players once
-    self.galleryPlayers = {}
-    for i = 1, 12 do
-        local pos = i <= 3 and "QB" or (i <= 6 and "RB" or (i <= 9 and "WR" or "TE"))
-        local player = RosterPlayersExpanded.getRandomPlayer(pos)
-        player.pos = pos
-        table.insert(self.galleryPlayers, player)
-    end
+    -- Load the entire predetermined player catalog
+    self.galleryPlayers = RosterPlayersExpanded.getAllPlayers()
 end
 
 function StateCollections:exit()
@@ -106,12 +100,21 @@ function StateCollections:draw()
     self.hoveredCollectionCard = nil
     local mx, my = love.mouse.getPosition()
     
+    local itemsPerPage = 15
+    local totalItems = 0
+    
+    love.graphics.setScissor(0, 100, 960, 390)
     if activeTab == "ROSTER PLAYERS" then
-        for i = 1, 12 do
-            local col = (i - 1) % 6
-            local row = math.floor((i - 1) / 6)
-            local x = 90 + col * 140
-            local y = 140 + row * 180 + self.scrollY
+        totalItems = #self.galleryPlayers
+        local startIdx = (self.currentPage - 1) * itemsPerPage + 1
+        local endIdx = math.min(startIdx + itemsPerPage - 1, totalItems)
+        
+        local drawn = 0
+        for i = startIdx, endIdx do
+            local col = drawn % 5
+            local row = math.floor(drawn / 5)
+            local x = 140 + col * 170
+            local y = 140 + row * 180
             
             local player = self.galleryPlayers[i]
             if player then
@@ -121,26 +124,41 @@ function StateCollections:draw()
                 end
                 CardRender.drawPlayerCard(x, y, player, false, love.timer.getDelta())
             end
+            drawn = drawn + 1
         end
     elseif activeTab == "PLAYBOOK" then
-        for i, card in ipairs(DeckManager.playbook) do
-            local col = (i - 1) % 6
-            local row = math.floor((i - 1) / 6)
-            local x = 90 + col * 140
-            local y = 150 + row * 185 + self.scrollY
+        totalItems = #DeckManager.playbook
+        local startIdx = (self.currentPage - 1) * itemsPerPage + 1
+        local endIdx = math.min(startIdx + itemsPerPage - 1, totalItems)
+        
+        local drawn = 0
+        for i = startIdx, endIdx do
+            local card = DeckManager.playbook[i]
+            local col = drawn % 5
+            local row = math.floor(drawn / 5)
+            local x = 140 + col * 170
+            local y = 150 + row * 185
             
             local isHover = mx >= x - 65 and mx <= x + 65 and my >= y - 87 and my <= y + 87
             if isHover then
                 self.hoveredCollectionCard = card
             end
             CardRender.drawPlayCard(x, y, card, false, 0)
+            drawn = drawn + 1
         end
     elseif activeTab == "DEFENSIVE SCHEMES" then
-        for i, blind in ipairs(DefensiveSchemesData) do
-            local col = (i - 1) % 3
-            local row = math.floor((i - 1) / 3)
+        totalItems = #DefensiveSchemesData
+        itemsPerPage = 9
+        local startIdx = (self.currentPage - 1) * itemsPerPage + 1
+        local endIdx = math.min(startIdx + itemsPerPage - 1, totalItems)
+        
+        local drawn = 0
+        for i = startIdx, endIdx do
+            local blind = DefensiveSchemesData[i]
+            local col = drawn % 3
+            local row = math.floor(drawn / 3)
             local x = 40 + col * 290
-            local y = 110 + row * 130 + self.scrollY
+            local y = 110 + row * 130
             
             love.graphics.setColor(C_SLATE_CONTAINER)
             love.graphics.rectangle("fill", x, y, 270, 115, 8, 8)
@@ -154,13 +172,21 @@ function StateCollections:draw()
             drawShadowText(blind.name, x + 75, y + 15, 1, 1, 1, 1.1)
             drawShadowText(blind.tier:upper(), x + 75, y + 35, 1, 0.84, 0, 0.85)
             drawShadowText(blind.description, x + 15, y + 70, 0.8, 0.8, 0.8, 0.9, "left", 240)
+            drawn = drawn + 1
         end
     elseif activeTab == "STAFF UPGRADES" then
-        for i, v in ipairs(VouchersData) do
-            local col = (i - 1) % 3
-            local row = math.floor((i - 1) / 3)
+        totalItems = #VouchersData
+        itemsPerPage = 9
+        local startIdx = (self.currentPage - 1) * itemsPerPage + 1
+        local endIdx = math.min(startIdx + itemsPerPage - 1, totalItems)
+        
+        local drawn = 0
+        for i = startIdx, endIdx do
+            local v = VouchersData[i]
+            local col = drawn % 3
+            local row = math.floor(drawn / 3)
             local x = 40 + col * 290
-            local y = 110 + row * 105 + self.scrollY
+            local y = 110 + row * 105
             
             love.graphics.setColor(C_SLATE_CONTAINER)
             love.graphics.rectangle("fill", x, y, 270, 90, 8, 8)
@@ -172,13 +198,21 @@ function StateCollections:draw()
             drawShadowText(v.name, x + 15, y + 12, 1, 0.84, 0, 1.1)
             drawShadowText("STAFF UPGRADE", x + 15, y + 32, 0.2, 0.8, 1, 0.75)
             drawShadowText(v.description, x + 15, y + 50, 0.8, 0.8, 0.8, 0.85, "left", 240)
+            drawn = drawn + 1
         end
     elseif activeTab == "STRATEGY BONUSES" then
-        for i, t in ipairs(TagsData) do
-            local col = (i - 1) % 4
-            local row = math.floor((i - 1) / 4)
+        totalItems = #TagsData
+        itemsPerPage = 12
+        local startIdx = (self.currentPage - 1) * itemsPerPage + 1
+        local endIdx = math.min(startIdx + itemsPerPage - 1, totalItems)
+        
+        local drawn = 0
+        for i = startIdx, endIdx do
+            local t = TagsData[i]
+            local col = drawn % 4
+            local row = math.floor(drawn / 4)
             local x = 40 + col * 220
-            local y = 110 + row * 105 + self.scrollY
+            local y = 110 + row * 105
             
             love.graphics.setColor(C_SLATE_CONTAINER)
             love.graphics.rectangle("fill", x, y, 200, 90, 8, 8)
@@ -190,13 +224,21 @@ function StateCollections:draw()
             drawShadowText(t.name:upper(), x + 10, y + 12, 1, 0.84, 0, 1.0)
             drawShadowText("STRATEGY BONUS", x + 10, y + 32, 0.8, 0.4, 0.0, 0.75)
             drawShadowText(t.description, x + 10, y + 50, 0.8, 0.8, 0.8, 0.85, "left", 180)
+            drawn = drawn + 1
         end
     elseif activeTab == "SIDELINE ADJUSTMENTS / DECALS" then
-        for i, c in ipairs(ConsumablesData) do
-            local col = (i - 1) % 6
-            local row = math.floor((i - 1) / 6)
-            local x = 60 + col * 140
-            local y = 140 + row * 190 + self.scrollY
+        totalItems = #ConsumablesData
+        itemsPerPage = 10
+        local startIdx = (self.currentPage - 1) * itemsPerPage + 1
+        local endIdx = math.min(startIdx + itemsPerPage - 1, totalItems)
+        
+        local drawn = 0
+        for i = startIdx, endIdx do
+            local c = ConsumablesData[i]
+            local col = drawn % 5
+            local row = math.floor(drawn / 5)
+            local x = 120 + col * 150
+            local y = 140 + row * 190
             
             local rx, ry = x + 65, y + 87
             local isHover = mx >= rx - 65 and mx <= rx + 65 and my >= ry - 87 and my <= ry + 87
@@ -214,8 +256,30 @@ function StateCollections:draw()
             love.graphics.printf(c.name:upper(), x + 5, y + 15, 120, "center")
             love.graphics.setColor(0.8, 0.8, 0.8)
             love.graphics.printf(c.description, x + 5, y + 65, 120 / 0.75, "center", 0, 0.75, 0.75)
+            drawn = drawn + 1
         end
     end
+    love.graphics.setScissor()
+    
+    -- Bottom Pagination UI (Balatro Style)
+    self.totalPages = math.max(1, math.ceil(totalItems / itemsPerPage))
+    
+    local pageY = 495
+    love.graphics.setColor(0.85, 0.25, 0.25) -- Red Banner
+    love.graphics.rectangle("fill", 380, pageY, 200, 35, 6, 6)
+    drawShadowText("Page " .. self.currentPage .. " / " .. self.totalPages, 380, pageY + 8, 1, 1, 1, 1.2, "center", 200)
+    
+    -- Prev Button
+    local hoverPrev = checkHover(330, pageY, 40, 35)
+    love.graphics.setColor(hoverPrev and {0.95, 0.35, 0.35} or {0.85, 0.25, 0.25})
+    love.graphics.rectangle("fill", 330, pageY, 40, 35, 6, 6)
+    drawShadowText("<", 330, pageY + 7, 1, 1, 1, 1.3, "center", 40)
+    
+    -- Next Button
+    local hoverNext = checkHover(590, pageY, 40, 35)
+    love.graphics.setColor(hoverNext and {0.95, 0.35, 0.35} or {0.85, 0.25, 0.25})
+    love.graphics.rectangle("fill", 590, pageY, 40, 35, 6, 6)
+    drawShadowText(">", 590, pageY + 7, 1, 1, 1, 1.3, "center", 40)
     
     -- Draw hover tooltips
     if self.hoveredCollectionCard then
@@ -230,17 +294,28 @@ function StateCollections:keypressed(key)
     elseif key == "left" or key == "a" then
         SoundManager.playSFX("click")
         self.tabIndex = self.tabIndex == 1 and #self.tabs or self.tabIndex - 1
-        self.scrollY = 0
+        self.currentPage = 1
     elseif key == "right" or key == "d" then
         SoundManager.playSFX("click")
         self.tabIndex = self.tabIndex == #self.tabs and 1 or self.tabIndex + 1
-        self.scrollY = 0
+        self.currentPage = 1
     end
 end
 
 function StateCollections:wheelmoved(x, y)
-    self.scrollY = self.scrollY + y * 40
-    self.scrollY = math.min(0, self.scrollY)
+    if y > 0 then
+        -- Scroll up = Prev Page
+        if self.currentPage > 1 then
+            self.currentPage = self.currentPage - 1
+            SoundManager.playSFX("click")
+        end
+    elseif y < 0 then
+        -- Scroll down = Next Page
+        if self.currentPage < (self.totalPages or 1) then
+            self.currentPage = self.currentPage + 1
+            SoundManager.playSFX("click")
+        end
+    end
 end
 
 function StateCollections:mousepressed(x, y, button)
@@ -260,19 +335,41 @@ function StateCollections:mousepressed(x, y, button)
             local tx = startX + (idx - 1) * 135
             if checkHover(tx, tabY, tabW, tabH) then
                 self.tabIndex = idx
-                self.scrollY = 0
+                self.currentPage = 1
                 SoundManager.playSFX("click")
                 return
             end
         end
+        
+        -- Pagination Buttons
+        local pageY = 495
+        if checkHover(330, pageY, 40, 35) then
+            if self.currentPage > 1 then
+                self.currentPage = self.currentPage - 1
+                SoundManager.playSFX("click")
+            end
+            return
+        end
+        if checkHover(590, pageY, 40, 35) then
+            if self.currentPage < (self.totalPages or 1) then
+                self.currentPage = self.currentPage + 1
+                SoundManager.playSFX("click")
+            end
+            return
+        end
     end
 
     if button == 2 and self.tabs[self.tabIndex] == "ROSTER PLAYERS" then
-        for i = 1, 12 do
-            local col = (i - 1) % 6
-            local row = math.floor((i - 1) / 6)
-            local rx = 90 + col * 140
-            local ry = 140 + row * 180 + self.scrollY
+        local itemsPerPage = 15
+        local startIdx = (self.currentPage - 1) * itemsPerPage + 1
+        local endIdx = math.min(startIdx + itemsPerPage - 1, #self.galleryPlayers)
+        
+        local drawn = 0
+        for i = startIdx, endIdx do
+            local col = drawn % 5
+            local row = math.floor(drawn / 5)
+            local rx = 140 + col * 170
+            local ry = 140 + row * 180
             
             if x >= rx - 55 and x <= rx + 55 and y >= ry - 65 and y <= ry + 65 then
                 local player = self.galleryPlayers[i]
@@ -282,6 +379,7 @@ function StateCollections:mousepressed(x, y, button)
                     return
                 end
             end
+            drawn = drawn + 1
         end
     end
 end
