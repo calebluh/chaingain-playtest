@@ -142,114 +142,13 @@ function StateMenu:draw()
         drawChunkyPillButton(btn)
     end
     
-    -- Options Modal Overlay
-    if self.activeModal == "OPTIONS" then
-        love.graphics.setColor(0, 0, 0, 0.75)
-        love.graphics.rectangle("fill", 0, 0, 960, 540)
-        
-        love.graphics.setColor(C_SLATE_CONTAINER)
-        love.graphics.rectangle("fill", 260, 50, 440, 440, 8, 8)
-        love.graphics.setColor(C_NEON_BORDER)
-        love.graphics.setLineWidth(2)
-        love.graphics.rectangle("line", 260, 50, 440, 440, 8, 8)
-        love.graphics.setLineWidth(1)
-        
-        drawShadowText("SETTINGS & AUDIO", 260, 65, 1, 1, 1, 1.8, "center", 440)
-        
-        local sfxPct = math.floor((_G.CONFIG_SFX_VOLUME or 0.8) * 100)
-        drawShadowText("SFX Volume: " .. sfxPct .. "%", 290, 110, 1, 1, 1, 1.1)
-        love.graphics.setColor(0.2, 0.2, 0.2)
-        love.graphics.rectangle("fill", 290, 130, 380, 12, 6, 6)
-        love.graphics.setColor(C_CYAN)
-        love.graphics.rectangle("fill", 290, 130, 380 * (_G.CONFIG_SFX_VOLUME or 0.8), 12, 6, 6)
-        
-        local musPct = math.floor((_G.CONFIG_MUSIC_VOLUME or 0.5) * 100)
-        drawShadowText("Music Volume: " .. musPct .. "%", 290, 155, 1, 1, 1, 1.1)
-        love.graphics.setColor(0.2, 0.2, 0.2)
-        love.graphics.rectangle("fill", 290, 175, 380, 12, 6, 6)
-        love.graphics.setColor(C_CYAN)
-        love.graphics.rectangle("fill", 290, 175, 380 * (_G.CONFIG_MUSIC_VOLUME or 0.5), 12, 6, 6)
-        
-        local shakePct = math.floor((_G.CONFIG_SCREENSHAKE or 1.0) * 100)
-        drawShadowText("Screen Shake Intensity: " .. shakePct .. "%", 290, 200, 1, 1, 1, 1.1)
-        love.graphics.setColor(0.2, 0.2, 0.2)
-        love.graphics.rectangle("fill", 290, 220, 380, 12, 6, 6)
-        love.graphics.setColor(C_GOLD)
-        love.graphics.rectangle("fill", 290, 220, 380 * (_G.CONFIG_SCREENSHAKE or 1.0), 12, 6, 6)
-        
-        local crtStr = _G.CONFIG_ENABLE_CRT and "ON" or "OFF"
-        drawShadowText("[Toggle] CRT Shader: " .. crtStr, 290, 255, 1, 0.84, 0, 1.1)
-        
-        local fsStr = _G.CONFIG_FULLSCREEN and "ON" or "OFF"
-        drawShadowText("[Toggle] Fullscreen Mode: " .. fsStr, 290, 285, 1, 0.84, 0, 1.1)
-        
-        local vsStr = _G.CONFIG_VSYNC and "ON" or "OFF"
-        drawShadowText("[Toggle] V-Sync: " .. vsStr, 290, 315, 1, 0.84, 0, 1.1)
-        
-        local muteStr = _G.CONFIG_MUTE_ON_FOCUS_LOST and "ON" or "OFF"
-        drawShadowText("[Toggle] Mute Focus Lost: " .. muteStr, 290, 345, 1, 0.84, 0, 1.1)
-        
-        local fpsStr = _G.CONFIG_SHOW_FPS and "ON" or "OFF"
-        drawShadowText("[Toggle] Show FPS: " .. fpsStr, 290, 375, 1, 0.84, 0, 1.1)
-        
-        drawChunkyPillButton(self.modalBackBtn)
-    end
+
 end
 
 function StateMenu:mousepressed(x, y, button, istouch, presses)
     if button == 1 then
         SoundManager.playSFX("click")
-        if self.activeModal == "OPTIONS" then
-            if checkHover(420, 430, 120, 38) then
-                self.activeModal = nil
-            end
-            if checkHover(290, 130, 380, 12) then
-                local pct = math.clamp((x - 290) / 380, 0, 1)
-                _G.CONFIG_SFX_VOLUME = pct
-                SaveManager.data.settings.sfxVolume = pct
-                SaveManager.save()
-            end
-            if checkHover(290, 175, 380, 12) then
-                local pct = math.clamp((x - 290) / 380, 0, 1)
-                _G.CONFIG_MUSIC_VOLUME = pct
-                SaveManager.data.settings.musicVolume = pct
-                SaveManager.save()
-            end
-            if checkHover(290, 220, 380, 12) then
-                local pct = math.clamp((x - 290) / 380, 0, 1)
-                _G.CONFIG_SCREENSHAKE = pct
-                SaveManager.data.settings.screenshake = pct
-                SaveManager.save()
-            end
-            if checkHover(290, 250, 380, 25) then
-                _G.CONFIG_ENABLE_CRT = not _G.CONFIG_ENABLE_CRT
-                SaveManager.data.settings.enableCRT = _G.CONFIG_ENABLE_CRT
-                SaveManager.save()
-            end
-            if checkHover(290, 280, 380, 25) then
-                _G.CONFIG_FULLSCREEN = not _G.CONFIG_FULLSCREEN
-                SaveManager.data.settings.fullscreen = _G.CONFIG_FULLSCREEN
-                pcall(love.window.setFullscreen, _G.CONFIG_FULLSCREEN)
-                SaveManager.save()
-            end
-            if checkHover(290, 310, 380, 25) then
-                _G.CONFIG_VSYNC = not _G.CONFIG_VSYNC
-                SaveManager.data.settings.vsync = _G.CONFIG_VSYNC
-                pcall(love.window.setVSync, _G.CONFIG_VSYNC and 1 or 0)
-                SaveManager.save()
-            end
-            if checkHover(290, 340, 380, 25) then
-                _G.CONFIG_MUTE_ON_FOCUS_LOST = not _G.CONFIG_MUTE_ON_FOCUS_LOST
-                SaveManager.data.settings.muteOnFocus = _G.CONFIG_MUTE_ON_FOCUS_LOST
-                SaveManager.save()
-            end
-            if checkHover(290, 370, 380, 25) then
-                _G.CONFIG_SHOW_FPS = not _G.CONFIG_SHOW_FPS
-                SaveManager.data.settings.showFPS = _G.CONFIG_SHOW_FPS
-                SaveManager.save()
-            end
-            return
-        end
+
         
         for _, btn in ipairs(self.buttons) do
             if checkHover(btn.x, btn.y, btn.w, btn.h) then
@@ -271,7 +170,8 @@ function StateMenu:mousepressed(x, y, button, istouch, presses)
                         end
                     end
                 elseif btn.id == "OPTIONS" then
-                    self.activeModal = "OPTIONS"
+                    local StateSettings = require("src.states.state_settings")
+                    StateManager.switch(StateSettings)
                 elseif btn.id == "SKILLS" then
                     local StateMyPlayerTree = require("src.states.state_myplayer_tree")
                     StateManager.switch(StateMyPlayerTree)

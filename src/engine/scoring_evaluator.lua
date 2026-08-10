@@ -123,8 +123,21 @@ function ScoringEvaluator.update(dt)
         local FieldAnimator = require("src.ui.field_animator")
         FieldAnimator.update(dt)
         if FieldAnimator.completed then
-            ScoringEvaluator.phase = 5
-            ScoringEvaluator.timer = 0.2
+            if ScoringEvaluator.isTurnover then
+                ScoringEvaluator.phase = 5.5
+                ScoringEvaluator.timer = 1.2
+            else
+                ScoringEvaluator.phase = 5
+                ScoringEvaluator.timer = 0.2
+                ScoringEvaluator.finalizeDriveSlam()
+            end
+        end
+        return
+    end
+    
+    if ScoringEvaluator.phase == 5.5 then
+        ScoringEvaluator.timer = ScoringEvaluator.timer - dt
+        if ScoringEvaluator.timer <= 0 then
             ScoringEvaluator.finalizeDriveSlam()
         end
         return
@@ -197,7 +210,13 @@ function ScoringEvaluator.evaluateCurrentRosterPlayer()
     end
     
     if player.edition == "Foil" then chipBonus = chipBonus + 5
-    elseif player.edition == "Holographic" then multBonus = multBonus + 1.0 end
+    elseif player.edition == "Holographic" then multBonus = multBonus + 1.0
+    elseif player.edition == "Negative" then
+        if ScoringEvaluator.gameState and ScoringEvaluator.gameState.rosterSlots and ScoringEvaluator.gameState.rosterSlots.FLEX then
+            ScoringEvaluator.gameState.rosterSlots.FLEX.max = (ScoringEvaluator.gameState.rosterSlots.FLEX.max or 1) + 1
+            FxManager.addFloatingText("NEGATIVE! +1 JOKER SLOT", 480, 160, 0.4, 0.2, 0.8, 1.2)
+        end
+    end
     
     if ScoringEvaluator.gameState and ScoringEvaluator.gameState.globalRosterChips then
         chipBonus = chipBonus + ScoringEvaluator.gameState.globalRosterChips

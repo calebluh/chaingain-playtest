@@ -190,6 +190,9 @@ function StateModeSelect:draw()
             love.graphics.setLineWidth(2)
             love.graphics.rectangle("line", col3X, sy, 280, 38, 6, 6)
             love.graphics.setLineWidth(1)
+        end
+    end
+    
     drawShadowText("START NEW CAREER RUN", mx + 20, my + 15, 1, 0.84, 0, 1.4)
     drawShadowText("Select your Franchise, Playbook Scheme, and Stake Difficulty", mx + 20, my + 42, 0.7, 0.75, 0.8, 0.85)
     

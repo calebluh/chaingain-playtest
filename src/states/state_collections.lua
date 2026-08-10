@@ -39,6 +39,7 @@ end
 
 function StateCollections:enter()
     self.tabIndex = 1
+    self.scrollY = 0
     self.tabs = {"ROSTER PLAYERS", "PLAYBOOK", "DEFENSIVE SCHEMES", "STAFF UPGRADES", "STRATEGY BONUSES", "SIDELINE ADJUSTMENTS / DECALS"}
     if not DeckManager.playbook or #DeckManager.playbook == 0 then
         DeckManager.init()
@@ -110,7 +111,7 @@ function StateCollections:draw()
             local col = (i - 1) % 6
             local row = math.floor((i - 1) / 6)
             local x = 90 + col * 140
-            local y = 140 + row * 180
+            local y = 140 + row * 180 + self.scrollY
             
             local player = self.galleryPlayers[i]
             if player then
@@ -126,7 +127,7 @@ function StateCollections:draw()
             local col = (i - 1) % 6
             local row = math.floor((i - 1) / 6)
             local x = 90 + col * 140
-            local y = 150 + row * 185
+            local y = 150 + row * 185 + self.scrollY
             
             local isHover = mx >= x - 65 and mx <= x + 65 and my >= y - 87 and my <= y + 87
             if isHover then
@@ -139,7 +140,7 @@ function StateCollections:draw()
             local col = (i - 1) % 3
             local row = math.floor((i - 1) / 3)
             local x = 40 + col * 290
-            local y = 110 + row * 130
+            local y = 110 + row * 130 + self.scrollY
             
             love.graphics.setColor(C_SLATE_CONTAINER)
             love.graphics.rectangle("fill", x, y, 270, 115, 8, 8)
@@ -159,7 +160,7 @@ function StateCollections:draw()
             local col = (i - 1) % 3
             local row = math.floor((i - 1) / 3)
             local x = 40 + col * 290
-            local y = 110 + row * 105
+            local y = 110 + row * 105 + self.scrollY
             
             love.graphics.setColor(C_SLATE_CONTAINER)
             love.graphics.rectangle("fill", x, y, 270, 90, 8, 8)
@@ -177,7 +178,7 @@ function StateCollections:draw()
             local col = (i - 1) % 4
             local row = math.floor((i - 1) / 4)
             local x = 40 + col * 220
-            local y = 110 + row * 105
+            local y = 110 + row * 105 + self.scrollY
             
             love.graphics.setColor(C_SLATE_CONTAINER)
             love.graphics.rectangle("fill", x, y, 200, 90, 8, 8)
@@ -195,7 +196,7 @@ function StateCollections:draw()
             local col = (i - 1) % 6
             local row = math.floor((i - 1) / 6)
             local x = 60 + col * 140
-            local y = 140 + row * 190
+            local y = 140 + row * 190 + self.scrollY
             
             local rx, ry = x + 65, y + 87
             local isHover = mx >= rx - 65 and mx <= rx + 65 and my >= ry - 87 and my <= ry + 87
@@ -229,10 +230,17 @@ function StateCollections:keypressed(key)
     elseif key == "left" or key == "a" then
         SoundManager.playSFX("click")
         self.tabIndex = self.tabIndex == 1 and #self.tabs or self.tabIndex - 1
+        self.scrollY = 0
     elseif key == "right" or key == "d" then
         SoundManager.playSFX("click")
         self.tabIndex = self.tabIndex == #self.tabs and 1 or self.tabIndex + 1
+        self.scrollY = 0
     end
+end
+
+function StateCollections:wheelmoved(x, y)
+    self.scrollY = self.scrollY + y * 40
+    self.scrollY = math.min(0, self.scrollY)
 end
 
 function StateCollections:mousepressed(x, y, button)
@@ -252,6 +260,7 @@ function StateCollections:mousepressed(x, y, button)
             local tx = startX + (idx - 1) * 135
             if checkHover(tx, tabY, tabW, tabH) then
                 self.tabIndex = idx
+                self.scrollY = 0
                 SoundManager.playSFX("click")
                 return
             end
@@ -263,7 +272,7 @@ function StateCollections:mousepressed(x, y, button)
             local col = (i - 1) % 6
             local row = math.floor((i - 1) / 6)
             local rx = 90 + col * 140
-            local ry = 140 + row * 180
+            local ry = 140 + row * 180 + self.scrollY
             
             if x >= rx - 55 and x <= rx + 55 and y >= ry - 65 and y <= ry + 65 then
                 local player = self.galleryPlayers[i]

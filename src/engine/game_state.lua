@@ -11,6 +11,13 @@ local StadiumPulse = require("src.engine.stadium_pulse")
 
 local GameState = {}
 
+GameState.STAKE_TIERS = {
+    ["white"] = "Rookie",
+    ["red"] = "Pro",
+    ["purple"] = "All-Pro",
+    ["gold"] = "Legend"
+}
+
 GameState.capCash = 5
 GameState.ante = 1
 GameState.gameWeek = 1
@@ -305,7 +312,7 @@ function GameState.kickFieldGoal()
             end
         end
     elseif GameState.drivesRemaining <= 0 then
-        GameState.status = "TURNOVER"
+        GameState.status = "DRIVE_COMPLETE" -- Fixed TURNOVER state softlock
     else
         GameState.status = "DRIVE_COMPLETE"
     end
@@ -325,7 +332,7 @@ function GameState.puntBall()
     StadiumPulse.addPulse(5)
     
     if GameState.drivesRemaining <= 0 and GameState.currentPoints < GameState.targetPoints then
-        GameState.status = "TURNOVER"
+        GameState.status = "DRIVE_COMPLETE" -- Fixed TURNOVER state softlock
     else
         GameState.status = "DRIVE_COMPLETE"
     end
@@ -348,7 +355,8 @@ function GameState.useConsumable(index)
             GameState.consecutiveDrivesWithoutRest = 0
         end
         if c.use then
-            return c.use(GameState)
+            local status, err = pcall(c.use, GameState)
+            if not status then print("Consumable Error: " .. tostring(err)) end
         end
         return c.useMessage or "Used Consumable"
     end

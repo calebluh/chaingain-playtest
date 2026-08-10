@@ -188,9 +188,20 @@ function StateMyPlayer:draw()
         
         -- Jersey Number
         drawShadowText("JERSEY NUMBER:", 360, 235, 0.8, 0.8, 0.8, 0.9)
-        drawShadowText("◄", 500, 235, 1, 1, 1, 1.0)
-        drawShadowText(tostring(PlayerVisualProfile.jerseyNumber), 530, 235, 1, 0.84, 0, 1.2)
-        drawShadowText("►", 570, 235, 1, 1, 1, 1.0)
+        local hoverMinus = checkHover(490, 230, 25, 25)
+        love.graphics.setColor(hoverMinus and {0.8, 0.2, 0.2} or {0.6, 0.2, 0.2})
+        love.graphics.rectangle("fill", 490, 230, 25, 25, 4, 4)
+        drawShadowText("-", 490, 232, 1, 1, 1, 1.2, "center", 25)
+        
+        local isJerseyFocused = (self.focusedField == "jersey")
+        love.graphics.setColor(isJerseyFocused and {0, 0.76, 1} or {0.18, 0.22, 0.28})
+        love.graphics.rectangle("fill", 525, 230, 40, 25, 4, 4)
+        drawShadowText(tostring(PlayerVisualProfile.jerseyNumber), 525, 232, 1, 0.84, 0, 1.2, "center", 40)
+        
+        local hoverPlus = checkHover(575, 230, 25, 25)
+        love.graphics.setColor(hoverPlus and {0.2, 0.8, 0.2} or {0.2, 0.6, 0.2})
+        love.graphics.rectangle("fill", 575, 230, 25, 25, 4, 4)
+        drawShadowText("+", 575, 232, 1, 1, 1, 1.2, "center", 25)
 
     elseif self.tab == "GEAR" then
         drawShadowText("EQUIPMENT & ACCESSORIES", 360, 140, 1, 0.84, 0, 1.3)
@@ -319,12 +330,23 @@ function StateMyPlayer:mousepressed(x, y, button, istouch, presses)
                     SoundManager.playSFX("click")
                 end
             end
-            if checkHover(495, 230, 25, 25) then
+            if checkHover(490, 230, 25, 25) then
+                PlayerVisualProfile.jerseyNumber = tonumber(PlayerVisualProfile.jerseyNumber) or 12
                 PlayerVisualProfile.jerseyNumber = math.max(0, PlayerVisualProfile.jerseyNumber - 1)
                 SoundManager.playSFX("click")
-            elseif checkHover(565, 230, 25, 25) then
+            elseif checkHover(575, 230, 25, 25) then
+                PlayerVisualProfile.jerseyNumber = tonumber(PlayerVisualProfile.jerseyNumber) or 12
                 PlayerVisualProfile.jerseyNumber = math.min(99, PlayerVisualProfile.jerseyNumber + 1)
                 SoundManager.playSFX("click")
+            elseif checkHover(525, 230, 40, 25) then
+                self.focusedField = "jersey"
+                PlayerVisualProfile.jerseyNumber = ""
+                SoundManager.playSFX("click")
+            else
+                if self.focusedField == "jersey" then
+                    self.focusedField = nil
+                    if PlayerVisualProfile.jerseyNumber == "" then PlayerVisualProfile.jerseyNumber = 12 end
+                end
             end
         elseif self.tab == "GEAR" then
             for i, ag in ipairs(PlayerVisualProfile.armGearOptions) do
@@ -380,6 +402,13 @@ function StateMyPlayer:textinput(t)
         if #self.creatorName < 15 then
             self.creatorName = self.creatorName .. t
         end
+    elseif self.focusedField == "jersey" then
+        if t:match("%d") then
+            local str = tostring(PlayerVisualProfile.jerseyNumber)
+            if #str < 2 then
+                PlayerVisualProfile.jerseyNumber = tonumber(str .. t)
+            end
+        end
     end
 end
 
@@ -389,6 +418,18 @@ function StateMyPlayer:keypressed(key)
             self.creatorName = self.creatorName:sub(1, -2)
         elseif key == "return" then
             self.focusedField = nil
+        end
+    elseif self.focusedField == "jersey" then
+        if key == "backspace" then
+            local str = tostring(PlayerVisualProfile.jerseyNumber)
+            if #str > 1 then
+                PlayerVisualProfile.jerseyNumber = tonumber(str:sub(1, -2))
+            else
+                PlayerVisualProfile.jerseyNumber = ""
+            end
+        elseif key == "return" then
+            self.focusedField = nil
+            if PlayerVisualProfile.jerseyNumber == "" then PlayerVisualProfile.jerseyNumber = 12 end
         end
     end
 end
