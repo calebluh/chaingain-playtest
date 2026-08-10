@@ -105,6 +105,7 @@ function StateCollections:draw()
     
     love.graphics.setScissor(0, 100, 960, 390)
     if activeTab == "ROSTER PLAYERS" then
+        itemsPerPage = 10
         totalItems = #self.galleryPlayers
         local startIdx = (self.currentPage - 1) * itemsPerPage + 1
         local endIdx = math.min(startIdx + itemsPerPage - 1, totalItems)
@@ -114,7 +115,7 @@ function StateCollections:draw()
             local col = drawn % 5
             local row = math.floor(drawn / 5)
             local x = 140 + col * 170
-            local y = 140 + row * 180
+            local y = 190 + row * 200
             
             local player = self.galleryPlayers[i]
             if player then
@@ -127,6 +128,7 @@ function StateCollections:draw()
             drawn = drawn + 1
         end
     elseif activeTab == "PLAYBOOK" then
+        itemsPerPage = 10
         totalItems = #DeckManager.playbook
         local startIdx = (self.currentPage - 1) * itemsPerPage + 1
         local endIdx = math.min(startIdx + itemsPerPage - 1, totalItems)
@@ -137,7 +139,7 @@ function StateCollections:draw()
             local col = drawn % 5
             local row = math.floor(drawn / 5)
             local x = 140 + col * 170
-            local y = 150 + row * 185
+            local y = 190 + row * 200
             
             local isHover = mx >= x - 65 and mx <= x + 65 and my >= y - 87 and my <= y + 87
             if isHover then
@@ -227,8 +229,8 @@ function StateCollections:draw()
             drawn = drawn + 1
         end
     elseif activeTab == "SIDELINE ADJUSTMENTS / DECALS" then
-        totalItems = #ConsumablesData
         itemsPerPage = 10
+        totalItems = #ConsumablesData
         local startIdx = (self.currentPage - 1) * itemsPerPage + 1
         local endIdx = math.min(startIdx + itemsPerPage - 1, totalItems)
         
@@ -238,7 +240,7 @@ function StateCollections:draw()
             local col = drawn % 5
             local row = math.floor(drawn / 5)
             local x = 120 + col * 150
-            local y = 140 + row * 190
+            local y = 190 + row * 200
             
             local rx, ry = x + 65, y + 87
             local isHover = mx >= rx - 65 and mx <= rx + 65 and my >= ry - 87 and my <= ry + 87
@@ -360,7 +362,7 @@ function StateCollections:mousepressed(x, y, button)
     end
 
     if button == 2 and self.tabs[self.tabIndex] == "ROSTER PLAYERS" then
-        local itemsPerPage = 15
+        local itemsPerPage = 10
         local startIdx = (self.currentPage - 1) * itemsPerPage + 1
         local endIdx = math.min(startIdx + itemsPerPage - 1, #self.galleryPlayers)
         
@@ -369,7 +371,7 @@ function StateCollections:mousepressed(x, y, button)
             local col = drawn % 5
             local row = math.floor(drawn / 5)
             local rx = 140 + col * 170
-            local ry = 140 + row * 180
+            local ry = 190 + row * 200
             
             if x >= rx - 55 and x <= rx + 55 and y >= ry - 65 and y <= ry + 65 then
                 local player = self.galleryPlayers[i]

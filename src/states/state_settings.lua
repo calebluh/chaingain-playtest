@@ -36,6 +36,14 @@ function StateSettings.draw()
     -- Footer Navigation
     love.graphics.setColor(0.7, 0.7, 0.7, 1)
     love.graphics.print("[ESC] BACK    [ARROWS] NAVIGATE    [SPACE / ENTER] TOGGLE", 120, 550)
+
+    -- Clickable BACK button
+    local mx, my = love.mouse.getPosition()
+    local hoverBack = mx >= 80 and mx <= 200 and my >= 490 and my <= 530
+    love.graphics.setColor(hoverBack and {0.9, 0.3, 0.3} or {0.8, 0.2, 0.2})
+    love.graphics.rectangle("fill", 80, 490, 120, 40, 6, 6)
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.printf("BACK", 80, 502, 120, "center")
 end
 
 function StateSettings.drawCategoryOptions()
@@ -84,6 +92,13 @@ end
 function StateSettings.mousepressed(x, y, button)
     if button ~= 1 then return end
     
+    -- Check BACK button
+    if x >= 80 and x <= 200 and y >= 490 and y <= 530 then
+        SoundManager.playSFX("click")
+        StateManager.switch(require("src.states.state_menu"))
+        return
+    end
+
     -- Check tabs
     for i, name in ipairs(StateSettings.tabs) do
         local tx = 110 + (i - 1) * 180

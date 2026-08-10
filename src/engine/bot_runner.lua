@@ -37,7 +37,11 @@ function BotRunner.runHeadlessSimulation(runsToSimulate)
     
     for run = 1, runsToSimulate do
         local ok, err = pcall(function()
-            GameStateData.init({ stake = "starter" })
+            if BotRunner.testConfig then
+                GameStateData.init(BotRunner.testConfig)
+            else
+                GameStateData.init({ stake = "starter" })
+            end
             DeckManager.init()
             DeckManager.drawHand()
             
