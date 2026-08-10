@@ -72,36 +72,89 @@ function love.load(arg)
         print("\n=== STARTING FULL MATRIX HEADLESS SIMULATION ===")
         local totalCombos = #FranchiseTeams * #archetypes * #stakes
         local currentCombo = 0
-        local globalWins = 0
-        local globalLosses = 0
-        local totalRuns = 0
+        local globalStats = { runs = 0, wins = 0, losses = 0, fieldGoals = 0, fumbles = 0, interceptions = 0, trueTurnovers = 0 }
+        local dimTeams = {}
+        local dimSchemes = {}
+        local dimStakes = {}
         
         for _, team in ipairs(FranchiseTeams) do
+            dimTeams[team.id] = { runs = 0, wins = 0, losses = 0, fieldGoals = 0, fumbles = 0, interceptions = 0, trueTurnovers = 0 }
             for _, arch in ipairs(archetypes) do
+                if not dimSchemes[arch.id] then
+                    dimSchemes[arch.id] = { runs = 0, wins = 0, losses = 0, fieldGoals = 0, fumbles = 0, interceptions = 0, trueTurnovers = 0 }
+                end
                 for _, stake in ipairs(stakes) do
+                    if not dimStakes[stake] then
+                        dimStakes[stake] = { runs = 0, wins = 0, losses = 0, fieldGoals = 0, fumbles = 0, interceptions = 0, trueTurnovers = 0 }
+                    end
+                    
                     currentCombo = currentCombo + 1
                     BotRunner.testConfig = { team = team, archetype = arch, stakeTier = stake }
                     
                     local runsToSim = 10
                     local summary = BotRunner.runHeadlessSimulation(runsToSim)
                     
-                    globalWins = globalWins + summary.wins
-                    globalLosses = globalLosses + summary.losses
-                    totalRuns = totalRuns + runsToSim
+                    -- Aggregate Global
+                    globalStats.runs = globalStats.runs + summary.totalRuns
+                    globalStats.wins = globalStats.wins + summary.wins
+                    globalStats.losses = globalStats.losses + summary.losses
+                    globalStats.fieldGoals = globalStats.fieldGoals + (summary.fieldGoals or 0)
+                    globalStats.fumbles = globalStats.fumbles + (summary.fumbles or 0)
+                    globalStats.interceptions = globalStats.interceptions + (summary.interceptions or 0)
+                    globalStats.trueTurnovers = globalStats.trueTurnovers + (summary.trueTurnovers or 0)
+                    
+                    -- Aggregate Team
+                    dimTeams[team.id].runs = dimTeams[team.id].runs + summary.totalRuns
+                    dimTeams[team.id].wins = dimTeams[team.id].wins + summary.wins
+                    dimTeams[team.id].losses = dimTeams[team.id].losses + summary.losses
+                    dimTeams[team.id].fieldGoals = dimTeams[team.id].fieldGoals + (summary.fieldGoals or 0)
+                    dimTeams[team.id].fumbles = dimTeams[team.id].fumbles + (summary.fumbles or 0)
+                    dimTeams[team.id].interceptions = dimTeams[team.id].interceptions + (summary.interceptions or 0)
+                    dimTeams[team.id].trueTurnovers = dimTeams[team.id].trueTurnovers + (summary.trueTurnovers or 0)
+                    
+                    -- Aggregate Scheme
+                    dimSchemes[arch.id].runs = dimSchemes[arch.id].runs + summary.totalRuns
+                    dimSchemes[arch.id].wins = dimSchemes[arch.id].wins + summary.wins
+                    dimSchemes[arch.id].losses = dimSchemes[arch.id].losses + summary.losses
+                    dimSchemes[arch.id].fieldGoals = dimSchemes[arch.id].fieldGoals + (summary.fieldGoals or 0)
+                    dimSchemes[arch.id].fumbles = dimSchemes[arch.id].fumbles + (summary.fumbles or 0)
+                    dimSchemes[arch.id].interceptions = dimSchemes[arch.id].interceptions + (summary.interceptions or 0)
+                    dimSchemes[arch.id].trueTurnovers = dimSchemes[arch.id].trueTurnovers + (summary.trueTurnovers or 0)
+                    
+                    -- Aggregate Stake
+                    dimStakes[stake].runs = dimStakes[stake].runs + summary.totalRuns
+                    dimStakes[stake].wins = dimStakes[stake].wins + summary.wins
+                    dimStakes[stake].losses = dimStakes[stake].losses + summary.losses
+                    dimStakes[stake].fieldGoals = dimStakes[stake].fieldGoals + (summary.fieldGoals or 0)
+                    dimStakes[stake].fumbles = dimStakes[stake].fumbles + (summary.fumbles or 0)
+                    dimStakes[stake].interceptions = dimStakes[stake].interceptions + (summary.interceptions or 0)
+                    dimStakes[stake].trueTurnovers = dimStakes[stake].trueTurnovers + (summary.trueTurnovers or 0)
                 end
             end
         end
         
-        local winRate = math.floor((globalWins / math.max(1, totalRuns)) * 100)
-        local jsonStr = string.format('{\n  "totalRuns": %d,\n  "wins": %d,\n  "losses": %d,\n  "winRatePct": %d\n}',
-            totalRuns, globalWins, globalLosses, winRate)
-            
-        love.filesystem.write("playtest_summary.json", jsonStr)
+        local winRate = math.floor((globalStats.wins / math.max(1, globalStats.runs)) * 100)
+        local trueTurnoverRate = math.floor((globalStats.trueTurnovers / math.max(1, globalStats.runs)) * 100)
+        
+        local fullOutput = {
+            global = globalStats,
+            teams = dimTeams,
+            schemes = dimSchemes,
+            stakes = dimStakes
+        }
+        
+        local SaveManager = require("src.engine.save_manager")
+        SaveManager.writeTelemetryLog("playtest_summary.json", fullOutput)
+        
         print("\n--- MATRIX TELEMETRY RESULTS ---")
-        print(string.format("Tested %d Combinations (%d Total Runs)", totalCombos, totalRuns))
-        print("Wins (Touchdowns): " .. globalWins)
-        print("Losses (Turnovers): " .. globalLosses)
-        print("Overall Win Rate: " .. winRate .. "%")
+        print(string.format("Tested %d Combinations (%d Total Runs)", totalCombos, globalStats.runs))
+        print("Touchdowns (Wins): " .. globalStats.wins)
+        print("Field Goals: " .. globalStats.fieldGoals)
+        print("Turnovers on Downs: " .. (globalStats.losses - globalStats.trueTurnovers))
+        print("Fumbles/Picks: " .. (globalStats.fumbles + globalStats.interceptions))
+        print("True Turnovers (Lost Drive): " .. globalStats.trueTurnovers)
+        print("Overall Touchdown Rate: " .. winRate .. "%")
+        print("True Turnover Rate: " .. trueTurnoverRate .. "%")
         print("==================================\n")
         love.event.quit()
         return

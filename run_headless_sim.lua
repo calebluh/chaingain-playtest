@@ -32,37 +32,43 @@ local ok, err = pcall(function()
     
     local totalCombos = #FranchiseTeams * #archetypes * #stakes
     local currentCombo = 0
-    local globalWins = 0
-    local globalLosses = 0
-    local totalRuns = 0
+    
+    local globalStats = { runs = 0, wins = 0, losses = 0, fieldGoals = 0, fumbles = 0, interceptions = 0, trueTurnovers = 0 }
     
     for _, team in ipairs(FranchiseTeams) do
         for _, arch in ipairs(archetypes) do
             for _, stake in ipairs(stakes) do
                 currentCombo = currentCombo + 1
                 
-                -- We patch BotRunner.runHeadlessSimulation to test this specific config
-                BotRunner.testConfig = {
-                    team = team,
-                    archetype = arch,
-                    stakeTier = stake
-                }
+                BotRunner.testConfig = { team = team, archetype = arch, stakeTier = stake }
                 
                 local runsToSim = 10
                 local summary = BotRunner.runHeadlessSimulation(runsToSim)
                 
-                globalWins = globalWins + summary.wins
-                globalLosses = globalLosses + summary.losses
-                totalRuns = totalRuns + runsToSim
+                globalStats.runs = globalStats.runs + summary.totalRuns
+                globalStats.wins = globalStats.wins + summary.wins
+                globalStats.losses = globalStats.losses + summary.losses
+                globalStats.fieldGoals = globalStats.fieldGoals + (summary.fieldGoals or 0)
+                globalStats.fumbles = globalStats.fumbles + (summary.fumbles or 0)
+                globalStats.interceptions = globalStats.interceptions + (summary.interceptions or 0)
+                globalStats.trueTurnovers = globalStats.trueTurnovers + (summary.trueTurnovers or 0)
             end
         end
     end
     
     print("\n--- MATRIX TELEMETRY RESULTS ---")
-    print(string.format("Tested %d Combinations (%d Total Runs)", totalCombos, totalRuns))
-    print("Wins (Touchdowns): " .. globalWins)
-    print("Losses (Turnovers): " .. globalLosses)
-    print("Overall Win Rate: " .. math.floor((globalWins / math.max(1, totalRuns)) * 100) .. "%")
+    print(string.format("Tested %d Combinations (%d Total Runs)", totalCombos, globalStats.runs))
+    print("Touchdowns (Wins): " .. globalStats.wins)
+    print("Field Goals: " .. globalStats.fieldGoals)
+    print("Turnovers on Downs: " .. (globalStats.losses - globalStats.trueTurnovers))
+    print("Fumbles/Picks: " .. (globalStats.fumbles + globalStats.interceptions))
+    print("True Turnovers (Lost Drive): " .. globalStats.trueTurnovers)
+    
+    local winRate = math.floor((globalStats.wins / math.max(1, globalStats.runs)) * 100)
+    local trueTurnoverRate = math.floor((globalStats.trueTurnovers / math.max(1, globalStats.runs)) * 100)
+    
+    print("Overall Touchdown Rate: " .. winRate .. "%")
+    print("True Turnover Rate: " .. trueTurnoverRate .. "%")
     print("==================================\n")
 end)
 

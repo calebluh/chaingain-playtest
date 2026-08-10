@@ -23,17 +23,22 @@ BotRunner.logs = {
 
 function BotRunner.runHeadlessSimulation(runsToSimulate)
     runsToSimulate = runsToSimulate or 1000
-    print(string.format("=== STARTING HEADLESS BOT SIMULATION (%d RUNS) ===", runsToSimulate))
     
     BotRunner.logs = {
         totalRuns = runsToSimulate,
         wins = 0,
         losses = 0,
+        fieldGoals = 0,
+        fumbles = 0,
+        interceptions = 0,
+        trueTurnovers = 0,
         crashes = {},
         avgYardsPerPlay = 0,
         totalPlaysCalled = 0,
         totalYardsGenerated = 0
     }
+    
+    local ScoringEvaluator = require("src.engine.scoring_evaluator")
     
     for run = 1, runsToSimulate do
         local ok, err = pcall(function()
@@ -53,6 +58,7 @@ function BotRunner.runHeadlessSimulation(runsToSimulate)
                 
                 if GameStateData.down == 4 and GameStateData.yardLine >= 65 then
                     GameStateData.kickFieldGoal()
+                    BotRunner.logs.fieldGoals = BotRunner.logs.fieldGoals + 1
                 elseif #DeckManager.hand > 0 then
                     local bestPlayIdx = 1
                     local bestScore = -999
@@ -85,33 +91,54 @@ function BotRunner.runHeadlessSimulation(runsToSimulate)
                     
                     local tChips = baseChips + rosterChips
                     local tMult = baseMult + rosterMult
+                    
+                    DefenseManager.callDefensivePlay()
                     tChips, tMult = DefenseManager.evaluatePlay(play.type, tChips, tMult)
                     tMult = math.max(0.1, tMult)
                     
-                    local zoneScale = 1.0
-                    if GameStateData.yardLine >= 80 then zoneScale = 0.55
-                    elseif GameStateData.yardLine >= 50 then zoneScale = 0.85 end
+                    local riskPct, tType = ScoringEvaluator.calculateTurnoverRisk(play, GameStateData)
+                    local isTurnover = (math.random(100) <= riskPct)
                     
-                    local yards = math.floor(tChips * tMult * zoneScale)
-                    BotRunner.logs.totalPlaysCalled = BotRunner.logs.totalPlaysCalled + 1
-                    BotRunner.logs.totalYardsGenerated = BotRunner.logs.totalYardsGenerated + yards
-                    
-                    GameStateData.totalYardsGained = GameStateData.totalYardsGained + yards
-                    GameStateData.yardLine = GameStateData.yardLine + yards
-                    
-                    if GameStateData.totalYardsGained >= GameStateData.distance then
-                        GameStateData.down = 1
-                        GameStateData.distance = 10
-                        GameStateData.totalYardsGained = 0
+                    if isTurnover then
+                        if tType == "INT" then BotRunner.logs.interceptions = BotRunner.logs.interceptions + 1
+                        else BotRunner.logs.fumbles = BotRunner.logs.fumbles + 1 end
+                        
+                        -- Recovery Minigame Simulation (1 in 3 chance to guess correctly)
+                        if math.random(1, 3) == 1 then
+                            -- Got it back! Restore down and distance (reset downs for bot simplicity)
+                            GameStateData.down = 1
+                            GameStateData.distance = 10
+                        else
+                            -- True Turnover!
+                            BotRunner.logs.trueTurnovers = BotRunner.logs.trueTurnovers + 1
+                            GameStateData.status = "TURNOVER"
+                        end
                     else
-                        GameStateData.down = GameStateData.down + 1
-                        GameStateData.distance = GameStateData.distance - yards
-                    end
-                    
-                    if GameStateData.yardLine >= 100 then
-                        GameStateData.status = "TOUCHDOWN"
-                    elseif GameStateData.down > 4 then
-                        GameStateData.status = "TURNOVER"
+                        local zoneScale = 1.0
+                        if GameStateData.yardLine >= 80 then zoneScale = 0.55
+                        elseif GameStateData.yardLine >= 50 then zoneScale = 0.85 end
+                        
+                        local yards = math.floor(tChips * tMult * zoneScale)
+                        BotRunner.logs.totalPlaysCalled = BotRunner.logs.totalPlaysCalled + 1
+                        BotRunner.logs.totalYardsGenerated = BotRunner.logs.totalYardsGenerated + yards
+                        
+                        GameStateData.totalYardsGained = GameStateData.totalYardsGained + yards
+                        GameStateData.yardLine = GameStateData.yardLine + yards
+                        
+                        if GameStateData.totalYardsGained >= GameStateData.distance then
+                            GameStateData.down = 1
+                            GameStateData.distance = 10
+                            GameStateData.totalYardsGained = 0
+                        else
+                            GameStateData.down = GameStateData.down + 1
+                            GameStateData.distance = GameStateData.distance - yards
+                        end
+                        
+                        if GameStateData.yardLine >= 100 then
+                            GameStateData.status = "TOUCHDOWN"
+                        elseif GameStateData.down > 4 then
+                            GameStateData.status = "TURNOVER"
+                        end
                     end
                     
                     DeckManager.fillHand()
@@ -134,9 +161,6 @@ function BotRunner.runHeadlessSimulation(runsToSimulate)
         BotRunner.logs.avgYardsPerPlay = math.floor(BotRunner.logs.totalYardsGenerated / BotRunner.logs.totalPlaysCalled)
     end
     
-    BotRunner.logs.winRatePct = math.floor((BotRunner.logs.wins / math.max(1, runsToSimulate)) * 100)
-    
-    SaveManager.writeTelemetryLog("playtest_summary.json", BotRunner.logs)
     return BotRunner.logs
 end
 
