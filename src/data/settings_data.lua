@@ -3,6 +3,7 @@ local SettingsData = {
     -- Gameplay
     stadiumPulseEnabled = true,
     pulseCounterScaling = true,
+    rpoMinigameEnabled = true,
     gameSpeed = 1.0,
     autoEndDrive = true,
     

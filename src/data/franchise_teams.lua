@@ -44,7 +44,7 @@ return {
     },
     {
         id = "PHI",
-        name = "Philly Eagles",
+        name = "Philly Phantoms",
         city = "Philadelphia",
         perk = "+$3 Cap Space bonus on every Touchdown.",
         primaryColor = {0.0, 0.4, 0.3},
@@ -84,7 +84,7 @@ return {
     },
     {
         id = "BAL",
-        name = "Baltimore Ravens",
+        name = "Baltimore Blackbirds",
         city = "Baltimore",
         perk = "+4 Base Yards on Power Runs & Heavy Schemes.",
         primaryColor = {0.3, 0.1, 0.5},
@@ -104,7 +104,7 @@ return {
     },
     {
         id = "CLE",
-        name = "Cleveland Browns",
+        name = "Cleveland Bulldogs",
         city = "Cleveland",
         perk = "Muddy Weather! +3 Base Yards on Inside Zone Runs.",
         primaryColor = {0.4, 0.2, 0.1},
@@ -154,7 +154,7 @@ return {
     },
     {
         id = "TEN",
-        name = "Tennessee Titans",
+        name = "Tennessee Spartans",
         city = "Nashville",
         perk = "+4 Base Yards on Ground & Pound Runs.",
         primaryColor = {0.3, 0.55, 0.85},
@@ -195,7 +195,7 @@ return {
     },
     {
         id = "NYJ",
-        name = "New York Jets",
+        name = "New York Aviators",
         city = "East Rutherford",
         perk = "+2 Base Yards on Short Crossing routes.",
         primaryColor = {0.08, 0.35, 0.2},
@@ -205,7 +205,7 @@ return {
     },
     {
         id = "NYG",
-        name = "New York Giants",
+        name = "New York Titans",
         city = "East Rutherford",
         perk = "+3 Base Yards on Play Action Flood concepts.",
         primaryColor = {0.05, 0.2, 0.55},
@@ -215,7 +215,7 @@ return {
     },
     {
         id = "WAS",
-        name = "Washington Commanders",
+        name = "Washington Sentinels",
         city = "Landover",
         perk = "+2 Base Yards on Counter & Trap runs.",
         primaryColor = {0.5, 0.1, 0.15},
@@ -245,7 +245,7 @@ return {
     },
     {
         id = "MIN",
-        name = "Minnesota Vikings",
+        name = "Minnesota Norsemen",
         city = "Minneapolis",
         perk = "+3 Base Yards on Deep Crosser routes.",
         primaryColor = {0.35, 0.15, 0.55},
@@ -255,7 +255,7 @@ return {
     },
     {
         id = "ATL",
-        name = "Atlanta Falcons",
+        name = "Atlanta Griffins",
         city = "Atlanta",
         perk = "+2.0 MTM on Go & Deep Fly routes.",
         primaryColor = {0.75, 0.1, 0.15},
@@ -265,7 +265,7 @@ return {
     },
     {
         id = "CAR",
-        name = "Carolina Panthers",
+        name = "Carolina Prowlers",
         city = "Charlotte",
         perk = "+3 Base Yards on QB & RB Option Runs.",
         primaryColor = {0.1, 0.1, 0.1},
@@ -275,7 +275,7 @@ return {
     },
     {
         id = "NO",
-        name = "New Orleans Saints",
+        name = "New Orleans Voodoo",
         city = "New Orleans",
         perk = "+2 Base Yards on Quick Slants & Screens.",
         primaryColor = {0.8, 0.7, 0.3},
@@ -285,7 +285,7 @@ return {
     },
     {
         id = "TB",
-        name = "Tampa Bay Buccaneers",
+        name = "Tampa Bay Corsairs",
         city = "Tampa",
         perk = "+3 Base Yards on Tight End Seam routes.",
         primaryColor = {0.75, 0.12, 0.15},
@@ -305,7 +305,7 @@ return {
     },
     {
         id = "LAR",
-        name = "LA Rams",
+        name = "LA Gladiators",
         city = "Los Angeles",
         perk = "+3 Base Yards on Wide Zone & Bootleg passes.",
         primaryColor = {0.0, 0.35, 0.85},

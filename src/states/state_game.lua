@@ -14,6 +14,8 @@ local SoundManager = require("src.engine.sound_manager")
 local FxManager = require("src.engine.fx_manager")
 local SaveManager = require("src.engine.save_manager")
 local Loc = require("src.engine.loc_manager")
+local SettingsData = require("src.data.settings_data")
+local RPOMinigame = require("src.ui.rpo_minigame")
 
 local StateGame = {}
 
@@ -70,6 +72,9 @@ end
 
 function StateGame:update(dt)
     if self.paused or self.showPlaybookModal then return end
+    
+    RPOMinigame.update(dt)
+    if RPOMinigame.active then return end
     
     self.time = self.time + dt
     local weatherType = GameStateData.weather or "clear"
@@ -436,6 +441,8 @@ function StateGame:draw()
         ScoringEvaluator.draw()
     end
 
+    RPOMinigame.draw()
+
     -- Status Banners & Navigation
     if GameStateData.status == "PLAYING" then
         if DefenseManager.currentPlay then
@@ -701,23 +708,46 @@ end
 function StateGame:callPlay()
     if self.selectedPlayIndex and #DeckManager.hand > 0 and not ScoringEvaluator.active then
         local playCard = table.remove(DeckManager.hand, self.selectedPlayIndex)
-        if playCard.type == "Kick" then
-            GameStateData.kickFieldGoal()
-        elseif playCard.type == "Punt" then
-            GameStateData.puntBall()
-        else
-            local ScoringEvaluator = require("src.engine.scoring_evaluator")
-            local risk, riskType = ScoringEvaluator.calculateTurnoverRisk(playCard, GameStateData)
-            local isTurnover = false
-            if risk > 0 and math.random(1, 100) <= risk then
-                isTurnover = true
-            end
-            
-            GameStateData.executePlay(playCard, isTurnover, riskType)
-            DeckManager.discardPlay(playCard)
-            DeckManager.fillHand()
-        end
         self.selectedPlayIndex = nil
+        
+        if SettingsData.rpoMinigameEnabled and playCard.type == "Play Action" then
+            RPOMinigame.start(function(result)
+                if result == "PERFECT" then
+                    playCard.baseChips = playCard.baseChips + 5
+                    playCard.baseMult = playCard.baseMult * 1.5
+                    FxManager.addFloatingText("PERFECT READ! +5 YDS x1.5 MTM", 480, 200, 0.2, 0.8, 0.3, 1.8)
+                    SoundManager.playSFX("touchdown")
+                elseif result == "GOOD" then
+                    FxManager.addFloatingText("GOOD READ!", 480, 200, 0.9, 0.8, 0.2, 1.2)
+                else
+                    playCard.baseChips = playCard.baseChips - 8
+                    FxManager.addFloatingText("MISSED READ! SACKED!", 480, 200, 1.0, 0.2, 0.2, 1.8)
+                    SoundManager.playSFX("tackle")
+                end
+                self:executePlaycard(playCard)
+            end)
+        else
+            self:executePlaycard(playCard)
+        end
+    end
+end
+
+function StateGame:executePlaycard(playCard)
+    if playCard.type == "Kick" then
+        GameStateData.kickFieldGoal()
+    elseif playCard.type == "Punt" then
+        GameStateData.puntBall()
+    else
+        local ScoringEvaluator = require("src.engine.scoring_evaluator")
+        local risk, riskType = ScoringEvaluator.calculateTurnoverRisk(playCard, GameStateData)
+        local isTurnover = false
+        if risk > 0 and math.random(1, 100) <= risk then
+            isTurnover = true
+        end
+        
+        GameStateData.executePlay(playCard, isTurnover, riskType)
+        DeckManager.discardPlay(playCard)
+        DeckManager.fillHand()
     end
 end
 
@@ -744,6 +774,11 @@ function StateGame:dealSpecialTeams(mode)
 end
 
 function StateGame:keypressed(key)
+    if RPOMinigame.active then
+        RPOMinigame.keypressed(key)
+        return
+    end
+
     if self.showPlaybookModal then
         if key == "escape" or key == "space" or key == "return" or key == "enter" then
             self.showPlaybookModal = false
