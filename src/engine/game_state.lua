@@ -7,6 +7,7 @@ local FxManager = require("src.engine.fx_manager")
 local RosterPlayersExpanded = require("src.data.roster_players_expanded")
 local SaveManager = require("src.engine.save_manager")
 local SteamManager = require("src.engine.steam_manager")
+local StadiumPulse = require("src.engine.stadium_pulse")
 
 local GameState = {}
 
@@ -46,6 +47,12 @@ function GameState.init(config)
     GameState.clockPenaltyNextDrive = 0
     GameState.stakeTier = (config and config.stakeTier) or _G.STAKE_TIER or "white"
     
+    if config and config.matchContext then
+        StadiumPulse.initWithContext(config.matchContext)
+    else
+        StadiumPulse.init()
+    end
+    
     GameState.currentPoints = 0
     GameState.targetPoints = 6
     GameState.drivesRemaining = 3
@@ -75,10 +82,27 @@ function GameState.init(config)
     if _G.GAME_MODE == "roguelite" then
         local myPlayerCard = PlayerCard.new(MyPlayerProfile.name, MyPlayerProfile.position .. "1", "Starter", MyPlayerProfile.baseMult, MyPlayerProfile.baseChips)
         myPlayerCard.isMyPlayer = true
+        myPlayerCard.overall = MyPlayerProfile.ovr or 70
+        myPlayerCard.edition = "Standard"
+        myPlayerCard.enhancement = nil
+        myPlayerCard.seal = nil
+        
         if MyPlayerProfile.hasNode("cmd_1") then GameState.touchdownBonusCash = (GameState.touchdownBonusCash or 0) + 2 end
         if MyPlayerProfile.hasNode("pass_3") then GameState.bonusAudibles = (GameState.bonusAudibles or 0) + 2 end
         if MyPlayerProfile.hasNode("cmd_2") then GameState.hasAnalyticsDept = true end
         GameState.addRosterPlayer(myPlayerCard, MyPlayerProfile.position)
+    end
+
+    -- Stake Difficulty OVR Scaling: Harder difficulties reduce starting card OVRs
+    local stakePenalties = { white = 0, red = 2, purple = 5, gold = 8, rookie = 0, pro = 2, veteran = 5, allpro = 8, hof = 12 }
+    local penalty = stakePenalties[GameState.stakeTier] or 0
+
+    local function getScaledPlayer(pos)
+        local p = RosterPlayersExpanded.getRandomPlayer(pos)
+        if p and not p.isMyPlayer then
+            p.overall = math.max(65, p.overall - penalty)
+        end
+        return p
     end
 
     -- 2. Apply archetype rosters (adding starting players where slots aren't full)
@@ -86,16 +110,16 @@ function GameState.init(config)
         local archId = GameState.config.archetype.id
         if archId == "air_raid" then
             GameState.rosterSlots.WR2.max = 2
-            GameState.addRosterPlayer(RosterPlayersExpanded.getRandomPlayer("QB"), "QB")
-            GameState.addRosterPlayer(RosterPlayersExpanded.getRandomPlayer("WR"), "WR1")
+            GameState.addRosterPlayer(getScaledPlayer("QB"), "QB")
+            GameState.addRosterPlayer(getScaledPlayer("WR"), "WR1")
         elseif archId == "ground_pound" then
             GameState.rosterSlots.RB.max = 2
-            GameState.addRosterPlayer(RosterPlayersExpanded.getRandomPlayer("RB"), "RB")
-            GameState.addRosterPlayer(RosterPlayersExpanded.getRandomPlayer("TE"), "WR2")
+            GameState.addRosterPlayer(getScaledPlayer("RB"), "RB")
+            GameState.addRosterPlayer(getScaledPlayer("TE"), "WR2")
         elseif archId == "west_coast" then
             GameState.rosterSlots.FLEX.max = 2
-            GameState.addRosterPlayer(RosterPlayersExpanded.getRandomPlayer("QB"), "QB")
-            GameState.addRosterPlayer(RosterPlayersExpanded.getRandomPlayer("RB"), "RB")
+            GameState.addRosterPlayer(getScaledPlayer("QB"), "QB")
+            GameState.addRosterPlayer(getScaledPlayer("RB"), "RB")
         end
     end
     
@@ -141,6 +165,8 @@ end
 function GameState.updatePlayClock(dt)
     if GameState.status ~= "PLAYING" or not GameState.clockActive then return end
     
+    StadiumPulse.update(dt)
+
     local ScoringEvaluator = require("src.engine.scoring_evaluator")
     local FieldAnimator = require("src.ui.field_animator")
     if ScoringEvaluator.active or FieldAnimator.active then return end
@@ -152,6 +178,7 @@ function GameState.updatePlayClock(dt)
         GameState.distance = GameState.distance + 5
         GameState.down = GameState.down + 1
         
+        StadiumPulse.addPulse(-10)
         FxManager.addFloatingText("DELAY OF GAME! -5 YDS", 480, 240, 1, 0.2, 0.2, 2.2)
         if _G.triggerScreenShake then _G.triggerScreenShake(12, 0.4) end
         
@@ -247,6 +274,7 @@ function GameState.kickFieldGoal()
     
     SoundManager.playSFX("coin")
     FxManager.addFloatingText("FIELD GOAL GOOD! +" .. fgPts .. " PTS!", 480, 220, 1, 0.84, 0, 2.5)
+    StadiumPulse.addPulse(15)
 
     if GameState.down == 4 and _G.GAME_MODE == "roguelite" then
         local MyPlayerProfile = require("src.data.myplayer_profile")
@@ -279,7 +307,7 @@ function GameState.kickFieldGoal()
     elseif GameState.drivesRemaining <= 0 then
         GameState.status = "TURNOVER"
     else
-        GameState.status = "TOUCHDOWN"
+        GameState.status = "DRIVE_COMPLETE"
     end
     
     return true
@@ -294,11 +322,12 @@ function GameState.puntBall()
     
     SoundManager.playSFX("whistle")
     FxManager.addFloatingText("PUNTED! SAVED DRIVE +$" .. puntPayout, 480, 220, 0.2, 0.8, 1, 2.0)
+    StadiumPulse.addPulse(5)
     
     if GameState.drivesRemaining <= 0 and GameState.currentPoints < GameState.targetPoints then
         GameState.status = "TURNOVER"
     else
-        GameState.status = "TOUCHDOWN"
+        GameState.status = "DRIVE_COMPLETE"
     end
     
     return true
@@ -362,7 +391,7 @@ function GameState.addRosterPlayer(playerCard, posOverride)
         end
     end
     
-    if playerCard.edition == "Franchise" and pos and GameState.rosterSlots[pos] then
+    if (playerCard.edition == "Franchise" or playerCard.edition == "Negative") and pos and GameState.rosterSlots[pos] then
         GameState.rosterSlots[pos].max = GameState.rosterSlots[pos].max + 1
     end
     
@@ -408,20 +437,5 @@ function GameState.executePlay(playCard, isTurnover, turnoverType)
     ScoringEvaluator.start(playCard, GameState, isTurnover, turnoverType)
 end
 
-function GameState.addConsumable(consumableObj)
-    if #GameState.consumables < GameState.maxConsumables then
-        table.insert(GameState.consumables, consumableObj)
-        return true
-    end
-    return false
-end
-
-function GameState.useConsumable(index)
-    if not GameState.consumables[index] then return "Slot Empty" end
-    local cons = GameState.consumables[index]
-    local msg = cons.use(GameState)
-    table.remove(GameState.consumables, index)
-    return msg
-end
-
 return GameState
+

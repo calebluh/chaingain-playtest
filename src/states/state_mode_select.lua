@@ -190,50 +190,99 @@ function StateModeSelect:draw()
             love.graphics.setLineWidth(2)
             love.graphics.rectangle("line", col3X, sy, 280, 38, 6, 6)
             love.graphics.setLineWidth(1)
-        end
+    drawShadowText("START NEW CAREER RUN", mx + 20, my + 15, 1, 0.84, 0, 1.4)
+    drawShadowText("Select your Franchise, Playbook Scheme, and Stake Difficulty", mx + 20, my + 42, 0.7, 0.75, 0.8, 0.85)
+    
+    -- Columns
+    local col1X = mx + 20
+    local col2X = mx + 300
+    local col3X = mx + 580
+    
+    -- 1. TEAM SELECTION
+    drawShadowText("1. FRANCHISE TEAM", col1X, my + 60, 0.0, 0.76, 1.0, 1.0)
+    love.graphics.setColor(C_TAB_BG)
+    love.graphics.rectangle("fill", col1X, my + 80, 260, 280, 6, 6)
+    
+    local team = FranchiseTeams[self.selectedTeamIdx]
+    if team then
+        love.graphics.setColor(team.primaryColor)
+        love.graphics.rectangle("fill", col1X + 10, my + 90, 240, 40, 4, 4)
+        love.graphics.setColor(team.secondaryColor)
+        love.graphics.rectangle("line", col1X + 10, my + 90, 240, 40, 4, 4)
+        drawShadowText(team.name:upper(), col1X + 10, my + 102, 1, 1, 1, 1.0, "center", 240)
         
-        drawShadowText(stake.name:upper(), col3X + 10, sy + 10, sc[1], sc[2], sc[3], 1.0)
+        love.graphics.setColor(0.8, 0.85, 0.9)
+        love.graphics.printf(team.perk, col1X + 15, my + 145, 230, "left", 0, 0.85, 0.85)
+        drawShadowText("WEATHER: " .. (team.weather or "clear"):upper(), col1X + 15, my + 215, 1, 0.84, 0, 0.85)
     end
     
-    -- Selected Perk Descriptions Footer Box
-    local descY = my + 265
-    love.graphics.setColor(C_TAB_BG)
-    love.graphics.rectangle("fill", col3X, descY, 280, 95, 6, 6)
+    -- Prev/Next Team Buttons
+    local hoverTL = checkHover(col1X + 10, my + 325, 115, 30)
+    love.graphics.setColor(hoverTL and C_BUTTON_ACTIVE or C_BUTTON_INACTIVE)
+    love.graphics.rectangle("fill", col1X + 10, my + 325, 115, 30, 4, 4)
+    drawShadowText("◄ PREV TEAM", col1X + 10, my + 332, 1, 1, 1, 0.8, "center", 115)
     
-    local activeTeam = FranchiseTeams[self.selectedTeamIdx]
-    local activeStake = self.stakes[self.selectedStakeIdx]
+    local hoverTR = checkHover(col1X + 135, my + 325, 115, 30)
+    love.graphics.setColor(hoverTR and C_BUTTON_ACTIVE or C_BUTTON_INACTIVE)
+    love.graphics.rectangle("fill", col1X + 135, my + 325, 115, 30, 4, 4)
+    drawShadowText("NEXT TEAM ►", col1X + 135, my + 332, 1, 1, 1, 0.8, "center", 115)
     
-    drawShadowText("TEAM PERK: " .. activeTeam.perk, col3X + 10, descY + 10, 0.2, 0.8, 1, 0.75, "left", 260)
-    drawShadowText("STAKE: " .. activeStake.desc, col3X + 10, descY + 50, 1, 0.84, 0, 0.75, "left", 260)
+    -- 2. PLAYBOOK SCHEME SELECTION
+    drawShadowText("2. PLAYBOOK SCHEME", col2X, my + 60, 0.0, 0.76, 1.0, 1.0)
+    for i, arch in ipairs(self.archetypes) do
+        local sy = my + 80 + (i - 1) * 54
+        local isSel = (self.selectedArchIdx == i)
+        local hover = checkHover(col2X, sy, 260, 48)
+        
+        love.graphics.setColor(isSel and C_BUTTON_ACTIVE or (hover and {0.22, 0.28, 0.36} or C_BUTTON_INACTIVE))
+        love.graphics.rectangle("fill", col2X, sy, 260, 48, 6, 6)
+        
+        drawShadowText(arch.name, col2X + 10, sy + 6, isSel and 1 or 0.9, isSel and 1 or 0.9, isSel and 1 or 0.9, 0.9)
+        love.graphics.setColor(0.7, 0.75, 0.8)
+        love.graphics.printf(arch.desc, col2X + 10, sy + 22, 240, "left", 0, 0.65, 0.65)
+    end
     
-    -- Mode Select Buttons (Arcade vs Career)
+    -- 3. STAKE DIFFICULTY
+    drawShadowText("3. STAKE DIFFICULTY", col3X, my + 60, 0.0, 0.76, 1.0, 1.0)
+    for i, stake in ipairs(self.stakes) do
+        local sy = my + 80 + (i - 1) * 44
+        local isSel = (self.selectedStakeIdx == i)
+        local hover = checkHover(col3X, sy, 280, 38)
+        
+        love.graphics.setColor(isSel and C_AMBER or (hover and {0.22, 0.28, 0.36} or C_BUTTON_INACTIVE))
+        love.graphics.rectangle("fill", col3X, sy, 280, 38, 6, 6)
+        
+        drawShadowText(stake.name, col3X + 10, sy + 4, isSel and 0 or 1, isSel and 0 or 1, isSel and 0 or 1, 0.95)
+        love.graphics.setColor(isSel and {0.1, 0.1, 0.1} or C_TEXT_MUTED)
+        love.graphics.printf(stake.desc, col3X + 10, sy + 20, 260, "left", 0, 0.7, 0.7)
+    end
+    
+    -- Mode Selector & Action Buttons
     local modeY = my + 380
-    drawShadowText("MODE:", col1X, modeY + 10, 1, 1, 1, 1.2)
     
-    -- Arcade Mode Button
-    local isArcadeHover = checkHover(col1X + 70, modeY, 120, 35)
-    local isArcadeSelected = (self.selectedMode == "arcade")
-    love.graphics.setColor(isArcadeSelected and C_BUTTON_ACTIVE or (isArcadeHover and {0.25, 0.29, 0.37} or C_BUTTON_INACTIVE))
+    drawShadowText("MODE:", col1X, modeY + 8, 1, 1, 1, 1.0)
+    local isArcade = (self.selectedMode == "arcade")
+    local isRoguelite = (self.selectedMode == "roguelite")
+    
+    love.graphics.setColor(isArcade and C_GREEN or C_BUTTON_INACTIVE)
     love.graphics.rectangle("fill", col1X + 70, modeY, 120, 35, 6, 6)
-    drawShadowText("ARCADE RUN", col1X + 70, modeY + 9, 1, 1, 1, 0.95, "center", 120)
+    drawShadowText("STANDARD", col1X + 70, modeY + 8, 1, 1, 1, 0.95, "center", 120)
     
-    -- MyPlayer Career Mode Button
-    local isCareerHover = checkHover(col1X + 200, modeY, 150, 35)
-    local isCareerSelected = (self.selectedMode == "roguelite")
-    love.graphics.setColor(isCareerSelected and C_BUTTON_ACTIVE or (isCareerHover and {0.25, 0.29, 0.37} or C_BUTTON_INACTIVE))
+    love.graphics.setColor(isRoguelite and C_GREEN or C_BUTTON_INACTIVE)
     love.graphics.rectangle("fill", col1X + 200, modeY, 150, 35, 6, 6)
-    drawShadowText("MYPLAYER CAREER", col1X + 200, modeY + 9, 1, 1, 1, 0.95, "center", 150)
+    drawShadowText("CAREER ROGUELITE", col1X + 200, modeY + 8, 1, 1, 1, 0.95, "center", 150)
     
-    -- Bottom Navigation: PLAY and BACK
-    local playHover = checkHover(col3X + 100, modeY - 5, 180, 45)
-    love.graphics.setColor(playHover and C_GREEN or {0.15, 0.6, 0.38})
-    love.graphics.rectangle("fill", col3X + 100, modeY - 5, 180, 45, 6, 6)
-    drawShadowText("START PLAY", col3X + 100, modeY + 7, 1, 1, 1, 1.4, "center", 180)
+    -- Start Play Button
+    local hoverStart = checkHover(col3X + 100, modeY - 5, 180, 45)
+    love.graphics.setColor(hoverStart and {0.0, 0.85, 0.4} or C_GREEN)
+    love.graphics.rectangle("fill", col3X + 100, modeY - 5, 180, 45, 8, 8)
+    drawShadowText("KICK OFF RUN", col3X + 100, modeY + 8, 1, 1, 1, 1.25, "center", 180)
     
-    local backHover = checkHover(col3X - 80, modeY - 5, 160, 45)
-    love.graphics.setColor(backHover and {1, 0.3, 0.3} or {0.8, 0.2, 0.2})
-    love.graphics.rectangle("fill", col3X - 80, modeY - 5, 160, 45, 6, 6)
-    drawShadowText("BACK TO LOBBY", col3X - 80, modeY + 7, 1, 1, 1, 1.2, "center", 160)
+    -- Back Button
+    local hoverBack = checkHover(col3X - 80, modeY - 5, 160, 45)
+    love.graphics.setColor(hoverBack and {0.9, 0.3, 0.3} or {0.7, 0.2, 0.2})
+    love.graphics.rectangle("fill", col3X - 80, modeY - 5, 160, 45, 8, 8)
+    drawShadowText("BACK", col3X - 80, modeY + 8, 1, 1, 1, 1.1, "center", 160)
 end
 
 function StateModeSelect:mousepressed(x, y, button, istouch, presses)
@@ -241,26 +290,28 @@ function StateModeSelect:mousepressed(x, y, button, istouch, presses)
     
     local mw, mh = 880, 450
     local mx, my = (960 - mw) / 2, (540 - mh) / 2
-    
     local col1X = mx + 20
-    local col2X = mx + 290
+    local col2X = mx + 300
     local col3X = mx + 580
     local modeY = my + 380
     
-    -- 1. Check Franchise Team Clicks
-    for i, team in ipairs(FranchiseTeams) do
-        local ty = my + 80 + (i - 1) * 38
-        if checkHover(col1X, ty, 250, 32) then
-            self.selectedTeamIdx = i
-            SoundManager.playSFX("click")
-            return
-        end
+    -- 1. Check Team Prev/Next
+    if checkHover(col1X + 10, my + 325, 115, 30) then
+        self.selectedTeamIdx = self.selectedTeamIdx - 1
+        if self.selectedTeamIdx < 1 then self.selectedTeamIdx = #FranchiseTeams end
+        SoundManager.playSFX("click")
+        return
+    elseif checkHover(col1X + 135, my + 325, 115, 30) then
+        self.selectedTeamIdx = self.selectedTeamIdx + 1
+        if self.selectedTeamIdx > #FranchiseTeams then self.selectedTeamIdx = 1 end
+        SoundManager.playSFX("click")
+        return
     end
     
-    -- 2. Check Scheme Archetype Clicks
+    -- 2. Check Playbook Scheme Clicks
     for i, arch in ipairs(self.archetypes) do
-        local ay = my + 80 + (i - 1) * 115
-        if checkHover(col2X, ay, 270, 105) then
+        local sy = my + 80 + (i - 1) * 54
+        if checkHover(col2X, sy, 260, 48) then
             self.selectedArchIdx = i
             SoundManager.playSFX("click")
             return
@@ -304,6 +355,7 @@ function StateModeSelect:mousepressed(x, y, button, istouch, presses)
             stakeTier = _G.STAKE_TIER
         })
         
+        DeckManager.init(archObj.id)
         DeckManager.drawHand()
         
         local StateGame = require("src.states.state_game")

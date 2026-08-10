@@ -142,43 +142,37 @@ function AssetManager.drawPlayerPortrait(x, y, w, h, playerName, position, isSta
         love.graphics.draw(img, 0, 0, 0, w / img:getWidth(), h / img:getHeight())
     else
         if isMyPlayer then
-            local MyPlayerProfile = require("src.data.myplayer_profile")
+            local PlayerVisualProfile = require("src.data.player_visual_profile")
+            local skinColor = PlayerVisualProfile.getSkinColor()
+            local visorColor = PlayerVisualProfile.getVisorColor()
+            
             love.graphics.setColor(0.08, 0.15, 0.25, 1)
             love.graphics.rectangle("fill", 0, 0, w, h, 6, 6)
             
-            love.graphics.setColor(0.0, 0.45, 0.8)
+            -- Jersey shoulders
+            love.graphics.setColor(PlayerVisualProfile.primaryColor or {0.13, 0.34, 0.13})
             love.graphics.rectangle("fill", w/2 - 22, h/2 + 10, 44, 25, 6, 6)
             
-            love.graphics.setColor(0.85, 0.65, 0.45)
+            -- Neck
+            love.graphics.setColor(skinColor)
             love.graphics.rectangle("fill", w/2 - 7, h/2 - 2, 14, 15)
             
-            love.graphics.setColor(0.0, 0.58, 1.0)
+            -- Helmet Shell
+            love.graphics.setColor(PlayerVisualProfile.shellColor or {0.07, 0.13, 0.27})
+            love.graphics.circle("fill", w/2, h/2 - 10, 18)
             
-            local hStyle = MyPlayerProfile.helmetStyle or "Modern"
-            if hStyle == "Classic" then
-                love.graphics.circle("fill", w/2, h/2 - 10, 18)
-                love.graphics.setColor(0.6, 0.6, 0.6)
-                love.graphics.setLineWidth(2)
-                love.graphics.line(w/2 + 2, h/2 - 5, w/2 + 18, h/2 + 5)
-                love.graphics.line(w/2 + 2, h/2 - 2, w/2 + 18, h/2 + 5)
-                love.graphics.setLineWidth(1)
-            elseif hStyle == "Speed" then
-                love.graphics.circle("fill", w/2, h/2 - 10, 18)
-                love.graphics.setColor(1, 1, 1, 0.9)
-                love.graphics.arc("fill", w/2, h/2 - 10, 18, -math.pi/2 - 0.2, -math.pi/2 + 0.2)
-            else
-                love.graphics.circle("fill", w/2, h/2 - 10, 18)
-                love.graphics.setColor(0.15, 0.15, 0.15)
-                love.graphics.rectangle("fill", w/2 + 2, h/2 - 5, 15, 10, 2, 2)
+            -- Helmet Stripe
+            if PlayerVisualProfile.stripeColor then
+                love.graphics.setColor(PlayerVisualProfile.stripeColor)
+                love.graphics.rectangle("fill", w/2 - 2, h/2 - 28, 4, 18)
             end
             
-            local vColor = {0.3, 0.75, 1.0, 0.7}
-            if MyPlayerProfile.visorTint == "Dark" then
-                vColor = {0.08, 0.08, 0.08, 0.95}
-            elseif MyPlayerProfile.visorTint == "Gold" then
-                vColor = {1.0, 0.8, 0.0, 0.85}
-            end
-            love.graphics.setColor(vColor)
+            -- Facemask
+            love.graphics.setColor(PlayerVisualProfile.maskColor or {0.75, 0.75, 0.75})
+            love.graphics.rectangle("fill", w/2 + 2, h/2 - 5, 15, 10, 2, 2)
+            
+            -- Visor Tint
+            love.graphics.setColor(visorColor)
             love.graphics.rectangle("fill", w/2 + 1, h/2 - 13, 14, 7, 2, 2)
             
             love.graphics.setColor(0, 0, 0, 0.5)
@@ -186,7 +180,7 @@ function AssetManager.drawPlayerPortrait(x, y, w, h, playerName, position, isSta
             love.graphics.setColor(0.0, 0.76, 1.0)
             local font = AssetManager.getFont(10)
             love.graphics.setFont(font)
-            love.graphics.printf("MYPLAYER", 4, h - 19, w - 8, "center")
+            love.graphics.printf(playerName:upper(), 4, h - 19, w - 8, "center")
         else
             -- Balatro HD Roster Vector Silhouette
             if isStar then

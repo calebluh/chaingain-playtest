@@ -4,6 +4,7 @@ local FxManager = require("src.engine.fx_manager")
 local DefenseManager = require("src.engine.defense_manager")
 local SaveManager = require("src.engine.save_manager")
 local Loc = require("src.engine.loc_manager")
+local StadiumPulse = require("src.engine.stadium_pulse")
 
 local ScoringEvaluator = {}
 
@@ -30,6 +31,11 @@ function ScoringEvaluator.start(playCard, gameState, isTurnover, turnoverType)
     
     local chips = playCard.baseChips
     local mult = playCard.baseMult
+    
+    -- StadiumPulse tier bonuses
+    local pulseBonuses = StadiumPulse.getBonuses()
+    chips = chips + (pulseBonuses.chips or 0)
+    mult = mult + (pulseBonuses.mult or 0)
     
     if playCard.enhancement == "Glass" then
         mult = mult * 2.0
@@ -153,36 +159,7 @@ function ScoringEvaluator.update(dt)
             ScoringEvaluator.phase = 4.5
             
             -- Predict yards gained for the animation
-            local gs = ScoringEvaluator.gameState
-            local totalMult = math.max(0.1, ScoringEvaluator.currentMult + (gs.tempMultBoost or 0))
-            local zoneScale = 1.0
-            if gs.yardLine >= 80 then
-                if not gs.ignoreRedZonePenalty then
-                    zoneScale = (gs.stakeTier == "gold") and 0.45 or 0.55
-                end
-            elseif gs.yardLine >= 50 then
-                zoneScale = 0.85
-            end
-            
-            local rawYards = ScoringEvaluator.currentChips * totalMult * zoneScale
-            local predictedYards = 0
-            if ScoringEvaluator.playCard.type == "Run" then
-                predictedYards = math.floor(math.min(25, 3 + rawYards * 0.4))
-            else
-                predictedYards = math.floor(math.min(80, 5 + rawYards * 0.35))
-            end
-            local DefenseManager = require("src.engine.defense_manager")
-            if DefenseManager.activeBlind and DefenseManager.activeBlind.id == "blitz_heavy" and ScoringEvaluator.playCard.type == "Play Action" then
-                predictedYards = predictedYards - 3
-            end
-            
-            if gs.weather == "snow" and not ScoringEvaluator.playCard.type:match("Pass") then
-                predictedYards = math.floor(predictedYards * 0.9)
-            end
-            
-            if gs.weather == "rain" and ScoringEvaluator.playCard.type:match("Pass") and math.random() < 0.15 then
-                predictedYards = -5
-            end
+            local predictedYards = ScoringEvaluator.calculateYardsGained(ScoringEvaluator.currentChips, ScoringEvaluator.currentMult, gs, ScoringEvaluator.playCard)
             
             local isIntercepted = ScoringEvaluator.isTurnover and (ScoringEvaluator.turnoverType == "INT")
             local isFumbled = ScoringEvaluator.isTurnover and (ScoringEvaluator.turnoverType == "FUMBLE")
@@ -277,10 +254,62 @@ function ScoringEvaluator.evaluateDefenseCounter()
     ScoringEvaluator.currentMult = cMult
 end
 
+function ScoringEvaluator.evaluateHandPassives(gs)
+    local DeckManager = require("src.engine.deck_manager")
+    local addedCash = 0
+    for _, card in ipairs(DeckManager.hand or {}) do
+        if card.enhancement == "Gold" then
+            addedCash = addedCash + 3
+            FxManager.addFloatingText("GOLD CARD HELD! +$3", 480, 150, 1.0, 0.84, 0.0, 1.5)
+        end
+        if card.seal == "Blue" then
+            local ConsumablesData = require("src.data.consumables")
+            if #gs.consumables < gs.maxConsumables then
+                local c = ConsumablesData[math.random(#ConsumablesData)]
+                gs.addConsumable(c)
+                FxManager.addFloatingText("BLUE DECAL! GENERATED " .. c.name:upper(), 480, 120, 0.0, 0.58, 1.0, 1.5)
+            end
+        end
+    end
+    return addedCash
+end
+
+function ScoringEvaluator.calculateYardsGained(chips, mult, gs, playCard)
+    local totalMult = math.max(0.1, mult + (gs.tempMultBoost or 0))
+    local zoneScale = 1.0
+    if gs.yardLine >= 80 then
+        if not gs.ignoreRedZonePenalty then
+            zoneScale = (gs.stakeTier == "gold") and 0.45 or 0.55
+        end
+    elseif gs.yardLine >= 50 then
+        zoneScale = 0.85
+    end
+    
+    local rawYards = chips * totalMult * zoneScale
+    local yardsGained = 0
+    if playCard.type == "Run" then
+        yardsGained = math.floor(math.min(25, 3 + rawYards * 0.4))
+    else
+        yardsGained = math.floor(math.min(80, 5 + rawYards * 0.35))
+    end
+    
+    local DefenseManager = require("src.engine.defense_manager")
+    if DefenseManager.activeBlind and DefenseManager.activeBlind.id == "blitz_heavy" and playCard.type == "Play Action" then
+        yardsGained = yardsGained - 3
+    end
+    
+    if gs.weather == "snow" and not playCard.type:match("Pass") then
+        yardsGained = math.floor(yardsGained * 0.9)
+    end
+    
+    return yardsGained
+end
+
 function ScoringEvaluator.finalizeDriveSlam()
     local gs = ScoringEvaluator.gameState
     
     if ScoringEvaluator.isTurnover then
+        StadiumPulse.addPulse(-20)
         ScoringEvaluator.active = false
         local FieldAnimator = require("src.ui.field_animator")
         FieldAnimator.active = false
@@ -308,38 +337,10 @@ function ScoringEvaluator.finalizeDriveSlam()
         item.player.jumpY = 0
     end
     
-    local gs = ScoringEvaluator.gameState
     local totalMult = math.max(0.1, ScoringEvaluator.currentMult + (gs.tempMultBoost or 0))
     gs.tempMultBoost = 0
     
-    -- -------------------------------------------------------------
-    -- DYNAMIC FIELD RESISTANCE SCALING (STAKE AWARE)
-    -- Gold Stake: Red Zone yard scaling set to 45%!
-    -- -------------------------------------------------------------
-    local zoneScale = 1.0
-    if gs.yardLine >= 80 then
-        if not gs.ignoreRedZonePenalty then
-            zoneScale = (gs.stakeTier == "gold") and 0.45 or 0.55
-        end
-    elseif gs.yardLine >= 50 then
-        zoneScale = 0.85
-    end
-    
-    local rawYards = ScoringEvaluator.currentChips * totalMult * zoneScale
-    local yardsGained = 0
-    if ScoringEvaluator.playCard.type == "Run" then
-        yardsGained = math.floor(math.min(25, 3 + rawYards * 0.4))
-    else
-        yardsGained = math.floor(math.min(80, 5 + rawYards * 0.35))
-    end
-    
-    if DefenseManager.activeBlind and DefenseManager.activeBlind.id == "blitz_heavy" and ScoringEvaluator.playCard.type == "Play Action" then
-        yardsGained = yardsGained - 3
-    end
-    
-    if gs.weather == "snow" and not ScoringEvaluator.playCard.type:match("Pass") then
-        yardsGained = math.floor(yardsGained * 0.9)
-    end
+    local yardsGained = ScoringEvaluator.calculateYardsGained(ScoringEvaluator.currentChips, ScoringEvaluator.currentMult, gs, ScoringEvaluator.playCard)
     
     local fumbled = false
     if gs.weather == "rain" and ScoringEvaluator.playCard.type:match("Pass") then
@@ -350,10 +351,7 @@ function ScoringEvaluator.finalizeDriveSlam()
         yardsGained = -5
         FxManager.addFloatingText("RAIN SLIP! FUMBLED PASS!", 480, 250, 1.0, 0.2, 0.2, 2.0)
     end
-    
-    gs.totalYardsGained = gs.totalYardsGained + yardsGained
-    gs.yardLine = math.max(1, gs.yardLine + yardsGained)
-    
+
     if ScoringEvaluator.playCard.enhancement == "Glass" then
         if math.random() < 0.25 then
             local DeckManager = require("src.engine.deck_manager")
@@ -378,6 +376,7 @@ function ScoringEvaluator.finalizeDriveSlam()
     if _G.triggerScreenShake then _G.triggerScreenShake(shakeAmt, 0.4) end
     SoundManager.playSFX("slam", 1.0 - math.min(0.3, shakeAmt * 0.01))
     
+    -- Elusive Hips (rush_2) skill node check BEFORE applying yardLine decrement
     if yardsGained < 0 then
         if _G.GAME_MODE == "roguelite" then
             local MyPlayerProfile = require("src.data.myplayer_profile")
@@ -390,8 +389,33 @@ function ScoringEvaluator.finalizeDriveSlam()
         end
     end
 
+    -- Safety Detection (yardLine + yardsGained <= 0)
+    if gs.yardLine + yardsGained <= 0 then
+        gs.yardLine = 1
+        gs.totalYardsGained = math.max(0, gs.totalYardsGained + yardsGained)
+        StadiumPulse.addPulse(-25)
+        SoundManager.playSFX("tackle")
+        FxManager.addFloatingText("SAFETY! TURNOVER & -2 PTS!", 480, 240, 1, 0.1, 0.1, 2.5)
+        gs.capCash = math.max(0, (gs.capCash or 0) - 2)
+        gs.drivesRemaining = gs.drivesRemaining - 1
+        gs.lastPlayResult = "SAFETY! Tackled in endzone. Turnover on downs!"
+        if gs.drivesRemaining <= 0 and gs.currentPoints < gs.targetPoints then
+            gs.status = "GAME_LOST"
+        else
+            gs.status = "DRIVE_LOST"
+        end
+        gs.resetPlayClock()
+        DefenseManager.callDefensivePlay()
+        return
+    end
+
+    -- Now apply yardLine and totalYardsGained update after rush_2 and safety checks
+    gs.totalYardsGained = gs.totalYardsGained + yardsGained
+    gs.yardLine = math.max(1, gs.yardLine + yardsGained)
+
     if yardsGained < 0 then
         SoundManager.playSFX("tackle")
+        StadiumPulse.addPulse(-10)
         gs.distance = gs.distance - yardsGained
         gs.down = gs.down + 1
         
@@ -408,50 +432,23 @@ function ScoringEvaluator.finalizeDriveSlam()
             gs.clockPenaltyNextDrive = 3
             gs.drivesRemaining = gs.drivesRemaining - 1
             
-            local DeckManager = require("src.engine.deck_manager")
-            for _, card in ipairs(DeckManager.hand or {}) do
-                if card.enhancement == "Gold" then
-                    gs.capCash = gs.capCash + 3
-                    FxManager.addFloatingText("GOLD CARD HELD! +$3", 480, 150, 1.0, 0.84, 0.0, 1.5)
-                end
-                if card.seal == "Blue" then
-                    local ConsumablesData = require("src.data.consumables")
-                    if #gs.consumables < gs.maxConsumables then
-                        local c = ConsumablesData[math.random(#ConsumablesData)]
-                        gs.addConsumable(c)
-                        FxManager.addFloatingText("BLUE DECAL! GENERATED " .. c.name:upper(), 480, 120, 0.0, 0.58, 1.0, 1.5)
-                    end
-                end
-            end
+            gs.capCash = gs.capCash + ScoringEvaluator.evaluateHandPassives(gs)
             
             if gs.drivesRemaining <= 0 and gs.currentPoints < gs.targetPoints then
-                gs.status = "TURNOVER"
+                gs.status = "GAME_LOST"
             else
-                gs.status = "TOUCHDOWN"
+                gs.status = "DRIVE_LOST"
             end
             gs.lastPlayResult = gs.lastPlayResult .. " TURNOVER ON DOWNS (-$3 CASH)!"
         end
     elseif gs.yardLine >= 100 then
         gs.currentPoints = gs.currentPoints + 7
         gs.drivesRemaining = gs.drivesRemaining - 1
+        StadiumPulse.addPulse(25)
         
         local payout = 5 + (gs.bonusDriveCash or 0) + (gs.touchdownBonusCash or 0)
         
-        local DeckManager = require("src.engine.deck_manager")
-        for _, card in ipairs(DeckManager.hand or {}) do
-            if card.enhancement == "Gold" then
-                payout = payout + 3
-                FxManager.addFloatingText("GOLD CARD HELD! +$3", 480, 150, 1.0, 0.84, 0.0, 1.5)
-            end
-            if card.seal == "Blue" then
-                local ConsumablesData = require("src.data.consumables")
-                if #gs.consumables < gs.maxConsumables then
-                    local c = ConsumablesData[math.random(#ConsumablesData)]
-                    gs.addConsumable(c)
-                    FxManager.addFloatingText("BLUE DECAL! GENERATED " .. c.name:upper(), 480, 120, 0.0, 0.58, 1.0, 1.5)
-                end
-            end
-        end
+        payout = payout + ScoringEvaluator.evaluateHandPassives(gs)
         
         gs.capCash = gs.capCash + payout
         
@@ -472,6 +469,21 @@ function ScoringEvaluator.finalizeDriveSlam()
             if gs.gameWeek > 4 then
                 gs.gameWeek = 1
                 gs.ante = gs.ante + 1
+                if gs.ante > 8 then
+                    local SteamManager = require("src.engine.steam_manager")
+                    SteamManager.unlockAchievement("ACH_SUPER_BOWL")
+                    if _G.GAME_MODE == "roguelite" then
+                        local MyPlayerProfile = require("src.data.myplayer_profile")
+                        MyPlayerProfile.superBowlRings = MyPlayerProfile.superBowlRings + 1
+                        MyPlayerProfile.seasonsPlayed = MyPlayerProfile.seasonsPlayed + 1
+                        if MyPlayerProfile.seasonsPlayed >= MyPlayerProfile.maxSeasons then
+                            MyPlayerProfile.retire()
+                            gs.lastPlayResult = "CAREER OVER. PLAYER RETIRED."
+                        else
+                            MyPlayerProfile.save()
+                        end
+                    end
+                end
             end
         elseif gs.drivesRemaining <= 0 then
             gs.status = "TURNOVER"
@@ -479,6 +491,8 @@ function ScoringEvaluator.finalizeDriveSlam()
             gs.status = "TOUCHDOWN"
         end
     else
+        if yardsGained >= 15 then StadiumPulse.addPulse(10) else StadiumPulse.addPulse(3) end
+
         if yardsGained >= previousDistance then
             local prevDown = gs.down
             gs.down = 1
@@ -503,26 +517,12 @@ function ScoringEvaluator.finalizeDriveSlam()
                 gs.clockPenaltyNextDrive = 3
                 gs.drivesRemaining = gs.drivesRemaining - 1
                 
-                local DeckManager = require("src.engine.deck_manager")
-                for _, card in ipairs(DeckManager.hand or {}) do
-                    if card.enhancement == "Gold" then
-                        gs.capCash = gs.capCash + 3
-                        FxManager.addFloatingText("GOLD CARD HELD! +$3", 480, 150, 1.0, 0.84, 0.0, 1.5)
-                    end
-                    if card.seal == "Blue" then
-                        local ConsumablesData = require("src.data.consumables")
-                        if #gs.consumables < gs.maxConsumables then
-                            local c = ConsumablesData[math.random(#ConsumablesData)]
-                            gs.addConsumable(c)
-                            FxManager.addFloatingText("BLUE DECAL! GENERATED " .. c.name:upper(), 480, 120, 0.0, 0.58, 1.0, 1.5)
-                        end
-                    end
-                end
+                gs.capCash = gs.capCash + ScoringEvaluator.evaluateHandPassives(gs)
                 
                 if gs.drivesRemaining <= 0 and gs.currentPoints < gs.targetPoints then
-                    gs.status = "TURNOVER"
+                    gs.status = "GAME_LOST"
                 else
-                    gs.status = "TOUCHDOWN"
+                    gs.status = "DRIVE_LOST"
                 end
                 gs.lastPlayResult = gs.lastPlayResult .. " TURNOVER ON DOWNS (-$3 CASH)!"
             end

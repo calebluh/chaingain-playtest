@@ -205,7 +205,8 @@ function StateDefense:resolveChoice(choiceName)
         GameStateData.down = 1
         GameStateData.distance = 10
         GameStateData.status = "PLAYING"
-        GameStateData.audibles = (GameStateData.audibles or 0) + 1
+        GameStateData.audiblesRemaining = (GameStateData.audiblesRemaining or 0) + 1
+        GameStateData.resetPlayClock()
     else
         self.resultStatus = "lose"
         self.resultText = self.activePlay.loseResult

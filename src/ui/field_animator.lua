@@ -383,9 +383,15 @@ function FieldAnimator.update(dt)
         local dist = math.sqrt(dx*dx + dy*dy)
         local oldX, oldY = def.x, def.y
         
-        if dist > 5 then
-            def.vx = (dx/dist) * def.speed
-            def.vy = (dy/dist) * def.speed
+        -- Pursuit urgency scaling as play duration progresses (t >= 0.5)
+        local urgencyMult = 1.0 + math.max(0, (t - 0.4) * 1.8)
+        if t >= 0.85 and dist < 45 and targetCarrier then
+            -- Snap tackle close-in at t >= 0.85
+            def.x = PhysicsUtils.lerp(def.x, targetCarrier.x, 12 * dt)
+            def.y = PhysicsUtils.lerp(def.y, targetCarrier.y, 12 * dt)
+        elseif dist > 5 then
+            def.vx = (dx/dist) * def.speed * urgencyMult
+            def.vy = (dy/dist) * def.speed * urgencyMult
             if not targetCarrier and FieldAnimator.playType:match("Pass") and def.role:match("DB") then
                 def.vx = def.vx * 1.15
             end
@@ -422,26 +428,50 @@ function FieldAnimator.update(dt)
     FieldAnimator.cameraX = FieldAnimator.cameraX + (FieldAnimator.targetCameraX - FieldAnimator.cameraX) * lerpFactor
 end
 
+function FieldAnimator.startTurnoverSequence(turnoverType)
+    FieldAnimator.isTurnoverSequence = true
+    FieldAnimator.turnoverType = turnoverType or "INT"
+    FieldAnimator.turnoverTimer = 0
+    FieldAnimator.turnoverDuration = 2.0
+end
+
+function FieldAnimator.updateTurnover(dt)
+    if not FieldAnimator.isTurnoverSequence then return end
+    FieldAnimator.turnoverTimer = FieldAnimator.turnoverTimer + dt
+    if FieldAnimator.turnoverTimer >= FieldAnimator.turnoverDuration then
+        FieldAnimator.isTurnoverSequence = false
+    end
+end
+
 local function drawRetroPlayer(x, y, jerseyColor, pantsColor, helmetColor, vx, vy, isOffense, time, isTackled, isMyPlayer)
     vx = vx or 0
     vy = vy or 0
     local speed = math.sqrt(vx*vx + vy*vy)
     local isMoving = speed > 10 and not isTackled
     
-    local MyPlayerProfile = nil
+    local PlayerVisualProfile = require("src.data.player_visual_profile")
+    local skinColor = {0.85, 0.65, 0.45}
+    local visorColor = {0.7, 0.85, 1.0, 0.5}
+    local torsoW, torsoH = 8, 10
+    
     if isMyPlayer then
-        MyPlayerProfile = require("src.data.myplayer_profile")
+        skinColor = PlayerVisualProfile.getSkinColor()
+        visorColor = PlayerVisualProfile.getVisorColor()
+        local scale = PlayerVisualProfile.getArchetypeScale()
+        torsoW = scale.torsoW
+        torsoH = scale.torsoH
+        jerseyColor = PlayerVisualProfile.primaryColor or jerseyColor
+        helmetColor = PlayerVisualProfile.shellColor or helmetColor
     end
     
     love.graphics.push()
     love.graphics.translate(x, y)
     
     if isTackled then
-        love.graphics.rotate(math.pi / 2) -- Lying on the ground!
+        love.graphics.rotate(math.pi / 2)
         love.graphics.translate(0, -6)
     end
     
-    -- Face direction based on movement or default
     local dir = 1
     if isMoving then
         dir = vx > 0 and 1 or -1
@@ -450,7 +480,6 @@ local function drawRetroPlayer(x, y, jerseyColor, pantsColor, helmetColor, vx, v
     end
     love.graphics.scale(dir, 1)
     
-    -- Simple running legs animation
     local legOffset = 0
     local armOffset = 0
     if isMoving then
@@ -460,74 +489,59 @@ local function drawRetroPlayer(x, y, jerseyColor, pantsColor, helmetColor, vx, v
     
     -- Shadow
     love.graphics.setColor(0, 0, 0, 0.35)
-    love.graphics.ellipse("fill", 0, 12, 6, 2)
+    love.graphics.ellipse("fill", 0, 12, torsoW * 0.75, 2)
     
     -- Legs (Pants / Socks)
     love.graphics.setColor(pantsColor)
-    -- Left Leg
-    love.graphics.rectangle("fill", -3 + legOffset * 0.5, 4, 3, 6)
-    -- Right Leg
+    love.graphics.rectangle("fill", -math.floor(torsoW/2) + 1 + legOffset * 0.5, 4, 3, 6)
     love.graphics.rectangle("fill", 1 - legOffset * 0.5, 4, 3, 6)
     
-    -- Shoes (Black/White)
-    love.graphics.setColor(1, 1, 1)
-    love.graphics.rectangle("fill", -3 + legOffset * 0.5 + (dir > 0 and 1 or -1), 10, 3, 2)
+    -- Cleats / Shoes
+    local cleatColor = (isMyPlayer and PlayerVisualProfile.cleatsColor) or {1, 1, 1}
+    love.graphics.setColor(cleatColor)
+    love.graphics.rectangle("fill", -math.floor(torsoW/2) + 1 + legOffset * 0.5 + (dir > 0 and 1 or -1), 10, 3, 2)
     love.graphics.rectangle("fill", 1 - legOffset * 0.5 + (dir > 0 and 1 or -1), 10, 3, 2)
     
     -- Torso (Jersey)
     love.graphics.setColor(jerseyColor)
-    love.graphics.rectangle("fill", -4, -6, 8, 10)
+    love.graphics.rectangle("fill", -math.floor(torsoW/2), -6, torsoW, torsoH)
     
     -- Arms
     love.graphics.setColor(jerseyColor)
-    -- Back Arm
-    love.graphics.rectangle("fill", -6 - armOffset * 0.5, -4, 3, 6)
-    -- Front Arm
-    love.graphics.rectangle("fill", 3 + armOffset * 0.5, -4, 3, 6)
+    love.graphics.rectangle("fill", -math.floor(torsoW/2) - 2 - armOffset * 0.5, -4, 3, 6)
+    love.graphics.rectangle("fill", math.floor(torsoW/2) - 1 + armOffset * 0.5, -4, 3, 6)
     
-    if MyPlayerProfile and MyPlayerProfile.gearTape == "Elbow" then
-        love.graphics.setColor(1, 1, 1, 1)
-        love.graphics.rectangle("fill", -6 - armOffset * 0.5, -2, 3, 2)
-        love.graphics.rectangle("fill", 3 + armOffset * 0.5, -2, 3, 2)
+    if isMyPlayer and PlayerVisualProfile.armGear ~= "none" then
+        love.graphics.setColor(PlayerVisualProfile.armGearColor or {1, 1, 1})
+        love.graphics.rectangle("fill", -math.floor(torsoW/2) - 2 - armOffset * 0.5, -2, 3, 2)
+        love.graphics.rectangle("fill", math.floor(torsoW/2) - 1 + armOffset * 0.5, -2, 3, 2)
     end
     
-    -- Hands (Skin tone / Wrist tape)
-    if MyPlayerProfile and MyPlayerProfile.gearTape == "Wrist" then
-        love.graphics.setColor(1, 1, 1, 1) -- White wrist tape!
+    -- Hands / Gloves
+    if isMyPlayer and PlayerVisualProfile.handGear ~= "none" then
+        love.graphics.setColor(PlayerVisualProfile.handGearColor or {1, 1, 1})
     else
-        love.graphics.setColor(0.85, 0.65, 0.45)
+        love.graphics.setColor(skinColor)
     end
-    love.graphics.rectangle("fill", -6 - armOffset * 0.5, 2, 3, 2)
-    love.graphics.rectangle("fill", 3 + armOffset * 0.5, 2, 3, 2)
+    love.graphics.rectangle("fill", -math.floor(torsoW/2) - 2 - armOffset * 0.5, 2, 3, 2)
+    love.graphics.rectangle("fill", math.floor(torsoW/2) - 1 + armOffset * 0.5, 2, 3, 2)
     
     -- Helmet
     love.graphics.setColor(helmetColor)
     love.graphics.rectangle("fill", -3.5, -13, 7, 7)
     
-    -- Speed aerodynamic stripe
-    if MyPlayerProfile and MyPlayerProfile.helmetStyle == "Speed" then
-        love.graphics.setColor(1, 1, 1, 0.8)
+    -- Helmet stripe
+    if isMyPlayer and PlayerVisualProfile.stripeColor then
+        love.graphics.setColor(PlayerVisualProfile.stripeColor)
         love.graphics.rectangle("fill", -1, -13, 2, 7)
     end
     
-    -- Face Mask (Grid lines)
-    love.graphics.setColor(0.7, 0.7, 0.7)
+    -- Facemask & Visor
+    love.graphics.setColor(isMyPlayer and PlayerVisualProfile.maskColor or {0.7, 0.7, 0.7})
     love.graphics.rectangle("fill", 2, -10, 3, 3)
     
-    -- Eye hole / Visor tint
-    if MyPlayerProfile then
-        local vt = MyPlayerProfile.visorTint
-        if vt == "Dark" then
-            love.graphics.setColor(0.08, 0.08, 0.08)
-        elseif vt == "Gold" then
-            love.graphics.setColor(1.0, 0.8, 0.0)
-        else
-            love.graphics.setColor(0.3, 0.75, 1.0)
-        end
-    else
-        love.graphics.setColor(0, 0, 0)
-    end
-    love.graphics.rectangle("fill", 3, -9, 1, 1) -- Eye hole
+    love.graphics.setColor(visorColor)
+    love.graphics.rectangle("fill", 2, -12, 4, 3, 1, 1)
     
     love.graphics.pop()
 end
@@ -718,20 +732,25 @@ function FieldAnimator.draw()
     
     -- 9. Dotted Pass Path while ball is in the air
     if FieldAnimator.playType:match("Pass") and t > 0.25 and t < 0.9 then
-        local qb = FieldAnimator.offense[1]
-        local wr1 = FieldAnimator.offense[2]
-        love.graphics.setColor(0.1, 0.8, 1.0, 0.45)
-        love.graphics.setLineWidth(2)
-        local steps = 15
-        for i = 0, steps do
-            local pt = i / steps
-            local px = PhysicsUtils.lerp(qb.x, wr1.targetX, pt)
-            local py = PhysicsUtils.lerp(qb.y, wr1.targetY, pt)
-            if i % 2 == 0 then
-                love.graphics.circle("fill", px, py, 2.5)
-            end
+        local qb, wr1
+        for _, p in ipairs(FieldAnimator.offense) do
+            if p.role == "QB" then qb = p
+            elseif p.role == "WR1" then wr1 = p end
         end
-        love.graphics.setLineWidth(1)
+        if qb and wr1 then
+            love.graphics.setColor(0.1, 0.8, 1.0, 0.45)
+            love.graphics.setLineWidth(2)
+            local steps = 15
+            for i = 0, steps do
+                local pt = i / steps
+                local px = PhysicsUtils.lerp(qb.x, wr1.targetX, pt)
+                local py = PhysicsUtils.lerp(qb.y, wr1.targetY, pt)
+                if i % 2 == 0 then
+                    love.graphics.circle("fill", px, py, 2.5)
+                end
+            end
+            love.graphics.setLineWidth(1)
+        end
     end
     
     -- 10. Dust / Snow Particles

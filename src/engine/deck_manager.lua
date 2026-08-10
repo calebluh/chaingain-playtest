@@ -9,36 +9,25 @@ DeckManager.discardPile = {}
 DeckManager.hand = {}
 DeckManager.handSize = 5
 
-function DeckManager.init()
+function DeckManager.init(schemeId)
     DeckManager.playbook = {}
     DeckManager.drawPile = {}
     DeckManager.discardPile = {}
     DeckManager.hand = {}
     DeckManager.handSize = 5
     
-    DeckManager.buildDefaultPlaybook()
+    if schemeId then
+        local PlaybookExpanded = require("src.data.playbook_expanded")
+        DeckManager.playbook = PlaybookExpanded.getSchemePlaybook(schemeId)
+    else
+        DeckManager.buildDefaultPlaybook()
+    end
     DeckManager.shuffle()
 end
 
 function DeckManager.buildDefaultPlaybook()
-    local defaultPlays = {
-        {name="HB Dive", type="Run", chips=3, mult=1.2},
-        {name="HB Stretch", type="Run", chips=4, mult=1.3},
-        {name="Inside Zone", type="Run", chips=4, mult=1.25},
-        {name="Quick Slant", type="Short Pass", chips=6, mult=1.5},
-        {name="Drag Route", type="Short Pass", chips=5, mult=1.4},
-        {name="Mesh", type="Short Pass", chips=7, mult=1.35},
-        {name="Dig Route", type="Medium Pass", chips=10, mult=1.7},
-        {name="Out Route", type="Medium Pass", chips=9, mult=1.65},
-        {name="Four Verticals", type="Deep Pass", chips=16, mult=2.2},
-        {name="PA Crossers", type="Play Action", chips=12, mult=2.1},
-    }
-    
-    -- Add 2 of each to get to 20
-    for _, play in ipairs(defaultPlays) do
-        table.insert(DeckManager.playbook, PlayCard.new(play.name, play.type, play.chips, play.mult))
-        table.insert(DeckManager.playbook, PlayCard.new(play.name, play.type, play.chips, play.mult))
-    end
+    local PlaybookExpanded = require("src.data.playbook_expanded")
+    DeckManager.playbook = PlaybookExpanded.generateFullPlaybook()
 end
 
 function DeckManager.shuffle()

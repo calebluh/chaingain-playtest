@@ -5,6 +5,8 @@ local DefenseManager = require("src.engine.defense_manager")
 local PlayerCard = require("src.entities.player_card")
 local CardRender = require("src.ui.card_render")
 local ScoringEvaluator = require("src.engine.scoring_evaluator")
+local FieldAnimator = require("src.ui.field_animator")
+local StadiumPulse = require("src.engine.stadium_pulse")
 local StateManager = require("src.states.state_manager")
 local PhysicsUtils = require("src.engine.physics_utils")
 local AssetManager = require("src.engine.asset_manager")
@@ -75,6 +77,33 @@ function StateGame:update(dt)
     
     GameStateData.updatePlayClock(dt)
     ScoringEvaluator.update(dt)
+    
+    -- Handle Status Transitions when play animations complete
+    if not ScoringEvaluator.active and not FieldAnimator.active then
+        if GameStateData.status == "TOUCHDOWN" or GameStateData.status == "DRIVE_COMPLETE" then
+            if GameStateData.drivesRemaining > 0 and GameStateData.currentPoints < GameStateData.targetPoints then
+                GameStateData.startDrive()
+                DeckManager.drawHand()
+            elseif GameStateData.currentPoints >= GameStateData.targetPoints then
+                GameStateData.status = "GAME_WON"
+            else
+                GameStateData.status = "GAME_LOST"
+            end
+        elseif GameStateData.status == "DRIVE_LOST" then
+            if GameStateData.drivesRemaining > 0 then
+                GameStateData.startDrive()
+                DeckManager.drawHand()
+            else
+                GameStateData.status = "GAME_LOST"
+            end
+        elseif GameStateData.status == "GAME_WON" then
+            local StateShop = require("src.states.state_shop")
+            StateManager.switch(StateShop)
+        elseif GameStateData.status == "GAME_LOST" or GameStateData.status == "TURNOVER" then
+            local StateMenu = require("src.states.state_menu")
+            StateManager.switch(StateMenu)
+        end
+    end
     
     if GameStateData.down == 4 and GameStateData.status == "PLAYING" then
         if not self.was4thDown then
@@ -179,24 +208,20 @@ function StateGame:draw()
         end
     end
 
-    local panelY = 8
-    
-    local function drawNeonPanel(x, y, w, h, borderColor)
-        love.graphics.setColor(0, 0, 0, 0.8)
-        love.graphics.rectangle("fill", x + 2, y + 2, w, h, 8, 8)
+    local function drawNeonPanel(px, py, pw, ph, colorOverride)
         love.graphics.setColor(C_SLATE_CONTAINER)
-        love.graphics.rectangle("fill", x, y, w, h, 8, 8)
-        love.graphics.setColor(borderColor or C_NEON_BORDER)
+        love.graphics.rectangle("fill", px, py, pw, ph, 6, 6)
+        love.graphics.setColor(colorOverride or C_BORDER_NORMAL)
         love.graphics.setLineWidth(2)
-        love.graphics.rectangle("line", x, y, w, h, 8, 8)
+        love.graphics.rectangle("line", px, py, pw, ph, 6, 6)
         love.graphics.setLineWidth(1)
     end
 
-    -- Scoreboard Panels
+    local panelY = 8
     drawNeonPanel(12, panelY, 155, 68)
-    drawShadowText(string.format("WEEK %d (SEASON %d)", GameStateData.gameWeek, GameStateData.ante), 12, panelY + 6, 1, 0.84, 0, 0.95, "center", 155)
+    local tierStr = "DIFFICULTY: " .. (GameStateData.stakeTier or "white"):upper()
+    drawShadowText("OPPONENT DEFENSE", 12, panelY + 6, 0.8, 0.8, 0.8, 0.85, "center", 155)
     if DefenseManager.activeBlind then
-        local tierStr = DefenseManager.activeBlind.tier or "Defense"
         drawShadowText(tierStr, 12, panelY + 26, 0.6, 0.6, 0.7, 0.7, "center", 155)
         drawShadowText(DefenseManager.activeBlind.name, 12, panelY + 40, 1, 1, 1, 0.9, "center", 155)
     end
@@ -249,19 +274,23 @@ function StateGame:draw()
 
     -- Progress Bar
     love.graphics.setColor(0.08, 0.1, 0.14, 0.9)
-    love.graphics.rectangle("fill", 12, 82, 933, 18, 4, 4)
+    love.graphics.rectangle("fill", 12, 82, 915, 18, 4, 4)
     local pct = math.min(1.0, GameStateData.yardLine / 100)
     love.graphics.setColor(0.18, 0.72, 0.45, 1)
-    love.graphics.rectangle("fill", 12, 82, 933 * pct, 18, 4, 4)
+    love.graphics.rectangle("fill", 12, 82, 915 * pct, 18, 4, 4)
     
     love.graphics.setColor(1, 0.84, 0, 0.8)
     love.graphics.setLineWidth(2)
-    love.graphics.line(12 + 933 * 0.65, 82, 12 + 933 * 0.65, 100)
+    love.graphics.line(12 + 915 * 0.65, 82, 12 + 915 * 0.65, 100)
     love.graphics.setLineWidth(1)
     love.graphics.setColor(C_NEON_BORDER)
-    love.graphics.rectangle("line", 12, 82, 933, 18, 4, 4)
+    love.graphics.rectangle("line", 12, 82, 915, 18, 4, 4)
     
-    drawShadowText("FIELD POSITION: " .. ballStr .. " (75 YDS TO END ZONE)", 12, 84, 1, 1, 1, 0.85, "center", 933)
+    local ydsToEndZone = math.max(0, 100 - GameStateData.yardLine)
+    drawShadowText("FIELD POSITION: " .. ballStr .. " (" .. ydsToEndZone .. " YDS TO END ZONE)", 12, 84, 1, 1, 1, 0.85, "center", 915)
+
+    -- Stadium Pulse Meter
+    StadiumPulse.draw(935, 10)
 
     -- Roster Slots
     local drawOrder = {"QB", "RB", "WR1", "WR2", "FLEX"}

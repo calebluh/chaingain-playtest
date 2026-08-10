@@ -310,7 +310,11 @@ function StatePackOpening:mousepressed(x, y, button)
                             success = true
                             msg = "Drafted " .. card.item.name .. " to Sideline!"
                         else
-                            msg = "SIDELINE PERK TRAY FULL!"
+                            -- Tray full: swap out 1st consumable
+                            local oldName = GameStateData.consumables[1].name
+                            GameStateData.consumables[1] = card.item
+                            success = true
+                            msg = "Swapped " .. oldName .. " for " .. card.item.name .. "!"
                         end
                     else
                         success = GameStateData.addRosterPlayer(card.item, card.item.pos)
