@@ -51,10 +51,20 @@ function CardRender.drawPlayCard(x, y, card, isSelected, time)
     
     love.graphics.setColor(C_SLATE_CARD)
     love.graphics.rectangle("fill", cx, cy, w, h, 6, 6)
+
+    love.graphics.setColor(0.07, 0.15, 0.18, 0.95)
+    love.graphics.rectangle("fill", cx + 4, cy + 4, w - 8, h - 8, 5, 5)
     
     love.graphics.setColor(0.12, 0.15, 0.20, 1)
     love.graphics.rectangle("fill", cx, cy, w, 28, 6, 6)
     love.graphics.rectangle("fill", cx, cy + 22, w, 6)
+
+    local accentTint = C_NEON_CYAN
+    if card.type == "Run" then accentTint = C_NEON_GREEN end
+    if card.type == "Deep Pass" or card.type == "Kick" or card.type == "Punt" then accentTint = C_NEON_YELLOW end
+    if card.type == "Defense" or card.type == "Special" then accentTint = C_NEON_PURPLE end
+    love.graphics.setColor(accentTint[1], accentTint[2], accentTint[3], 0.18)
+    love.graphics.rectangle("fill", cx + 8, cy + 32, w - 16, 90, 4, 4)
     
     drawShadowText(card.name, cx + 6, cy + 4, 1, 1, 1, 0.95)
     drawShadowText(card.type:upper(), cx + 6, cy + 16, 0.7, 0.75, 0.8, 0.75)

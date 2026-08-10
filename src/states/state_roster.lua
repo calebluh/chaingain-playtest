@@ -77,23 +77,13 @@ local function drawPixelFace(x, y)
     love.graphics.pop()
 end
 
-local function drawStars(x, y, rating)
-    local numStars = 1
-    if rating >= 90 then numStars = 5
-    elseif rating >= 80 then numStars = 4
-    elseif rating >= 70 then numStars = 3
-    elseif rating >= 60 then numStars = 2 end
-    
-    love.graphics.setColor(1, 0.84, 0)
-    for i = 1, 5 do
-        if i <= numStars then
-            love.graphics.print("*", x + (i-1)*12, y)
-        else
-            love.graphics.setColor(0.4, 0.4, 0.4)
-            love.graphics.print("*", x + (i-1)*12, y)
-            love.graphics.setColor(1, 0.84, 0)
-        end
-    end
+local function drawOverallBadge(x, y, rating)
+    love.graphics.setColor(0.12, 0.12, 0.12)
+    love.graphics.rectangle("fill", x, y, 54, 16, 3, 3)
+    love.graphics.setColor(1, 0.78, 0.18)
+    love.graphics.print("OVR", x + 4, y + 2, 0, 0.8, 0.8)
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.print(tostring(rating), x + 28, y + 2, 0, 0.8, 0.8)
 end
 
 function StateRoster:draw()
@@ -106,11 +96,11 @@ function StateRoster:draw()
     
     -- Player Grid (2x6)
     local startX = 60
-    local startY = 100
-    local slotW = 120
-    local slotH = 150
-    local padX = 20
-    local padY = 20
+    local startY = 105
+    local slotW = 118
+    local slotH = 142
+    local padX = 18
+    local padY = 14
     
     for i = 1, 12 do
         local row = math.floor((i - 1) / 6)
@@ -134,27 +124,20 @@ function StateRoster:draw()
             local pos = pData.pos
             
             love.graphics.setColor(C_OFFENSE)
-            love.graphics.rectangle("fill", cx + 2, cy + 2, slotW - 4, 80, 4, 4)
+            love.graphics.rectangle("fill", cx + 2, cy + 2, slotW - 4, 72, 4, 4)
             
-            drawShadowText(pos, cx + 5, cy + 5, 1, 1, 1, 1.2)
-            
-            -- Pixel Face
-            drawPixelFace(cx + 35, cy + 30)
+            drawShadowText(pos, cx + 5, cy + 5, 1, 1, 1, 1.1)
             
             -- Name block
             love.graphics.setColor(0.3, 0.3, 0.3)
-            love.graphics.rectangle("fill", cx + 2, cy + 85, slotW - 4, 63, 0, 0, 4, 4)
+            love.graphics.rectangle("fill", cx + 2, cy + 78, slotW - 4, 56, 0, 0, 4, 4)
             
             -- Truncate name
             local shortName = string.sub(card.name, 1, 12)
-            drawShadowText(shortName, cx + 5, cy + 90, 1, 1, 1, 1.2)
+            drawShadowText(shortName, cx + 5, cy + 82, 1, 1, 1, 1.1)
             
-            -- Stars
-            drawStars(cx + 30, cy + 120, card.overall or 75)
-            
-            -- Level Up Bar
-            love.graphics.setColor(0, 0.8, 0)
-            love.graphics.rectangle("fill", cx + 5, cy + 140, slotW - 10, 6)
+            -- Overall rating
+            drawOverallBadge(cx + 26, cy + 106, card.overall or 75)
         end
     end
     

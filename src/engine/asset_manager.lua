@@ -4,6 +4,72 @@ local AssetManager = {}
 local images = {}
 local fontCache = {}
 
+local function buildAssetCandidates(relativePath)
+    local normalized = (relativePath or ""):gsub("\\", "/")
+    normalized = normalized:gsub("^%./+", "")
+    normalized = normalized:gsub("^/+", "")
+
+    if normalized == "" then
+        return {}
+    end
+
+    local candidates = {}
+    local seen = {}
+
+    local function addCandidate(path)
+        if not path or seen[path] then
+            return
+        end
+        seen[path] = true
+        table.insert(candidates, path)
+    end
+
+    local normalizedNoExt = normalized:gsub("%.png$", "")
+
+    addCandidate(normalized)
+    addCandidate("assets/2x/" .. normalized)
+    addCandidate("assets/1x/" .. normalized)
+    addCandidate("assets/images/" .. normalized)
+    addCandidate("assets/images/2x/" .. normalized)
+    addCandidate("assets/" .. normalized)
+
+    if normalizedNoExt:match("^ui/") then
+        addCandidate("assets/images/" .. normalizedNoExt:gsub("^ui/", ""))
+        addCandidate("assets/images/ui/" .. normalizedNoExt:gsub("^ui/", "") .. ".png")
+    end
+
+    if normalized:match("^cards/") or normalizedNoExt:match("^cards/") then
+        addCandidate("assets/images/cards/" .. normalized:gsub("^cards/", ""))
+        addCandidate("assets/images/cards/" .. normalizedNoExt:gsub("^cards/", "") .. ".png")
+    end
+
+    if normalized:match("^players/") or normalizedNoExt:match("^players/") then
+        addCandidate("assets/images/players/" .. normalized:gsub("^players/", ""))
+        addCandidate("assets/images/players/" .. normalizedNoExt:gsub("^players/", "") .. ".png")
+    end
+
+    if normalized:match("^blinds/") or normalizedNoExt:match("^blinds/") then
+        addCandidate("assets/images/blinds/" .. normalized:gsub("^blinds/", ""))
+        addCandidate("assets/images/blinds/" .. normalizedNoExt:gsub("^blinds/", "") .. ".png")
+    end
+
+    if normalized:match("^ui/") or normalizedNoExt:match("^ui/") then
+        addCandidate("assets/images/ui/" .. normalized:gsub("^ui/", ""))
+        addCandidate("assets/images/ui/" .. normalizedNoExt:gsub("^ui/", "") .. ".png")
+    end
+
+    if not normalized:match("^images/") and not normalized:match("^cards/") and not normalized:match("^blinds/") and not normalized:match("^players/") and not normalized:match("^ui/") then
+        addCandidate("assets/images/" .. normalized)
+        addCandidate("assets/" .. normalized)
+        addCandidate("assets/images/cards/" .. normalized)
+        addCandidate("assets/images/players/" .. normalized)
+        addCandidate("assets/images/blinds/" .. normalized)
+        addCandidate("assets/images/ui/" .. normalized)
+    end
+
+    return candidates
+end
+
 function AssetManager.init()
     images = {}
     fontCache = {}
@@ -13,12 +79,8 @@ function AssetManager.getImage(relativePath)
     if images[relativePath] ~= nil then
         return images[relativePath]
     end
-    
-    local candidatePaths = {
-        "assets/images/" .. relativePath,
-        "assets/" .. relativePath
-    }
-    
+
+    local candidatePaths = buildAssetCandidates(relativePath)
     for _, fullPath in ipairs(candidatePaths) do
         if love.filesystem and love.filesystem.getInfo and love.filesystem.getInfo(fullPath) then
             local ok, img = pcall(love.graphics.newImage, fullPath)
@@ -28,7 +90,7 @@ function AssetManager.getImage(relativePath)
             end
         end
     end
-    
+
     images[relativePath] = false
     return false
 end

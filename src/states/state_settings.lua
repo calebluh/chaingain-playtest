@@ -2,11 +2,14 @@
 local SettingsData = require("src.data.settings_data")
 local StateManager = require("src.states.state_manager")
 local SoundManager = require("src.engine.sound_manager")
-local StateMenu = require("src.states.state_menu")
 local StateSettings = {}
 
 StateSettings.activeTab = 1
 StateSettings.tabs = { "GAMEPLAY", "VISUALS", "AUDIO", "STREAMER" }
+
+function StateSettings:enter()
+    self.activeTab = 1
+end
 
 function StateSettings.draw()
     -- Outer Modal Window
@@ -96,6 +99,7 @@ function StateSettings.mousepressed(x, y, button)
     -- Check BACK button
     if x >= 80 and x <= 200 and y >= 490 and y <= 530 then
         SoundManager.playSFX("click")
+        local StateMenu = require("src.states.state_menu")
         StateManager.switch(StateMenu)
         return
     end
@@ -138,6 +142,7 @@ end
 
 function StateSettings.keypressed(key)
     if key == "escape" then
+        local StateMenu = require("src.states.state_menu")
         StateManager.switch(StateMenu)
     elseif key == "tab" or key == "right" then
         StateSettings.activeTab = (StateSettings.activeTab % #StateSettings.tabs) + 1

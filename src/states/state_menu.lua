@@ -5,6 +5,7 @@ local SaveManager = require("src.engine.save_manager")
 local GameStateData = require("src.engine.game_state")
 local DeckManager = require("src.engine.deck_manager")
 local Loc = require("src.engine.loc_manager")
+local AssetManager = require("src.engine.asset_manager")
 
 local StateMenu = {}
 
@@ -129,11 +130,19 @@ function StateMenu:draw()
         love.graphics.line(0, yPos, 960, yPos)
     end
     love.graphics.pop()
-    
-    -- Rebranded Commercial Title
-    drawShadowText("CHAIN", 480 - 150, 75, 1, 1, 1, 4.4, "center", 300)
-    drawShadowText("GAIN", 480 - 200, 145, 0.0, 0.76, 1.0, 4.4, "center", 400)
-    
+
+    local logoImage = AssetManager.getImage("ui/ui_logo.png") or AssetManager.getImage("ui_logo.png") or AssetManager.getImage("assets/ui_logo.png")
+    if logoImage then
+        local logoW = 560
+        local scale = logoW / logoImage:getWidth()
+        local logoH = logoImage:getHeight() * scale
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.draw(logoImage, 480 - logoW / 2, 38, 0, scale, scale)
+    else
+        drawShadowText("CHAIN GAIN", 480 - 260, 82, 1, 1, 1, 4.0, "center", 520)
+        drawShadowText("CHAIN GAIN", 480 - 258, 80, 0.0, 0.76, 1.0, 4.0, "center", 520)
+    end
+
     local hs = SaveManager.data.highScoreYards or 0
     local td = SaveManager.data.totalTouchdowns or 0
     drawShadowText(string.format("ACTIVE PROFILE: %s | HIGH SCORE: %d YDS | TDS: %d", SaveManager.data.profileName or "Profile 1", hs, td), 480 - 300, 215, 0.8, 0.8, 0.8, 1.1, "center", 600)
@@ -141,8 +150,6 @@ function StateMenu:draw()
     for _, btn in ipairs(self.buttons) do
         drawChunkyPillButton(btn)
     end
-    
-
 end
 
 function StateMenu:mousepressed(x, y, button, istouch, presses)
