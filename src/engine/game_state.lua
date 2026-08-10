@@ -141,6 +141,10 @@ end
 function GameState.updatePlayClock(dt)
     if GameState.status ~= "PLAYING" or not GameState.clockActive then return end
     
+    local ScoringEvaluator = require("src.engine.scoring_evaluator")
+    local FieldAnimator = require("src.ui.field_animator")
+    if ScoringEvaluator.active or FieldAnimator.active then return end
+    
     GameState.playClock = GameState.playClock - dt
     if GameState.playClock <= 0 then
         SoundManager.playSFX("whistle")
@@ -324,7 +328,7 @@ end
 
 function GameState.addRosterPlayer(playerCard, posOverride)
     local pos = posOverride
-    if pos == "TE" or pos == "WR" then pos = nil end -- Map legacy positions to smart auto-slotting
+    if pos == "TE" or pos == "WR" then pos = nil end
 
     if not pos then
         if playerCard.position:match("QB") then
@@ -334,6 +338,8 @@ function GameState.addRosterPlayer(playerCard, posOverride)
                 pos = "RB"
             elseif #GameState.rosterSlots.FLEX.cards < GameState.rosterSlots.FLEX.max then
                 pos = "FLEX"
+            else
+                pos = "RB"
             end
         elseif playerCard.position:match("WR") then
             if #GameState.rosterSlots.WR1.cards < GameState.rosterSlots.WR1.max then
@@ -342,12 +348,16 @@ function GameState.addRosterPlayer(playerCard, posOverride)
                 pos = "WR2"
             elseif #GameState.rosterSlots.FLEX.cards < GameState.rosterSlots.FLEX.max then
                 pos = "FLEX"
+            else
+                pos = "WR1"
             end
         elseif playerCard.position:match("TE") then
             if #GameState.rosterSlots.WR2.cards < GameState.rosterSlots.WR2.max then
                 pos = "WR2"
             elseif #GameState.rosterSlots.FLEX.cards < GameState.rosterSlots.FLEX.max then
                 pos = "FLEX"
+            else
+                pos = "WR2"
             end
         end
     end
@@ -357,9 +367,24 @@ function GameState.addRosterPlayer(playerCard, posOverride)
     end
     
     if pos and GameState.rosterSlots[pos] then
-        if #GameState.rosterSlots[pos].cards < GameState.rosterSlots[pos].max then
-            table.insert(GameState.rosterSlots[pos].cards, playerCard)
+        local slotData = GameState.rosterSlots[pos]
+        if #slotData.cards < slotData.max then
+            table.insert(slotData.cards, playerCard)
             return true
+        else
+            -- Slot is full: swap out lowest OVR non-MyPlayer card
+            local replaceIdx = nil
+            local minOvr = 999
+            for i, c in ipairs(slotData.cards) do
+                if not c.isMyPlayer and c.overall < minOvr then
+                    minOvr = c.overall
+                    replaceIdx = i
+                end
+            end
+            if replaceIdx then
+                slotData.cards[replaceIdx] = playerCard
+                return true
+            end
         end
     end
     return false

@@ -240,4 +240,13 @@ function StateLoadout:mousepressed(x, y, button)
     end
 end
 
+function StateLoadout:keypressed(key)
+    if key == "escape" then
+        local SoundManager = require("src.engine.sound_manager")
+        SoundManager.playSFX("click")
+        local StateMenu = require("src.states.state_menu")
+        StateManager.switch(StateMenu)
+    end
+end
+
 return StateLoadout

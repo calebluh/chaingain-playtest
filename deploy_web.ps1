@@ -1,5 +1,9 @@
+param(
+    [switch]$NoServe
+)
+
 # deploy_web.ps1
-Write-Host "Building BalatroFB for the Web..." -ForegroundColor Cyan
+Write-Host "Building Chain Gain for the Web..." -ForegroundColor Cyan
 
 # 1. Clean up old builds
 if (Test-Path "balatrofb.love") { Remove-Item "balatrofb.love" -Force }
@@ -21,11 +25,28 @@ if (Test-Path "assets/icon.png") {
     Copy-Item "assets/icon.png" "web_build/favicon.ico" -Force
 }
 
-Write-Host "Build complete! Output is in the 'web_build' folder." -ForegroundColor Green
-Write-Host "Starting local web server on http://localhost:8000..." -ForegroundColor Cyan
-Write-Host "Please open this URL in Chrome on your remote desktop for smooth rendering." -ForegroundColor Yellow
-Write-Host "If you want to play from your local machine, run 'npx localtunnel --port 8000' in a separate terminal." -ForegroundColor Magenta
-Write-Host "Press Ctrl+C to stop the server." -ForegroundColor Red
+# 3.6 Automatically publish web_build to GitHub Pages gh-pages branch
+$remoteUrl = (git config --get remote.origin.url)
+if ($remoteUrl) {
+    Write-Host "Deploying compiled web build directly to GitHub Pages (gh-pages)..." -ForegroundColor Yellow
+    Push-Location web_build
+    git init -q
+    git checkout -B gh-pages
+    git remote add origin $remoteUrl.Trim() 2>$null
+    git add .
+    git commit -m "Automated GitHub Pages Deployment" -q
+    git push origin gh-pages --force
+    Pop-Location
+    Write-Host "GitHub Pages deployment complete!" -ForegroundColor Green
+}
 
-# 4. Start the local server
-npx serve -l 8000 web_build
+Write-Host "Build complete! Output is in the 'web_build' folder." -ForegroundColor Green
+
+if (-not $NoServe) {
+    Write-Host "Starting local web server on http://localhost:8000..." -ForegroundColor Cyan
+    Write-Host "Please open this URL in Chrome on your remote desktop for smooth rendering." -ForegroundColor Yellow
+    Write-Host "Press Ctrl+C to stop the server." -ForegroundColor Red
+
+    # 4. Start the local server
+    npx serve -l 8000 web_build
+}
