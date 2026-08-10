@@ -60,14 +60,49 @@ function love.load(arg)
     end
     
     if isHeadless then
-        local logs = BotRunner.runHeadlessSimulation(1000)
-        local jsonStr = string.format('{\n  "totalRuns": %d,\n  "wins": %d,\n  "losses": %d,\n  "crashes": %d,\n  "winRatePct": %d,\n  "avgYardsPerPlay": %d\n}',
-            logs.totalRuns, logs.wins, logs.losses, #logs.crashes, logs.winRatePct, logs.avgYardsPerPlay)
+        local FranchiseTeams = require("src.data.franchise_teams")
+        local archetypes = {
+            { id = "west_coast", name = "West Coast" },
+            { id = "air_coryell", name = "Air Coryell" },
+            { id = "erhardt_perkins", name = "Erhardt-Perkins" },
+            { id = "spread", name = "Spread" }
+        }
+        local stakes = { "white", "red", "gold", "obsidian" }
+        
+        print("\n=== STARTING FULL MATRIX HEADLESS SIMULATION ===")
+        local totalCombos = #FranchiseTeams * #archetypes * #stakes
+        local currentCombo = 0
+        local globalWins = 0
+        local globalLosses = 0
+        local totalRuns = 0
+        
+        for _, team in ipairs(FranchiseTeams) do
+            for _, arch in ipairs(archetypes) do
+                for _, stake in ipairs(stakes) do
+                    currentCombo = currentCombo + 1
+                    BotRunner.testConfig = { team = team, archetype = arch, stakeTier = stake }
+                    
+                    local runsToSim = 10
+                    local summary = BotRunner.runHeadlessSimulation(runsToSim)
+                    
+                    globalWins = globalWins + summary.wins
+                    globalLosses = globalLosses + summary.losses
+                    totalRuns = totalRuns + runsToSim
+                end
+            end
+        end
+        
+        local winRate = math.floor((globalWins / math.max(1, totalRuns)) * 100)
+        local jsonStr = string.format('{\n  "totalRuns": %d,\n  "wins": %d,\n  "losses": %d,\n  "winRatePct": %d\n}',
+            totalRuns, globalWins, globalLosses, winRate)
             
-        local f = io.open("f:/Projects/BalatroFB/playtest_summary.json", "w")
-        if f then f:write(jsonStr); f:close() end
         love.filesystem.write("playtest_summary.json", jsonStr)
-        print("[BOT] Headless Simulation exported to playtest_summary.json!")
+        print("\n--- MATRIX TELEMETRY RESULTS ---")
+        print(string.format("Tested %d Combinations (%d Total Runs)", totalCombos, totalRuns))
+        print("Wins (Touchdowns): " .. globalWins)
+        print("Losses (Turnovers): " .. globalLosses)
+        print("Overall Win Rate: " .. winRate .. "%")
+        print("==================================\n")
         love.event.quit()
         return
     end
