@@ -103,7 +103,6 @@ function StateCollections:draw()
     local itemsPerPage = 15
     local totalItems = 0
     
-    love.graphics.setScissor(0, 100, 960, 390)
     if activeTab == "ROSTER PLAYERS" then
         itemsPerPage = 10
         totalItems = #self.galleryPlayers

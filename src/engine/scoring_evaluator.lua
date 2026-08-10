@@ -172,7 +172,7 @@ function ScoringEvaluator.update(dt)
             ScoringEvaluator.phase = 4.5
             
             -- Predict yards gained for the animation
-            local predictedYards = ScoringEvaluator.calculateYardsGained(ScoringEvaluator.currentChips, ScoringEvaluator.currentMult, gs, ScoringEvaluator.playCard)
+            local predictedYards = ScoringEvaluator.calculateYardsGained(ScoringEvaluator.currentChips, ScoringEvaluator.currentMult, ScoringEvaluator.gameState, ScoringEvaluator.playCard)
             
             local isIntercepted = ScoringEvaluator.isTurnover and (ScoringEvaluator.turnoverType == "INT")
             local isFumbled = ScoringEvaluator.isTurnover and (ScoringEvaluator.turnoverType == "FUMBLE")

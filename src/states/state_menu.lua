@@ -131,8 +131,8 @@ function StateMenu:draw()
     love.graphics.pop()
     
     -- Rebranded Commercial Title
-    drawShadowText("AUDIBLE", 480 - 150, 75, 1, 1, 1, 4.4, "center", 300)
-    drawShadowText("GRIDIRON TACTICS", 480 - 200, 145, 0.0, 0.76, 1.0, 2.4, "center", 400)
+    drawShadowText("CHAIN", 480 - 150, 75, 1, 1, 1, 4.4, "center", 300)
+    drawShadowText("GAIN", 480 - 200, 145, 0.0, 0.76, 1.0, 4.4, "center", 400)
     
     local hs = SaveManager.data.highScoreYards or 0
     local td = SaveManager.data.totalTouchdowns or 0
