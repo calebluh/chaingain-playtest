@@ -339,7 +339,13 @@ function FieldAnimator.update(dt)
         local tx, ty = def.x, def.y
         
         if targetCarrier then
-            tx, ty = targetCarrier.x, targetCarrier.y
+            if FieldAnimator.yardsGained > 0 and not FieldAnimator.isIntercepted then
+                local trailOffset = (1.0 - math.min(1.0, t)) * 75
+                tx = math.max(def.x - 10, targetCarrier.x - trailOffset)
+                ty = targetCarrier.y
+            else
+                tx, ty = targetCarrier.x, targetCarrier.y
+            end
         else
             local targetPlayer = nil
             if def.role == "DB1" then
@@ -648,6 +654,21 @@ function FieldAnimator.draw()
     love.graphics.setColor(C_FIRST)
     love.graphics.setLineWidth(3)
     love.graphics.line(firstX, FIELD_Y + 15, firstX, FIELD_Y + FIELD_HEIGHT - 18)
+    
+    -- Target Spot Line (Neon Green Dotted Line)
+    if FieldAnimator.yardsGained > 0 and not FieldAnimator.isIntercepted then
+        local targetGainX = losX + FieldAnimator.yardsGained * YARD_PX
+        love.graphics.setColor(0.0, 0.9, 0.4, 0.6)
+        love.graphics.setLineWidth(2)
+        local steps = 12
+        for i = 0, steps do
+            if i % 2 == 0 then
+                local y1 = FIELD_Y + 15 + i * (FIELD_HEIGHT - 33) / steps
+                local y2 = FIELD_Y + 15 + (i + 1) * (FIELD_HEIGHT - 33) / steps
+                love.graphics.line(targetGainX, y1, targetGainX, y2)
+            end
+        end
+    end
     love.graphics.setLineWidth(1)
     
     -- 7. Defensive Zone Coverages before snap
