@@ -209,13 +209,17 @@ function ScoringEvaluator.evaluateCurrentRosterPlayer()
         FxManager.addFloatingText("IRONCLAD FRONT: YARDS NEGATED!", 480, 220, 1, 0.2, 0.2, 1.2)
     end
     
-    if player.edition == "Foil" then chipBonus = chipBonus + 5
-    elseif player.edition == "Holographic" then multBonus = multBonus + 1.0
-    elseif player.edition == "Negative" then
-        if ScoringEvaluator.gameState and ScoringEvaluator.gameState.rosterSlots and ScoringEvaluator.gameState.rosterSlots.FLEX then
-            ScoringEvaluator.gameState.rosterSlots.FLEX.max = (ScoringEvaluator.gameState.rosterSlots.FLEX.max or 1) + 1
-            FxManager.addFloatingText("NEGATIVE! +1 JOKER SLOT", 480, 160, 0.4, 0.2, 0.8, 1.2)
-        end
+    if player.edition == "Pumped" or player.edition == "Foil" then
+        chipBonus = chipBonus + 5
+        FxManager.addFloatingText("PUMPED! +5 YDS", 480, 160, 1.0, 0.84, 0.0, 1.2)
+    elseif player.edition == "Juiced" or player.edition == "Holographic" then
+        multBonus = multBonus + 0.5
+        FxManager.addFloatingText("JUICED! +0.5 MTM", 480, 160, 0.0, 0.76, 1.0, 1.2)
+    elseif player.edition == "Fan Favorite" or player.edition == "Polychrome" then
+        multBonus = multBonus * 1.5
+        FxManager.addFloatingText("FAN FAVORITE! x1.5 MTM", 480, 160, 1.0, 0.3, 0.3, 1.2)
+    elseif player.edition == "Franchise Player" or player.edition == "Negative" or player.edition == "Franchise" then
+        FxManager.addFloatingText("FRANCHISE PLAYER! +1 ROSTER SLOT", 480, 160, 0.4, 0.2, 0.8, 1.2)
     end
     
     if ScoringEvaluator.gameState and ScoringEvaluator.gameState.globalRosterChips then
@@ -474,6 +478,7 @@ function ScoringEvaluator.finalizeDriveSlam()
         SoundManager.playSFX("touchdown")
         if _G.triggerScreenShake then _G.triggerScreenShake(20, 0.6) end
         if _G.triggerHitStop then _G.triggerHitStop(0.2) end
+        FxManager.triggerCelebrationFireworks()
         SaveManager.recordTouchdown()
         SaveManager.updateHighScore(gs.totalYardsGained)
         

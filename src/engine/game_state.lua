@@ -399,7 +399,7 @@ function GameState.addRosterPlayer(playerCard, posOverride)
         end
     end
     
-    if (playerCard.edition == "Franchise" or playerCard.edition == "Negative") and pos and GameState.rosterSlots[pos] then
+    if (playerCard.edition == "Franchise Player" or playerCard.edition == "Franchise" or playerCard.edition == "Negative") and pos and GameState.rosterSlots[pos] then
         GameState.rosterSlots[pos].max = GameState.rosterSlots[pos].max + 1
     end
     

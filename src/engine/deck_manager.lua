@@ -69,6 +69,14 @@ function DeckManager.drawHand()
                     local j = math.random(i2)
                     DeckManager.drawPile[i2], DeckManager.drawPile[j] = DeckManager.drawPile[j], DeckManager.drawPile[i2]
                 end
+            elseif DeckManager.playbook and #DeckManager.playbook > 0 then
+                for _, card in ipairs(DeckManager.playbook) do
+                    table.insert(DeckManager.drawPile, card)
+                end
+                for i2 = #DeckManager.drawPile, 2, -1 do
+                    local j = math.random(i2)
+                    DeckManager.drawPile[i2], DeckManager.drawPile[j] = DeckManager.drawPile[j], DeckManager.drawPile[i2]
+                end
             else
                 break
             end
@@ -134,6 +142,14 @@ function DeckManager.fillHand()
                     table.insert(DeckManager.drawPile, card)
                 end
                 DeckManager.discardPile = {}
+                for i2 = #DeckManager.drawPile, 2, -1 do
+                    local j = math.random(i2)
+                    DeckManager.drawPile[i2], DeckManager.drawPile[j] = DeckManager.drawPile[j], DeckManager.drawPile[i2]
+                end
+            elseif DeckManager.playbook and #DeckManager.playbook > 0 then
+                for _, card in ipairs(DeckManager.playbook) do
+                    table.insert(DeckManager.drawPile, card)
+                end
                 for i2 = #DeckManager.drawPile, 2, -1 do
                     local j = math.random(i2)
                     DeckManager.drawPile[i2], DeckManager.drawPile[j] = DeckManager.drawPile[j], DeckManager.drawPile[i2]

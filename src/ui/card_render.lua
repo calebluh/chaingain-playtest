@@ -34,6 +34,9 @@ end
 function CardRender.drawPlayCard(x, y, card, isSelected, time)
     love.graphics.push()
     love.graphics.translate(x, y)
+    if card and card.rot and math.abs(card.rot) > 0.001 then
+        love.graphics.rotate(card.rot)
+    end
     
     local w, h = 130, 175
     local cx, cy = -w/2, -h/2
@@ -213,38 +216,41 @@ function CardRender.drawPlayerCard(x, y, player, isHovered, dt)
     
     if (player.flipProgress or 0) < 0.5 then
         -- -------------------------------------------------------------
-        -- FRONT FACE: Retro Bowl Style
+        -- FRONT FACE: Clean MUT Style Card
         -- -------------------------------------------------------------
         -- Thick White Border with Drop Shadow
         love.graphics.setColor(1, 1, 1, 1)
         love.graphics.rectangle("fill", cx - 4, cy - 4, w + 8, h + 8, 4, 4)
         
-        -- Top Half Color Background
-        local topColor = {0.3, 0.7, 0.9} -- Default Light Blue
-        if player.position == "DB" or player.position == "LB" or player.position == "DL" then
-            topColor = {0.9, 0.2, 0.2} -- Red for defense
-        elseif player.position == "K" or player.position == "P" then
-            topColor = {0.2, 0.8, 0.3} -- Green for special teams
+        -- Top Half Color Background by Position Group
+        local topColor = {0.18, 0.25, 0.35}
+        local posStr = player.position:gsub("%d", "")
+        if posStr == "DB" or posStr == "LB" or posStr == "DL" then
+            topColor = {0.85, 0.2, 0.2}
+        elseif posStr == "K" or posStr == "P" then
+            topColor = {0.15, 0.7, 0.3}
+        elseif posStr == "QB" then
+            topColor = {0.0, 0.55, 0.95}
+        elseif posStr == "RB" or posStr == "WR" or posStr == "TE" then
+            topColor = {0.95, 0.55, 0.0}
         end
         love.graphics.setColor(topColor)
         love.graphics.rectangle("fill", cx, cy, w, h/2, 2, 2)
         
-        -- Bottom Half Dark Grey
-        love.graphics.setColor(0.3, 0.3, 0.3)
+        -- Bottom Half Dark Slate
+        love.graphics.setColor(0.12, 0.14, 0.18)
         love.graphics.rectangle("fill", cx, cy + h/2, w, h/2, 2, 2)
         
-        -- Position Text (Top Left)
-        local font = AssetManager.getFont(14)
-        love.graphics.setFont(font)
-        drawShadowText(player.position, cx + 4, cy + 4, 1, 1, 1, 1.2)
+        -- Overall Rating (TOP LEFT)
+        local ovrVal = player.overall or 80
+        local ovrColor = {1, 1, 1}
+        if ovrVal >= 90 then ovrColor = {1.0, 0.84, 0.0}
+        elseif ovrVal >= 80 then ovrColor = {0.0, 0.85, 1.0}
+        end
+        drawShadowText(tostring(ovrVal), cx + 5, cy + 4, ovrColor[1], ovrColor[2], ovrColor[3], 1.25)
         
-        -- Morale Icon (Top Right)
-        love.graphics.setColor(1.0, 0.84, 0.0)
-        love.graphics.rectangle("fill", cx + w - 22, cy + 4, 18, 18, 2, 2)
-        love.graphics.setColor(0, 0, 0)
-        love.graphics.circle("fill", cx + w - 17, cy + 9, 2)
-        love.graphics.circle("fill", cx + w - 9, cy + 9, 2)
-        love.graphics.arc("line", cx + w - 13, cy + 12, 5, 0, math.pi)
+        -- Position Tag (TOP RIGHT)
+        drawShadowText(player.position, cx + w - 38, cy + 4, 1, 1, 1, 1.15, "right", 34)
         
         -- Player Sprite (Center Top Half)
         local teamColors = { primary = {0.1, 0.1, 0.1}, secondary = {0.9, 0.9, 0.9} }
@@ -255,26 +261,15 @@ function CardRender.drawPlayerCard(x, y, player, isHovered, dt)
         AssetManager.drawRetroPlayer(0, cy + 45, teamColors.primary, {0.9, 0.9, 0.9}, teamColors.secondary, 0, 0, true, 0, false, player.isMyPlayer, 4)
         
         -- Player Name (Center Bottom Half)
-        drawShadowText(player.name:sub(1, 12), cx + 5, cy + h/2 + 8, 1, 1, 1, 1.1, "center", w - 10)
+        drawShadowText(player.name:sub(1, 14), cx + 4, cy + h/2 + 8, 1, 1, 1, 1.1, "center", w - 8)
         
-        -- Star Rating
-        local stars = math.floor((player.overall or 70) / 18)
-        love.graphics.setColor(1.0, 0.84, 0.0)
-        local starW = 12
-        local startX = cx + (w - (stars * starW)) / 2
-        for i = 1, stars do
-            drawShadowText("*", startX + (i-1)*starW, cy + h/2 + 25, 1.0, 0.84, 0.0, 1.5)
-        end
-        
-        -- Stamina/XP Bar at bottom
-        love.graphics.setColor(1, 1, 1, 1)
-        love.graphics.rectangle("fill", cx + 4, cy + h - 14, w - 8, 8, 2, 2)
-        love.graphics.setColor(0.2, 0.8, 0.2)
-        love.graphics.rectangle("fill", cx + 6, cy + h - 12, (w - 12) * 0.8, 4, 1, 1)
+        -- Archetype / Rarity Subheader
+        local subTag = player.archetypeTag or player.rarity or player.tierName or "PLAYER"
+        drawShadowText(subTag:upper(), cx + 4, cy + h/2 + 28, 0.8, 0.84, 0.9, 0.75, "center", w - 8)
         
     else
         -- -------------------------------------------------------------
-        -- BACK FACE: Scouting & Synergy Report
+        -- BACK FACE: Flipped Details Face
         -- -------------------------------------------------------------
         love.graphics.setColor(1, 1, 1, 1)
         love.graphics.rectangle("fill", cx - 2, cy - 2, w + 4, h + 4, 8, 8)
@@ -282,42 +277,36 @@ function CardRender.drawPlayerCard(x, y, player, isHovered, dt)
         love.graphics.setColor(C_BACK_CARD)
         love.graphics.rectangle("fill", cx, cy, w, h, 6, 6)
         
-        drawShadowText("SCOUTING REPORT", cx + 4, cy + 4, 1, 0.84, 0, 0.8, "center", w - 8)
-        drawShadowText(player.name, cx + 4, cy + 18, 1, 1, 1, 0.85, "center", w - 8)
+        -- Top Header: Player Name & OVR + Position
+        drawShadowText(player.name:upper(), cx + 4, cy + 6, 1, 1, 1, 0.9, "center", w - 8)
+        local posOvrStr = (player.position or "WR") .. " • " .. (player.overall or 80) .. " OVR"
+        drawShadowText(posOvrStr, cx + 4, cy + 20, 1, 0.84, 0, 0.8, "center", w - 8)
         
-        -- Primary Roster Synergy Ability Box
+        -- Primary Roster Ability Box
         love.graphics.setColor(0.15, 0.18, 0.24, 1)
-        love.graphics.rectangle("fill", cx + 4, cy + 34, w - 8, 38, 4, 4)
+        love.graphics.rectangle("fill", cx + 4, cy + 36, w - 8, 38, 4, 4)
         love.graphics.setColor(C_NEON_YELLOW)
-        love.graphics.rectangle("line", cx + 4, cy + 34, w - 8, 38, 4, 4)
+        love.graphics.rectangle("line", cx + 4, cy + 36, w - 8, 38, 4, 4)
         
-        drawShadowText("SYNERGY:", cx + 6, cy + 36, 1, 0.84, 0, 0.7)
-        drawShadowText(player.abilityDesc or "+YDS & +MTM", cx + 6, cy + 46, 1, 1, 1, 0.65, "left", w - 12)
+        drawShadowText("SYNERGY ABILITY:", cx + 6, cy + 38, 1, 0.84, 0, 0.65)
+        drawShadowText(player.abilityDesc or "+YDS & +MTM", cx + 6, cy + 48, 1, 1, 1, 0.65, "left", w - 12)
         
-        -- Equipped Badges Panel
-        if player.equippedBadges and #player.equippedBadges > 0 then
-            love.graphics.setColor(0.1, 0.3, 0.4)
-            love.graphics.rectangle("fill", cx + 4, cy + 74, w - 8, 16, 3, 3)
-            local badgeStr = "BADGES: " .. #player.equippedBadges .. "/2"
-            drawShadowText(badgeStr, cx + 6, cy + 76, 0.2, 0.8, 1, 0.65)
-        end
-        
-        -- Attributes Bars (SPD, STR, AWR, CTH)
-        local barY = cy + 90
+        -- Attributes (SPD, STR, AWR, CTH)
+        local barY = cy + 80
         local function drawStatBar(label, statVal, offset, yOffset)
-            local bx = cx + 6 + offset * 48
+            local bx = cx + 6 + offset * 50
             local by = barY + (yOffset or 0)
-            drawShadowText(label .. ":" .. statVal, bx, by, 0.8, 0.8, 0.8, 0.6)
+            drawShadowText(label .. ":" .. statVal, bx, by, 0.85, 0.85, 0.85, 0.65)
             love.graphics.setColor(0.2, 0.25, 0.3)
-            love.graphics.rectangle("fill", bx, by + 10, 42, 4)
+            love.graphics.rectangle("fill", bx, by + 11, 44, 4)
             love.graphics.setColor(0.0, 0.76, 1.0)
-            love.graphics.rectangle("fill", bx, by + 10, 42 * (statVal / 99), 4)
+            love.graphics.rectangle("fill", bx, by + 11, 44 * (statVal / 99), 4)
         end
         
         drawStatBar("SPD", player.spd or 80, 0, 0)
         drawStatBar("STR", player.str or 80, 1, 0)
-        drawStatBar("AWR", player.awr or 80, 0, 18)
-        drawStatBar("CTH", player.cth or 80, 1, 18)
+        drawStatBar("AWR", player.awr or 80, 0, 20)
+        drawStatBar("CTH", player.cth or 80, 1, 20)
     end
     
     love.graphics.pop()
@@ -330,14 +319,14 @@ function CardRender.drawTooltip(mx, my, card)
     
     -- 1. Edition (Helmet Finish)
     if card.edition and card.edition ~= "Standard" then
-        if card.edition == "Foil" then
-            table.insert(tips, { title = "FOIL FINISH", desc = "Grants +5 Base Yards to this play/player." })
-        elseif card.edition == "Holographic" then
-            table.insert(tips, { title = "HOLO FINISH", desc = "Grants +0.5 Drive Momentum (MTM) multiplier." })
-        elseif card.edition == "Polychrome" then
-            table.insert(tips, { title = "POLYCHROME FINISH", desc = "Grants x1.5 Drive Momentum (MTM) multiplier." })
-        elseif card.edition == "Franchise" or card.edition == "Negative" then
-            table.insert(tips, { title = "FRANCHISE EDITION", desc = "Grants +1 Active Roster Slot limit." })
+        if card.edition == "Pumped" or card.edition == "Foil" then
+            table.insert(tips, { title = "PUMPED EDITION", desc = "Grants +5 Base Yards to this play/player." })
+        elseif card.edition == "Juiced" or card.edition == "Holographic" then
+            table.insert(tips, { title = "JUICED EDITION", desc = "Grants +0.5 Drive Momentum (MTM) multiplier." })
+        elseif card.edition == "Fan Favorite" or card.edition == "Polychrome" then
+            table.insert(tips, { title = "FAN FAVORITE EDITION", desc = "Grants x1.5 Drive Momentum (MTM) multiplier." })
+        elseif card.edition == "Franchise Player" or card.edition == "Negative" or card.edition == "Franchise" then
+            table.insert(tips, { title = "FRANCHISE PLAYER EDITION", desc = "Grants +1 Active Roster Slot limit." })
         end
     end
     
@@ -404,6 +393,51 @@ function CardRender.drawTooltip(mx, my, card)
         drawShadowText(tip.desc, tx + 8, ty + 20, 0.9, 0.9, 0.9, 0.75, "left", tipW - 16)
         
         ty = ty + tipH + 8
+    end
+    love.graphics.setColor(1, 1, 1, 1)
+end
+
+function CardRender.drawDeckTooltip(mx, my)
+    local DeckManager = require("src.engine.deck_manager")
+    local drawPile = DeckManager.drawPile or {}
+    
+    local runCount = 0
+    local passCount = 0
+    local rpoCount = 0
+    local specialCount = 0
+    
+    for _, card in ipairs(drawPile) do
+        local ctype = card.type or ""
+        local cname = card.name or ""
+        if ctype:match("RPO") or cname:match("RPO") or ctype == "Play Action" or ctype == "Option" then
+            rpoCount = rpoCount + 1
+        elseif ctype == "Run" then
+            runCount = runCount + 1
+        elseif ctype:match("Pass") then
+            passCount = passCount + 1
+        else
+            specialCount = specialCount + 1
+        end
+    end
+    
+    local total = #drawPile
+    local tx, ty = math.min(770, mx + 15), math.max(10, my - 95)
+    local tipW = 175
+    local tipH = 100
+    
+    love.graphics.setColor(0.129, 0.149, 0.192, 0.96)
+    love.graphics.rectangle("fill", tx, ty, tipW, tipH, 6, 6)
+    love.graphics.setColor(0.0, 0.76, 1.0, 0.9)
+    love.graphics.setLineWidth(2)
+    love.graphics.rectangle("line", tx, ty, tipW, tipH, 6, 6)
+    love.graphics.setLineWidth(1)
+    
+    drawShadowText("DRAW PILE (" .. total .. " CARDS)", tx + 8, ty + 6, 1, 0.84, 0, 0.85)
+    drawShadowText("RUN PLAYS: " .. runCount, tx + 10, ty + 24, 0.2, 0.85, 0.4, 0.8)
+    drawShadowText("PASS PLAYS: " .. passCount, tx + 10, ty + 42, 0.0, 0.76, 1.0, 0.8)
+    drawShadowText("RPO / OPTIONS: " .. rpoCount, tx + 10, ty + 60, 1.0, 0.6, 0.0, 0.8)
+    if specialCount > 0 then
+        drawShadowText("SPECIAL/DEF: " .. specialCount, tx + 10, ty + 78, 0.8, 0.4, 1.0, 0.8)
     end
     love.graphics.setColor(1, 1, 1, 1)
 end

@@ -303,6 +303,7 @@ function StateShop:mousepressed(x, y, button, istouch, presses)
             else
                 GameStateData.nextRound("standard")
             end
+            DeckManager.shuffle()
             DeckManager.drawHand()
             StateManager.switch(StateGame)
             return

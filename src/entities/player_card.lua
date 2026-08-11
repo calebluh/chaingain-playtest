@@ -62,19 +62,19 @@ function PlayerCard.new(name, position, rarity, multBonus, chipBonus, edition)
         self.archetypeTag = arch.tag
     end
 
-    -- Editions: Standard, Foil (+5 YDS), Holographic (+1.0 MTM), Polychrome (x1.5 MTM), Negative (+1 Roster Slot)
+    -- Editions: Standard, Pumped (+5 YDS), Juiced (+0.5 MTM), Fan Favorite (x1.5 MTM), Franchise Player (+1 Roster Slot)
     if edition then
         self.edition = edition
     else
         local roll = math.random(1, 100)
         if roll > 96 then
-            self.edition = "Negative"
+            self.edition = "Franchise Player"
         elseif roll > 90 then
-            self.edition = "Polychrome"
+            self.edition = "Fan Favorite"
         elseif roll > 80 then
-            self.edition = "Holographic"
+            self.edition = "Juiced"
         elseif roll > 70 then
-            self.edition = "Foil"
+            self.edition = "Pumped"
         else
             self.edition = "Standard"
         end

@@ -32,4 +32,15 @@ function PlayCard:upgrade(ydsAmount, mtmAmount)
     self.baseMult = self.baseMult + (mtmAmount or 0.5)
 end
 
+function PlayCard:update(dt, isHovered, mouseRelX)
+    local PhysicsUtils = require("src.engine.physics_utils")
+    local targetRot = 0
+    if isHovered and mouseRelX then
+        targetRot = math.clamp(mouseRelX * 0.006, -0.15, 0.15)
+    end
+    self.rot = self.rot or 0
+    self.rotVelocity = self.rotVelocity or 0
+    self.rot, self.rotVelocity = PhysicsUtils.spring(self.rot, targetRot, self.rotVelocity, dt or 0.016, 14, 0.35, 0)
+end
+
 return PlayCard

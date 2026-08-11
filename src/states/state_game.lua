@@ -131,13 +131,14 @@ function StateGame:update(dt)
     for i, card in ipairs(DeckManager.hand) do
         local targetX = startX + (i - 1) * 95
         local targetY = 390
-        local baseRot = (i - (N + 1) / 2) * 0.10
-        
         local isHovered = (mx >= targetX - 45 and mx <= targetX + 45 and my >= targetY - 60 and my <= targetY + 80)
+        local relX = mx - targetX
+        if card.update then card:update(dt, isHovered, relX) end
         
         if self.draggingCardIndex == i then
             targetX = mx
             targetY = my
+        end
             local dx = mx - self.dragLastX
             baseRot = dx * 0.015
         elseif i == self.selectedPlayIndex then
@@ -271,11 +272,17 @@ function StateGame:draw()
     drawShadowText("CLOCK", 740, panelY + 6, 0.8, 0.8, 0.8, 0.85, "center", 80)
     drawShadowText(string.format("%02d", clockSecs), 740, panelY + 28, isLowClock and 1 or 0, isLowClock and 0.2 or 0.84, isLowClock and 0.2 or 0, 1.8, "center", 80)
 
-    drawNeonPanel(825, panelY, 95, 68)
-    local ballStr = GameStateData.yardLine < 50 and ("OWN " .. GameStateData.yardLine) or ("OPP " .. (100 - GameStateData.yardLine))
-    drawShadowText("DOWN:" .. GameStateData.down, 827, panelY + 6, 1, 1, 1, 0.8)
-    drawShadowText("DIST:" .. GameStateData.distance, 827, panelY + 24, 1, 1, 1, 0.8)
-    drawShadowText("BALL:" .. ballStr, 827, panelY + 44, 1, 0.84, 0, 0.8)
+    drawNeonPanel(820, panelY, 63, 68)
+    local ballStr = GameStateData.yardLine < 50 and ("O" .. GameStateData.yardLine) or ("D" .. (100 - GameStateData.yardLine))
+    drawShadowText("D:" .. GameStateData.down, 822, panelY + 6, 1, 1, 1, 0.75)
+    drawShadowText("Y:" .. GameStateData.distance, 822, panelY + 24, 1, 1, 1, 0.75)
+    drawShadowText(ballStr, 822, panelY + 44, 1, 0.84, 0, 0.75)
+
+    local hoverSpeed = checkHover(886, panelY, 36, 68)
+    local speedStr = string.format("%.0fx", SettingsData.gameSpeed or 1.0)
+    drawNeonPanel(886, panelY, 36, 68, hoverSpeed and {1.0, 0.84, 0.0} or C_BORDER_NORMAL)
+    drawShadowText("⏩", 886, panelY + 12, 1, 0.84, 0, 0.9, "center", 36)
+    drawShadowText(speedStr, 886, panelY + 38, 1, 1, 1, 0.9, "center", 36)
 
     local hoverOpt = checkHover(925, panelY, 23, 68)
     drawNeonPanel(925, panelY, 23, 68, hoverOpt and {0.0, 0.76, 1.0} or C_BORDER_NORMAL)
@@ -466,6 +473,11 @@ function StateGame:draw()
         local drawCount = #DeckManager.drawPile
         local btnText = string.format("PLAYBOOK (%d/%d)", drawCount, totalCards)
         drawShadowText(btnText, 800, 483, 1, 1, 1, 0.85, "center", 145)
+        
+        if isPlaybookHover and not self.showPlaybookModal then
+            local mx, my = love.mouse.getPosition()
+            CardRender.drawDeckTooltip(mx, my)
+        end
     elseif GameStateData.status == "TOUCHDOWN" then
         drawShadowText("DRIVE COMPLETED! PRESS [SPACE] TO VISIT FRONT OFFICE SHOP", 20, 510, 1, 0.84, 0, 1.2)
     elseif GameStateData.status == "GAME_WON" then
@@ -617,6 +629,12 @@ function StateGame:mousepressed(x, y, button, istouch, presses)
     end
 
     if GameStateData.status == "PLAYING" and not self.paused then
+        if button == 1 and checkHover(886, 8, 36, 68) then
+            local currentSpeed = SettingsData.gameSpeed or 1.0
+            SettingsData.gameSpeed = (currentSpeed == 1.0) and 2.0 or ((currentSpeed == 2.0) and 4.0 or 1.0)
+            SoundManager.playSFX("click")
+            return
+        end
         if button == 1 and checkHover(925, 8, 23, 68) then
             local PauseOverlay = require("src.ui.pause_overlay")
             StateManager.openOverlay(PauseOverlay)
@@ -743,6 +761,10 @@ function StateGame:callPlay()
 end
 
 function StateGame:executePlaycard(playCard)
+    if _G.triggerScreenShake then _G.triggerScreenShake(14, 0.25) end
+    FxManager.addBurstParticles(480, 320, 35, 0.0, 0.76, 1.0)
+    SoundManager.playSFX("tackle")
+    
     if playCard.type == "Kick" then
         GameStateData.kickFieldGoal()
     elseif playCard.type == "Punt" then

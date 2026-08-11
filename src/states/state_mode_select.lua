@@ -91,9 +91,9 @@ function StateModeSelect:draw()
     love.graphics.rectangle("fill", mx + 330, my - 25, tabW, tabH, 8, 8)
     drawShadowText("Continue", mx + 330, my - 20, 1, 1, 1, 1.0, "center", tabW)
     
-    love.graphics.setColor(C_TAB_INACTIVE)
+    love.graphics.setColor(self.activeTab == "CHALLENGES" and C_TAB_ACTIVE or C_TAB_INACTIVE)
     love.graphics.rectangle("fill", mx + 460, my - 25, tabW, tabH, 8, 8)
-    drawShadowText("Challenges", mx + 460, my - 20, 1, 1, 1, 1.0, "center", tabW)
+    drawShadowText("Daily Mutator", mx + 460, my - 20, 1, 1, 1, 1.0, "center", tabW)
     
     -- Modal Base
     love.graphics.setColor(C_MODAL)
@@ -113,6 +113,8 @@ function StateModeSelect:draw()
         self:drawTeamGrid(innerX, innerY, innerW, innerH)
     elseif self.phase == "SCHEME" then
         self:drawSchemeGrid(innerX, innerY, innerW, innerH)
+    elseif self.phase == "DAILY" then
+        self:drawDailyGrid(innerX, innerY, innerW, innerH)
     else
         self:drawStakeGrid(innerX, innerY, innerW, innerH)
     end
@@ -308,6 +310,22 @@ function StateModeSelect:drawStakeGrid(x, y, w, h)
     end
 end
 
+function StateModeSelect:drawDailyGrid(x, y, w, h)
+    drawShadowText("DAILY SEEDED CHALLENGE", x + 20, y + 20, 1, 0.84, 0, 1.4)
+    drawShadowText("Date Seed: " .. os.date("%Y-%m-%d"), x + 20, y + 50, 0.8, 0.84, 0.9, 1.0)
+    
+    love.graphics.setColor(0.18, 0.22, 0.3, 1)
+    love.graphics.rectangle("fill", x + 20, y + 80, w - 40, 160, 6, 6)
+    love.graphics.setColor(0.0, 0.76, 1.0, 0.8)
+    love.graphics.setLineWidth(2)
+    love.graphics.rectangle("line", x + 20, y + 80, w - 40, 160, 6, 6)
+    love.graphics.setLineWidth(1)
+    
+    drawShadowText("ACTIVE GLOBAL MUTATOR:", x + 35, y + 95, 1, 0.84, 0, 1.1)
+    drawShadowText("🚀 OOPS ALL HAIL MARYS!", x + 35, y + 120, 1, 1, 1, 1.2)
+    drawShadowText("• Playbook is pre-stacked with Deep Pass & Option plays.\n• All Pass plays gain +20 Base Yards.\n• Red Zone penalties are completely negated!", x + 35, y + 145, 0.85, 0.85, 0.85, 0.85, "left", w - 70)
+end
+
 function StateModeSelect:drawRightPanel(x, y, w, h)
     
     if self.phase == "TEAM" then
@@ -387,8 +405,14 @@ function StateModeSelect:mousepressed(mx, my, button)
     local botY = bmy + 325
     local actY = bmy + 375
     
-    -- Top Tabs (Cosmetic but playable sound)
-    if checkHover(bmx + 200, bmy - 25, 120, 35) or checkHover(bmx + 330, bmy - 25, 120, 35) or checkHover(bmx + 460, bmy - 25, 120, 35) then
+    if checkHover(bmx + 460, bmy - 25, 120, 35) then
+        self.activeTab = "CHALLENGES"
+        self.phase = "DAILY"
+        SoundManager.playSFX("click")
+        return
+    elseif checkHover(bmx + 200, bmy - 25, 120, 35) then
+        self.activeTab = "NEW"
+        self.phase = "TEAM"
         SoundManager.playSFX("click")
     end
     

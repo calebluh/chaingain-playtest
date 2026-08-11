@@ -123,6 +123,20 @@ function FxManager.draw(weatherType)
         love.graphics.setColor(ft.r, ft.g, ft.b, ft.alpha)
         love.graphics.print(ft.text, ft.x, ft.y, 0, ft.scale, ft.scale)
     end
+function FxManager.triggerCelebrationFireworks()
+    local colors = {
+        {1.0, 0.84, 0.0},
+        {0.0, 0.76, 1.0},
+        {1.0, 0.30, 0.30},
+        {0.2, 0.85, 0.40},
+        {0.8, 0.40, 1.0}
+    }
+    for burst = 1, 5 do
+        local bx = math.random(150, 810)
+        local by = math.random(80, 300)
+        local col = colors[math.random(#colors)]
+        FxManager.addBurstParticles(bx, by, 35, col[1], col[2], col[3])
+    end
 end
 
 return FxManager
