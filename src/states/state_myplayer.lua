@@ -106,8 +106,8 @@ function StateMyPlayer:draw()
     love.graphics.setColor(0.08, 0.09, 0.11)
     love.graphics.rectangle("fill", 60, 120, 260, 340, 8, 8)
     
-    -- Draw Locker details inside clip
-    love.graphics.setScissor(60, 120, 260, 340)
+    -- Draw Locker details inside clip (window coords due to 2x global scale)
+    love.graphics.setScissor(120, 240, 520, 680)
     
     -- Floor
     love.graphics.setColor(0.12, 0.13, 0.15)

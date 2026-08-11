@@ -50,6 +50,16 @@ local function drawShadowText(text, x, y, r, g, b, scale, align, limit)
     end
 end
 
+local function drawNeonPanel(x, y, w, h, borderColor)
+    love.graphics.setColor(C_SLATE_CONTAINER)
+    love.graphics.rectangle("fill", x, y, w, h, 6, 6)
+    
+    love.graphics.setColor(borderColor or C_NEON_BORDER)
+    love.graphics.setLineWidth(1.5)
+    love.graphics.rectangle("line", x, y, w, h, 6, 6)
+    love.graphics.setLineWidth(1)
+end
+
 function StateGame:enter()
     self.selectedPlayIndex = nil
     self.draggingCardIndex = nil
