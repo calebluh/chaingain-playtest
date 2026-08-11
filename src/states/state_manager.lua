@@ -74,6 +74,18 @@ function StateManager.keypressed(key)
     end
 end
 
+function StateManager.textinput(t)
+    if StateManager.overlay then
+        if StateManager.overlay.textinput then
+            StateManager.overlay:textinput(t)
+        end
+    else
+        if StateManager.activeState and StateManager.activeState.textinput then
+            StateManager.activeState:textinput(t)
+        end
+    end
+end
+
 function StateManager.mousepressed(x, y, button, istouch, presses)
     if StateManager.overlay then
         if StateManager.overlay.mousepressed then

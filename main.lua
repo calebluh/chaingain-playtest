@@ -44,6 +44,8 @@ function love.load(arg)
     end
     
     love.graphics.setDefaultFilter("linear", "linear")
+    love.keyboard.setTextInput(true)
+    love.keyboard.setKeyRepeat(true)
     math.randomseed(os.time())
     
     AssetManager.init()
@@ -281,6 +283,12 @@ function love.keypressed(key)
         return
     end
     StateManager.keypressed(key)
+end
+
+function love.textinput(t)
+    if StateManager.textinput then
+        StateManager.textinput(t)
+    end
 end
 
 function love.mousepressed(x, y, button, istouch, presses)

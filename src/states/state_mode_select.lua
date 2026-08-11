@@ -43,6 +43,7 @@ function StateModeSelect:enter()
     self.selectedArchIdx = 1
     self.selectedStakeIdx = 1
     self.selectedMode = "roguelite"
+    self.activeTab = "NEW"
     
     self.phase = "TEAM" -- "TEAM", "SCHEME", or "STAKE"
     self.currentPage = 1
@@ -50,10 +51,10 @@ function StateModeSelect:enter()
     self.time = 0
     
     self.archetypes = {
-        { id = "west_coast", name = "West Coast", desc = "Start with +1 RB, +2 TE, +2 WR slots. Balanced attack approach based on short passing." },
-        { id = "air_coryell", name = "Air Coryell", desc = "Start with +1 RB, +1 TE, +3 WR slots. Focus on vertical passing and deep numbering concepts." },
-        { id = "erhardt_perkins", name = "Erhardt-Perkins", desc = "Start with +2 RB, +2 TE, +1 WR slots. Efficient 1-2 word playcalling. +1 Audible per drive." },
-        { id = "spread", name = "Spread", desc = "Start with +4 WR slots, 0 TEs. Heavy shotgun formations utilizing wide receiver spacing." }
+        { id = "west_coast", playbookId = "west_coast", name = "West Coast", desc = "Start with +1 RB, +2 TE, +2 WR slots. Balanced attack approach based on short passing." },
+        { id = "air_raid", playbookId = "air_raid", name = "Air Coryell", desc = "Start with +1 RB, +1 TE, +3 WR slots. Focus on vertical passing and deep numbering concepts." },
+        { id = "ground_pound", playbookId = "shanahan_wide_zone", name = "Erhardt-Perkins", desc = "Start with +2 RB, +2 TE, +1 WR slots. Efficient 1-2 word playcalling. +1 Audible per drive." },
+        { id = "spread_rpo", playbookId = "spread_rpo", name = "Spread", desc = "Start with +4 WR slots, 0 TEs. Heavy shotgun formations utilizing wide receiver spacing." }
     }
     
     self.stakes = {
@@ -83,11 +84,11 @@ function StateModeSelect:draw()
     local tabW = 120
     local tabH = 35
     
-    love.graphics.setColor(C_TAB_ACTIVE)
+    love.graphics.setColor(self.activeTab == "NEW" and C_TAB_ACTIVE or C_TAB_INACTIVE)
     love.graphics.rectangle("fill", mx + 200, my - 25, tabW, tabH, 8, 8)
     drawShadowText("New Run", mx + 200, my - 20, 1, 1, 1, 1.0, "center", tabW)
     
-    love.graphics.setColor(C_TAB_INACTIVE)
+    love.graphics.setColor(self.activeTab == "CONTINUE" and C_TAB_ACTIVE or C_TAB_INACTIVE)
     love.graphics.rectangle("fill", mx + 330, my - 25, tabW, tabH, 8, 8)
     drawShadowText("Continue", mx + 330, my - 20, 1, 1, 1, 1.0, "center", tabW)
     
@@ -538,7 +539,7 @@ function StateModeSelect:mousepressed(mx, my, button)
                 stakeTier = _G.STAKE_TIER
             })
             
-            DeckManager.init(archObj.id)
+            DeckManager.init(archObj.playbookId or archObj.id)
             DeckManager.drawHand()
             
             local StateGame = require("src.states.state_game")
@@ -551,7 +552,7 @@ function StateModeSelect:mousepressed(mx, my, button)
     if checkHover(bmx + 610, actY, 170, 35) then
         SoundManager.playSFX("click")
         if self.selectedMode == "roguelite" then
-            self.selectedMode = "roguelike"
+            self.selectedMode = "franchise"
         else
             self.selectedMode = "roguelite"
         end

@@ -522,6 +522,7 @@ function StateMyPlayer:textinput(t)
     if self.focusedField == "name" then
         if #self.creatorName < 15 then
             self.creatorName = self.creatorName .. t
+            MyPlayerProfile.name = self.creatorName
         end
     elseif self.focusedField == "jersey" then
         if t:match("%d") then
