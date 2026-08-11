@@ -87,18 +87,18 @@ end
 function StateMenu:rebuildButtons()
     self.buttons = {}
     if self.hasSaveRun then
-        table.insert(self.buttons, { id = "CONTINUE", name = "CONTINUE SEASON", color = C_GOLD, x = 30, y = 440, w = 150, h = 50, wasHovered = false })
-        table.insert(self.buttons, { id = "PLAY", name = Loc.get("PLAY_NOW"), color = C_BLUE, x = 190, y = 440, w = 150, h = 50, wasHovered = false })
-        table.insert(self.buttons, { id = "CAREER", name = Loc.get("MYPLAYER"), color = C_BLUE, x = 350, y = 440, w = 140, h = 50, wasHovered = false })
-        table.insert(self.buttons, { id = "PROFILE", name = "PROFILE " .. SaveManager.activeProfileIndex, color = C_AMBER, x = 500, y = 440, w = 130, h = 50, wasHovered = false })
-        table.insert(self.buttons, { id = "COLLECTION", name = Loc.get("COLLECTION"), color = C_GREEN, x = 640, y = 440, w = 140, h = 50, wasHovered = false })
-        table.insert(self.buttons, { id = "OPTIONS", name = Loc.get("OPTIONS"), color = C_CYAN, x = 790, y = 440, w = 130, h = 50, wasHovered = false })
+        table.insert(self.buttons, { id = "CONTINUE", name = "CONTINUE", color = C_GOLD, x = 20, y = 440, w = 135, h = 50, wasHovered = false })
+        table.insert(self.buttons, { id = "PLAY", name = Loc.get("PLAY_NOW"), color = C_BLUE, x = 165, y = 440, w = 135, h = 50, wasHovered = false })
+        table.insert(self.buttons, { id = "CAREER", name = Loc.get("MYPLAYER"), color = C_BLUE, x = 310, y = 440, w = 135, h = 50, wasHovered = false })
+        table.insert(self.buttons, { id = "COLLECTION", name = "GALLERY", color = C_GREEN, x = 455, y = 440, w = 135, h = 50, wasHovered = false })
+        table.insert(self.buttons, { id = "HOF", name = "TROPHIES", color = C_GOLD, x = 600, y = 440, w = 135, h = 50, wasHovered = false })
+        table.insert(self.buttons, { id = "OPTIONS", name = Loc.get("OPTIONS"), color = C_CYAN, x = 745, y = 440, w = 195, h = 50, wasHovered = false })
     else
-        table.insert(self.buttons, { id = "PLAY", name = Loc.get("PLAY_NOW"), color = C_BLUE, x = 40, y = 440, w = 170, h = 50, wasHovered = false })
-        table.insert(self.buttons, { id = "CAREER", name = Loc.get("MYPLAYER"), color = C_BLUE, x = 220, y = 440, w = 170, h = 50, wasHovered = false })
-        table.insert(self.buttons, { id = "PROFILE", name = "PROFILE " .. SaveManager.activeProfileIndex, color = C_AMBER, x = 400, y = 440, w = 150, h = 50, wasHovered = false })
-        table.insert(self.buttons, { id = "COLLECTION", name = Loc.get("COLLECTION"), color = C_GREEN, x = 560, y = 440, w = 160, h = 50, wasHovered = false })
-        table.insert(self.buttons, { id = "OPTIONS", name = Loc.get("OPTIONS"), color = C_CYAN, x = 730, y = 440, w = 150, h = 50, wasHovered = false })
+        table.insert(self.buttons, { id = "PLAY", name = Loc.get("PLAY_NOW"), color = C_BLUE, x = 30, y = 440, w = 165, h = 50, wasHovered = false })
+        table.insert(self.buttons, { id = "CAREER", name = Loc.get("MYPLAYER"), color = C_BLUE, x = 210, y = 440, w = 165, h = 50, wasHovered = false })
+        table.insert(self.buttons, { id = "COLLECTION", name = "GALLERY", color = C_GREEN, x = 390, y = 440, w = 165, h = 50, wasHovered = false })
+        table.insert(self.buttons, { id = "HOF", name = "TROPHIES", color = C_GOLD, x = 570, y = 440, w = 165, h = 50, wasHovered = false })
+        table.insert(self.buttons, { id = "OPTIONS", name = Loc.get("OPTIONS"), color = C_CYAN, x = 750, y = 440, w = 180, h = 50, wasHovered = false })
     end
 end
 
@@ -186,6 +186,9 @@ function StateMenu:mousepressed(x, y, button, istouch, presses)
                 elseif btn.id == "COLLECTION" then
                     local StateCollections = require("src.states.state_collections")
                     StateManager.switch(StateCollections)
+                elseif btn.id == "HOF" then
+                    local StateHallOfFame = require("src.states.state_hall_of_fame")
+                    StateManager.switch(StateHallOfFame)
                 elseif btn.id == "PLAY" then
                     local StateModeSelect = require("src.states.state_mode_select")
                     StateManager.switch(StateModeSelect)

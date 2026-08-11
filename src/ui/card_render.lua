@@ -319,13 +319,13 @@ function CardRender.drawTooltip(mx, my, card)
     
     -- 1. Edition (Helmet Finish)
     if card.edition and card.edition ~= "Standard" then
-        if card.edition == "Pumped" or card.edition == "Foil" then
+        if card.edition == "Pumped" then
             table.insert(tips, { title = "PUMPED EDITION", desc = "Grants +5 Base Yards to this play/player." })
-        elseif card.edition == "Juiced" or card.edition == "Holographic" then
+        elseif card.edition == "Juiced" then
             table.insert(tips, { title = "JUICED EDITION", desc = "Grants +0.5 Drive Momentum (MTM) multiplier." })
-        elseif card.edition == "Fan Favorite" or card.edition == "Polychrome" then
+        elseif card.edition == "Fan Favorite" then
             table.insert(tips, { title = "FAN FAVORITE EDITION", desc = "Grants x1.5 Drive Momentum (MTM) multiplier." })
-        elseif card.edition == "Franchise Player" or card.edition == "Negative" or card.edition == "Franchise" then
+        elseif card.edition == "Franchise Player" then
             table.insert(tips, { title = "FRANCHISE PLAYER EDITION", desc = "Grants +1 Active Roster Slot limit." })
         end
     end

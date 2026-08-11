@@ -65,12 +65,24 @@ function StateGame:enter()
     end
     
     SoundManager.playMusic("gameplay_theme")
+    
+    local TutorialOverlay = require("src.ui.tutorial_overlay")
+    if SaveManager.data and not SaveManager.data.hasCompletedTutorial then
+        TutorialOverlay.start()
+    end
 end
 
 function StateGame:exit()
 end
 
 function StateGame:update(dt)
+    local CommentaryTicker = require("src.ui.commentary_ticker")
+    CommentaryTicker.update(dt)
+
+    local TutorialOverlay = require("src.ui.tutorial_overlay")
+    TutorialOverlay.update(dt)
+    if TutorialOverlay.active then return end
+
     if self.paused or self.showPlaybookModal then return end
     
     RPOMinigame.update(dt)
@@ -135,10 +147,10 @@ function StateGame:update(dt)
         local relX = mx - targetX
         if card.update then card:update(dt, isHovered, relX) end
         
+        local baseRot = 0
         if self.draggingCardIndex == i then
             targetX = mx
             targetY = my
-        end
             local dx = mx - self.dragLastX
             baseRot = dx * 0.015
         elseif i == self.selectedPlayIndex then
@@ -448,10 +460,6 @@ function StateGame:draw()
         FieldAnimator.draw()
     end
     
-    if ScoringEvaluator.active then
-        ScoringEvaluator.draw()
-    end
-
     RPOMinigame.draw()
 
     -- Status Banners & Navigation
@@ -592,9 +600,21 @@ function StateGame:draw()
         local mx, my = love.mouse.getPosition()
         CardRender.drawTooltip(mx, my, self.hoveredPlaybookCard)
     end
+
+    local CommentaryTicker = require("src.ui.commentary_ticker")
+    CommentaryTicker.draw()
+
+    local TutorialOverlay = require("src.ui.tutorial_overlay")
+    TutorialOverlay.draw()
 end
 
 function StateGame:mousepressed(x, y, button, istouch, presses)
+    local TutorialOverlay = require("src.ui.tutorial_overlay")
+    if TutorialOverlay.active then
+        TutorialOverlay.mousepressed(x, y, button)
+        return
+    end
+
     if ScoringEvaluator.active then return end
     
     if self.paused and button == 1 then
@@ -806,6 +826,12 @@ function StateGame:dealSpecialTeams(mode)
 end
 
 function StateGame:keypressed(key)
+    local TutorialOverlay = require("src.ui.tutorial_overlay")
+    if TutorialOverlay.active then
+        TutorialOverlay.keypressed(key)
+        return
+    end
+
     if RPOMinigame.active then
         RPOMinigame.keypressed(key)
         return

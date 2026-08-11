@@ -209,16 +209,16 @@ function ScoringEvaluator.evaluateCurrentRosterPlayer()
         FxManager.addFloatingText("IRONCLAD FRONT: YARDS NEGATED!", 480, 220, 1, 0.2, 0.2, 1.2)
     end
     
-    if player.edition == "Pumped" or player.edition == "Foil" then
+    if player.edition == "Pumped" then
         chipBonus = chipBonus + 5
         FxManager.addFloatingText("PUMPED! +5 YDS", 480, 160, 1.0, 0.84, 0.0, 1.2)
-    elseif player.edition == "Juiced" or player.edition == "Holographic" then
+    elseif player.edition == "Juiced" then
         multBonus = multBonus + 0.5
         FxManager.addFloatingText("JUICED! +0.5 MTM", 480, 160, 0.0, 0.76, 1.0, 1.2)
-    elseif player.edition == "Fan Favorite" or player.edition == "Polychrome" then
+    elseif player.edition == "Fan Favorite" then
         multBonus = multBonus * 1.5
         FxManager.addFloatingText("FAN FAVORITE! x1.5 MTM", 480, 160, 1.0, 0.3, 0.3, 1.2)
-    elseif player.edition == "Franchise Player" or player.edition == "Negative" or player.edition == "Franchise" then
+    elseif player.edition == "Franchise Player" then
         FxManager.addFloatingText("FRANCHISE PLAYER! +1 ROSTER SLOT", 480, 160, 0.4, 0.2, 0.8, 1.2)
     end
     
@@ -248,14 +248,10 @@ function ScoringEvaluator.evaluateCurrentRosterPlayer()
     ScoringEvaluator.currentChips = ScoringEvaluator.currentChips + chipBonus
     ScoringEvaluator.currentMult = ScoringEvaluator.currentMult + multBonus
     
-    if player.edition == "Polychrome" then
-        ScoringEvaluator.currentMult = ScoringEvaluator.currentMult * 1.5
-    end
-    
     local pitchStep = 1.0 + (ScoringEvaluator.currentRosterIdx * 0.08)
     SoundManager.playSFX("coin", pitchStep)
     
-    if chipBonus > 0 or multBonus > 0 or player.edition == "Polychrome" then
+    if chipBonus > 0 or multBonus > 0 then
         local msg = player.name .. ": +" .. chipBonus .. "Y +" .. string.format("%.1f", multBonus) .. "M"
         if player.edition and player.edition ~= "Standard" then
             msg = msg .. " [" .. player.edition:upper() .. "]"
@@ -560,76 +556,6 @@ function ScoringEvaluator.finalizeDriveSlam()
     DefenseManager.callDefensivePlay()
 end
 
-function ScoringEvaluator.draw()
-    -- Disabled: animated yards and momentum are integrated directly into the top scoreboard
-    do return end
-    
-    local t = love.timer.getTime()
-    
-    -- Main Box
-    local boxX, boxY = 60, 200
-    local boxW, boxH = 220, 110
-    
-    love.graphics.push()
-    
-    -- Screen shake for high mults
-    if ScoringEvaluator.currentMult >= 3.0 then
-        local shakeX = math.random(-3, 3)
-        local shakeY = math.random(-3, 3)
-        love.graphics.translate(shakeX, shakeY)
-    end
-    
-    -- Flame Effects (if mult >= 2.0)
-    if ScoringEvaluator.currentMult >= 2.0 then
-        love.graphics.setBlendMode("add")
-        for i = 1, 10 do
-            local ox = math.sin(t * 10 + i) * 10
-            local oy = (t * -50 + i * 15) % boxH
-            love.graphics.setColor(1.0, 0.4, 0.0, 0.4 - (oy/boxH)*0.4)
-            love.graphics.circle("fill", boxX + (boxW * (i/10)) + ox, boxY + boxH - oy, math.random(5, 15))
-            
-            -- High heat blue flames
-            if ScoringEvaluator.currentMult >= 4.0 then
-                love.graphics.setColor(0.0, 0.6, 1.0, 0.5 - (oy/boxH)*0.5)
-                love.graphics.circle("fill", boxX + (boxW * (i/10)) + ox * 0.5, boxY + boxH - oy * 1.5, math.random(3, 10))
-            end
-        end
-        love.graphics.setBlendMode("alpha")
-    end
-    
-    -- Box Background
-    love.graphics.setColor(0.08, 0.1, 0.14, 0.95)
-    love.graphics.rectangle("fill", boxX, boxY, boxW, boxH, 8, 8)
-    
-    local multIntensity = math.min(1.0, (ScoringEvaluator.currentMult - 1.0) / 3.0)
-    love.graphics.setColor(1.0 * multIntensity, 0.76 - 0.76 * multIntensity, 1.0 - multIntensity)
-    love.graphics.setLineWidth(3)
-    love.graphics.rectangle("line", boxX, boxY, boxW, boxH, 8, 8)
-    love.graphics.setLineWidth(1)
-    
-    -- Play Type Title
-    local title = ScoringEvaluator.playCard and ScoringEvaluator.playCard.type or "PLAY"
-    love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.printf(title:upper(), boxX, boxY + 10, boxW, "center")
-    
-    -- Chips (Yards) Box
-    love.graphics.setColor(0.0, 0.58, 1.0)
-    love.graphics.rectangle("fill", boxX + 15, boxY + 40, 80, 45, 6, 6)
-    love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.printf(string.format("%d", math.floor(ScoringEvaluator.displayedChips)), boxX + 15, boxY + 52, 80 / 1.5, "center", 0, 1.5, 1.5)
-    
-    -- 'X' symbol
-    love.graphics.setColor(1, 0.3, 0.3)
-    love.graphics.print("X", boxX + 104, boxY + 52, 0, 1.3, 1.3)
-    
-    -- Mult (MTM) Box
-    love.graphics.setColor(1.0, 0.3, 0.3)
-    love.graphics.rectangle("fill", boxX + 125, boxY + 40, 80, 45, 6, 6)
-    love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.printf(string.format("%.1f", ScoringEvaluator.displayedMult), boxX + 125, boxY + 52, 80 / 1.5, "center", 0, 1.5, 1.5)
-    
-    love.graphics.pop()
-end
 
 function ScoringEvaluator.calculateTurnoverRisk(playCard, gameState)
     if not playCard then return 0, "None" end

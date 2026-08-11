@@ -123,6 +123,8 @@ function FxManager.draw(weatherType)
         love.graphics.setColor(ft.r, ft.g, ft.b, ft.alpha)
         love.graphics.print(ft.text, ft.x, ft.y, 0, ft.scale, ft.scale)
     end
+end
+
 function FxManager.triggerCelebrationFireworks()
     local colors = {
         {1.0, 0.84, 0.0},
