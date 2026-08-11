@@ -182,15 +182,68 @@ local rosterCatalog = {
     { name = "Talon Grip", pos = "TE", rarity = "Silver", ovr = 72, chip = 1, mult = 0.1, tag = "STARTER", desc = "Backup TE." },
     { name = "Brock Tower", pos = "TE", rarity = "Gold", ovr = 81, chip = 2, mult = 0.2, tag = "POSSESSION", desc = "+2 YDS." },
     { name = "Max Block", pos = "TE", rarity = "Silver", ovr = 70, chip = 1, mult = 0.1, tag = "STARTER", desc = "Backup TE." },
+    { name = "Ridge Anchor", pos = "TE", rarity = "Bronze", ovr = 66, chip = 1, mult = 0.1, tag = "RESERVE", desc = "Blocking TE depth." },
+    { name = "Vault Heavy", pos = "TE", rarity = "Bronze", ovr = 62, chip = 1, mult = 0.05, tag = "RESERVE", desc = "H-Back depth." },
+    { name = "Rookie TightEnd", pos = "TE", rarity = "Bronze", ovr = 60, chip = 1, mult = 0.0, tag = "DEVELOPMENT", desc = "Raw TE prospect." },
 
-    -- Additional Defense / Special
+    -- Additional Quarterbacks down to 60
+    { name = "Colt Rivers", pos = "QB", rarity = "Bronze", ovr = 67, chip = 1, mult = 0.1, tag = "RESERVE", desc = "3rd string QB." },
+    { name = "Tyron Flash", pos = "QB", rarity = "Bronze", ovr = 64, chip = 1, mult = 0.05, tag = "RESERVE", desc = "Camp arm." },
+    { name = "Brock Miller", pos = "QB", rarity = "Bronze", ovr = 62, chip = 1, mult = 0.05, tag = "RESERVE", desc = "Practice squad QB." },
+    { name = "Rookie Passer", pos = "QB", rarity = "Bronze", ovr = 60, chip = 1, mult = 0.0, tag = "DEVELOPMENT", desc = "Raw prospect." },
+
+    -- Additional Running Backs down to 60
+    { name = "Slate Heavy", pos = "RB", rarity = "Bronze", ovr = 66, chip = 1, mult = 0.1, tag = "RESERVE", desc = "Power back depth." },
+    { name = "Trent Stride", pos = "RB", rarity = "Bronze", ovr = 62, chip = 1, mult = 0.05, tag = "RESERVE", desc = "Kick returner." },
+    { name = "Rookie Runner", pos = "RB", rarity = "Bronze", ovr = 60, chip = 1, mult = 0.0, tag = "DEVELOPMENT", desc = "Developmental back." },
+
+    -- Additional Wide Receivers down to 60
+    { name = "Drift Signal", pos = "WR", rarity = "Bronze", ovr = 67, chip = 1, mult = 0.1, tag = "RESERVE", desc = "Slot WR depth." },
+    { name = "Trace Aero", pos = "WR", rarity = "Bronze", ovr = 64, chip = 1, mult = 0.05, tag = "RESERVE", desc = "Gunner WR." },
+    { name = "Reed Vector", pos = "WR", rarity = "Bronze", ovr = 62, chip = 1, mult = 0.05, tag = "RESERVE", desc = "Practice squad target." },
+    { name = "Rookie Catcher", pos = "WR", rarity = "Bronze", ovr = 60, chip = 1, mult = 0.0, tag = "DEVELOPMENT", desc = "Undrafted WR." },
+
+    -- Defense / Special Teams full 99->60 coverage
+    { name = "Aaron Crush", pos = "DL", rarity = "X-Factor", ovr = 95, chip = 0, mult = 0.0, tag = "PASS RUSHER", desc = "Elite interior disrupter." },
+    { name = "Myles Havoc", pos = "DL", rarity = "X-Factor", ovr = 91, chip = 0, mult = 0.0, tag = "EDGE", desc = "Speed edge rusher." },
     { name = "Thor Hammer", pos = "DL", rarity = "Gold", ovr = 89, chip = 0, mult = 0.0, tag = "RUN STOPPER", desc = "DL" },
+    { name = "Max Trench", pos = "DL", rarity = "Gold", ovr = 84, chip = 0, mult = 0.0, tag = "NOSE TACKLE", desc = "Stout run defender." },
+    { name = "Warren Wall", pos = "DL", rarity = "Gold", ovr = 80, chip = 0, mult = 0.0, tag = "ROTATIONAL", desc = "Solid rotational end." },
+    { name = "Vance Breach", pos = "DL", rarity = "Silver", ovr = 78, chip = 0, mult = 0.0, tag = "ROTATIONAL", desc = "Backup interior pass rusher." },
+    { name = "Iron Clad", pos = "DL", rarity = "Silver", ovr = 71, chip = 0, mult = 0.0, tag = "DEPTH", desc = "Depth lineman." },
+    { name = "Boulder Shift", pos = "DL", rarity = "Bronze", ovr = 66, chip = 0, mult = 0.0, tag = "RESERVE", desc = "Fringe roster player." },
+    { name = "Rookie Lineman", pos = "DL", rarity = "Bronze", ovr = 60, chip = 0, mult = 0.0, tag = "DEVELOPMENT", desc = "Undrafted free agent." },
+
+    { name = "Fred Force", pos = "LB", rarity = "X-Factor", ovr = 94, chip = 0, mult = 0.0, tag = "COVERAGE LB", desc = "Sideline to sideline range." },
     { name = "Viper Strike", pos = "LB", rarity = "X-Factor", ovr = 92, chip = 0, mult = 0.0, tag = "COVERAGE", desc = "LB" },
+    { name = "Roquan Prowl", pos = "LB", rarity = "Gold", ovr = 85, chip = 0, mult = 0.0, tag = "MIKE", desc = "Tackle machine." },
+    { name = "Micah Stalker", pos = "LB", rarity = "Gold", ovr = 81, chip = 0, mult = 0.0, tag = "WILL", desc = "Pass rush linebacker." },
+    { name = "Chase Hunter", pos = "LB", rarity = "Silver", ovr = 78, chip = 0, mult = 0.0, tag = "ROTATIONAL", desc = "Special teams captain." },
+    { name = "Jax Patrol", pos = "LB", rarity = "Silver", ovr = 71, chip = 0, mult = 0.0, tag = "DEPTH", desc = "Backup inside backer." },
+    { name = "Ridge Watch", pos = "LB", rarity = "Bronze", ovr = 67, chip = 0, mult = 0.0, tag = "RESERVE", desc = "Practice squad backer." },
+    { name = "Rookie Linebacker", pos = "LB", rarity = "Bronze", ovr = 60, chip = 0, mult = 0.0, tag = "DEVELOPMENT", desc = "Raw athletic project." },
+
+    { name = "Sauce Lock", pos = "DB", rarity = "X-Factor", ovr = 95, chip = 0, mult = 0.0, tag = "SHUTDOWN", desc = "Zero completions allowed." },
+    { name = "Jalen Cover", pos = "DB", rarity = "X-Factor", ovr = 91, chip = 0, mult = 0.0, tag = "BALL HAWK", desc = "Ball hawking safety." },
     { name = "Hawk Eye", pos = "DB", rarity = "Gold", ovr = 85, chip = 0, mult = 0.0, tag = "BALL HAWK", desc = "DB" },
-    { name = "Legatron", pos = "K", rarity = "X-Factor", ovr = 95, chip = 0, mult = 0.0, tag = "CLUTCH", desc = "Kicker" }
+    { name = "Tre Lock", pos = "DB", rarity = "Gold", ovr = 82, chip = 0, mult = 0.0, tag = "NICKEL", desc = "Slot DB specialist." },
+    { name = "Kyle Sentry", pos = "DB", rarity = "Silver", ovr = 79, chip = 0, mult = 0.0, tag = "SAFETY", desc = "Deep third safety." },
+    { name = "Derwin Patrol", pos = "DB", rarity = "Silver", ovr = 76, chip = 0, mult = 0.0, tag = "HYBRID", desc = "Box safety." },
+    { name = "Fleet Shadow", pos = "DB", rarity = "Bronze", ovr = 68, chip = 0, mult = 0.0, tag = "RESERVE", desc = "Corner depth." },
+    { name = "Dash Guard", pos = "DB", rarity = "Bronze", ovr = 64, chip = 0, mult = 0.0, tag = "RESERVE", desc = "Practice squad secondary." },
+    { name = "Rookie Secondary", pos = "DB", rarity = "Bronze", ovr = 60, chip = 0, mult = 0.0, tag = "DEVELOPMENT", desc = "Raw cornerback." },
+
+    { name = "Legatron", pos = "K", rarity = "X-Factor", ovr = 95, chip = 0, mult = 0.0, tag = "CLUTCH", desc = "Kicker" },
+    { name = "Justin Cannon", pos = "K", rarity = "X-Factor", ovr = 90, chip = 0, mult = 0.0, tag = "CLUTCH", desc = "Deep range specialist." },
+    { name = "Evan Scope", pos = "K", rarity = "Gold", ovr = 81, chip = 0, mult = 0.0, tag = "KICKER", desc = "Accurate distance kicker." },
+    { name = "Harrison Arch", pos = "K", rarity = "Silver", ovr = 76, chip = 0, mult = 0.0, tag = "KICKER", desc = "Consistent kicker." },
+    { name = "Young Distance", pos = "K", rarity = "Bronze", ovr = 67, chip = 0, mult = 0.0, tag = "KICKER", desc = "Big leg, wild accuracy." },
+    { name = "Rookie Kicker", pos = "K", rarity = "Bronze", ovr = 60, chip = 0, mult = 0.0, tag = "DEVELOPMENT", desc = "Camp leg." }
 }
 
 local RosterPlayersExpanded = {}
+
+local POS_ORDER = { QB = 1, RB = 2, WR = 3, TE = 4, DL = 5, LB = 6, DB = 7, K = 8 }
 
 function RosterPlayersExpanded.getAllPlayers()
     local all = {}
@@ -202,6 +255,23 @@ function RosterPlayersExpanded.getAllPlayers()
         player.ability = template.ability
         table.insert(all, player)
     end
+
+    table.sort(all, function(a, b)
+        local posA = a.position:gsub("%d", "")
+        local posB = b.position:gsub("%d", "")
+        local orderA = POS_ORDER[posA] or 99
+        local orderB = POS_ORDER[posB] or 99
+        if orderA ~= orderB then
+            return orderA < orderB
+        else
+            if a.overall ~= b.overall then
+                return a.overall > b.overall
+            else
+                return a.name < b.name
+            end
+        end
+    end)
+
     return all
 end
 

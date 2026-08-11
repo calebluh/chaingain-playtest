@@ -177,7 +177,7 @@ function ScoringEvaluator.update(dt)
             local isIntercepted = ScoringEvaluator.isTurnover and (ScoringEvaluator.turnoverType == "INT")
             local isFumbled = ScoringEvaluator.isTurnover and (ScoringEvaluator.turnoverType == "FUMBLE")
             local FieldAnimator = require("src.ui.field_animator")
-            FieldAnimator.startPlay(ScoringEvaluator.playCard.type, predictedYards, gs.yardLine, gs.distance, isIntercepted, isFumbled)
+            FieldAnimator.startPlay(ScoringEvaluator.playCard.type, predictedYards, ScoringEvaluator.gameState.yardLine, ScoringEvaluator.gameState.distance, isIntercepted, isFumbled)
         end
     end
 end

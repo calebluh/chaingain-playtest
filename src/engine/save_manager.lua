@@ -83,14 +83,26 @@ function SaveManager.load(idx)
         end
     end
     
-    _G.CONFIG_ENABLE_CRT = SaveManager.data.settings.enableCRT
-    _G.CONFIG_SFX_VOLUME = SaveManager.data.settings.sfxVolume
-    _G.CONFIG_MUSIC_VOLUME = SaveManager.data.settings.musicVolume
+    _G.CONFIG_ENABLE_CRT = SaveManager.data.settings.enableCRT or false
+    _G.CONFIG_SFX_VOLUME = SaveManager.data.settings.sfxVolume or 0.8
+    _G.CONFIG_MUSIC_VOLUME = SaveManager.data.settings.musicVolume or 0.5
     _G.CONFIG_SCREENSHAKE = SaveManager.data.settings.screenshake or 1.0
     _G.CONFIG_FULLSCREEN = SaveManager.data.settings.fullscreen or false
     _G.CONFIG_VSYNC = SaveManager.data.settings.vsync ~= false
     _G.CONFIG_MUTE_ON_FOCUS_LOST = SaveManager.data.settings.muteOnFocus or false
     _G.CONFIG_SHOW_FPS = SaveManager.data.settings.showFPS or false
+    
+    local SettingsData = require("src.data.settings_data")
+    SettingsData.sfxVolume = _G.CONFIG_SFX_VOLUME
+    SettingsData.musicVolume = _G.CONFIG_MUSIC_VOLUME
+    if SaveManager.data.settings.masterVolume ~= nil then SettingsData.masterVolume = SaveManager.data.settings.masterVolume end
+    if SaveManager.data.settings.stadiumPulseEnabled ~= nil then SettingsData.stadiumPulseEnabled = SaveManager.data.settings.stadiumPulseEnabled end
+    if SaveManager.data.settings.gameSpeed ~= nil then SettingsData.gameSpeed = SaveManager.data.settings.gameSpeed end
+    if SaveManager.data.settings.impactFx ~= nil then SettingsData.impactFx = SaveManager.data.settings.impactFx end
+    if SaveManager.data.settings.weatherStains ~= nil then SettingsData.weatherStains = SaveManager.data.settings.weatherStains end
+    if SaveManager.data.settings.reducedFlashing ~= nil then SettingsData.reducedFlashing = SaveManager.data.settings.reducedFlashing end
+    if SaveManager.data.settings.streamerMode ~= nil then SettingsData.streamerMode = SaveManager.data.settings.streamerMode end
+    if SaveManager.data.settings.profanityFilter ~= nil then SettingsData.profanityFilter = SaveManager.data.settings.profanityFilter end
     
     if love.window then
         pcall(love.window.setFullscreen, _G.CONFIG_FULLSCREEN)

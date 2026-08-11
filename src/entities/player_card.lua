@@ -89,17 +89,25 @@ function PlayerCard.new(name, position, rarity, multBonus, chipBonus, edition)
     -- MUT Tier Frame Colors
     if self.overall >= 90 then
         self.tierName = "X-Factor"
+        self.rarity = rarity or "X-Factor"
         self.cardColor = { 0.12, 0.08, 0.22 }
         self.borderColor = { 0.0, 0.94, 1.0 }
         self.secondaryBorderColor = { 0.61, 0.0, 1.0 }
     elseif self.overall >= 80 then
         self.tierName = "Gold"
+        self.rarity = rarity or "Gold"
         self.cardColor = { 0.22, 0.18, 0.05 }
         self.borderColor = { 1.0, 0.84, 0.0 }
-    else
+    elseif self.overall >= 70 then
         self.tierName = "Silver"
+        self.rarity = rarity or "Silver"
         self.cardColor = { 0.12, 0.14, 0.18 }
         self.borderColor = { 0.62, 0.66, 0.71 }
+    else
+        self.tierName = "Bronze"
+        self.rarity = rarity or "Bronze"
+        self.cardColor = { 0.18, 0.12, 0.08 }
+        self.borderColor = { 0.80, 0.50, 0.25 }
     end
 
     self.isFlipped = false
