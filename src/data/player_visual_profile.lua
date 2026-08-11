@@ -25,12 +25,17 @@ PlayerVisualProfile.jerseyNumber = 88
 PlayerVisualProfile.numberFont = "classic_block" -- "classic_block", "modern_apex", "bold_outline"
 
 -- Accessories
-PlayerVisualProfile.armGear = "none"        -- "none", "turf_tape", "elbow_sleeve", "wristband", "full_sleeve"
+PlayerVisualProfile.armGear = "none"        -- "none", "turf_tape", "left_sleeve", "right_sleeve", "both_sleeves"
 PlayerVisualProfile.armGearColor = {1.0, 1.0, 1.0}
 PlayerVisualProfile.handGear = "receiver"   -- "none", "receiver", "lineman"
 PlayerVisualProfile.handGearColor = {1.0, 1.0, 1.0}
 PlayerVisualProfile.cleats = "low"          -- "low", "mid", "high"
 PlayerVisualProfile.cleatsColor = {0.1, 0.1, 0.1}
+
+-- AAA Overhaul Gear Additions
+PlayerVisualProfile.calfSleeves = "none"    -- "none", "white", "black", "team_primary"
+PlayerVisualProfile.mouthguardColor = {1.0, 1.0, 1.0}
+PlayerVisualProfile.tattoos = false         -- true/false for stylised pixel dots on arms
 
 -- ─── Palette Data ───────────────────────────────────────────────
 PlayerVisualProfile.skinTones = {
@@ -66,9 +71,10 @@ PlayerVisualProfile.visorOptions = { "clear", "dark", "gold_mirror", "iridescent
 PlayerVisualProfile.jerseyCutOptions = { "standard", "cropped", "sleeveless" }
 PlayerVisualProfile.jerseyPatternOptions = { "solid", "shoulder_stripes", "sleeve_cuffs", "camo_panels" }
 PlayerVisualProfile.numberFontOptions = { "classic_block", "modern_apex", "bold_outline" }
-PlayerVisualProfile.armGearOptions = { "none", "turf_tape", "elbow_sleeve", "wristband", "full_sleeve" }
+PlayerVisualProfile.armGearOptions = { "none", "turf_tape", "left_sleeve", "right_sleeve", "both_sleeves" }
 PlayerVisualProfile.handGearOptions = { "none", "receiver", "lineman" }
 PlayerVisualProfile.cleatsOptions = { "low", "mid", "high" }
+PlayerVisualProfile.calfSleeveOptions = { "none", "white", "black", "team_primary" }
 
 -- ─── Helpers ────────────────────────────────────────────────────
 function PlayerVisualProfile.getSkinColor()

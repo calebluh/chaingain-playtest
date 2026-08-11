@@ -364,28 +364,57 @@ function AssetManager.drawRetroPlayer(x, y, jerseyColor, pantsColor, helmetColor
     
     -- Legs (Pants / Socks)
     love.graphics.setColor(pantsColor)
-    love.graphics.rectangle("fill", -math.floor(torsoW/2) + 1 + legOffset * 0.5, 4, 3, 6)
-    love.graphics.rectangle("fill", 1 - legOffset * 0.5, 4, 3, 6)
+    local backLegX = -math.floor(torsoW/2) + 1 + legOffset * 0.5
+    local frontLegX = 1 - legOffset * 0.5
+    love.graphics.rectangle("fill", backLegX, 4, 3, 6)
+    love.graphics.rectangle("fill", frontLegX, 4, 3, 6)
+    
+    -- Calf Sleeves
+    if isMyPlayer and PlayerVisualProfile.calfSleeves ~= "none" then
+        local calfCol = {1,1,1}
+        if PlayerVisualProfile.calfSleeves == "black" then calfCol = {0.15,0.15,0.15}
+        elseif PlayerVisualProfile.calfSleeves == "team_primary" then calfCol = jerseyColor end
+        love.graphics.setColor(calfCol)
+        love.graphics.rectangle("fill", backLegX, 7, 3, 3)
+        love.graphics.rectangle("fill", frontLegX, 7, 3, 3)
+    end
     
     -- Cleats / Shoes
     local cleatColor = (isMyPlayer and PlayerVisualProfile.cleatsColor) or {1, 1, 1}
     love.graphics.setColor(cleatColor)
-    love.graphics.rectangle("fill", -math.floor(torsoW/2) + 1 + legOffset * 0.5 + (dir > 0 and 1 or -1), 10, 3, 2)
-    love.graphics.rectangle("fill", 1 - legOffset * 0.5 + (dir > 0 and 1 or -1), 10, 3, 2)
+    love.graphics.rectangle("fill", backLegX + (dir > 0 and 1 or -1), 10, 3, 2)
+    love.graphics.rectangle("fill", frontLegX + (dir > 0 and 1 or -1), 10, 3, 2)
     
     -- Torso (Jersey)
     love.graphics.setColor(jerseyColor)
     love.graphics.rectangle("fill", -math.floor(torsoW/2), -6, torsoW, torsoH)
     
-    -- Arms
+    -- Arms & Tattoos
     love.graphics.setColor(jerseyColor)
-    love.graphics.rectangle("fill", -math.floor(torsoW/2) - 2 - armOffset * 0.5, -4, 3, 6)
-    love.graphics.rectangle("fill", math.floor(torsoW/2) - 1 + armOffset * 0.5, -4, 3, 6)
+    local backArmX = -math.floor(torsoW/2) - 2 - armOffset * 0.5
+    local frontArmX = math.floor(torsoW/2) - 1 + armOffset * 0.5
+    
+    love.graphics.rectangle("fill", backArmX, -4, 3, 6)
+    love.graphics.rectangle("fill", frontArmX, -4, 3, 6)
+    
+    if isMyPlayer and PlayerVisualProfile.tattoos then
+        love.graphics.setColor(0.2, 0.2, 0.2, 0.8)
+        -- Tattoos on lower arms (which will be rendered below gear)
+        love.graphics.rectangle("fill", backArmX + 1, 2, 1, 2)
+        love.graphics.rectangle("fill", frontArmX + 1, 3, 1, 1)
+    end
     
     if isMyPlayer and PlayerVisualProfile.armGear ~= "none" then
         love.graphics.setColor(PlayerVisualProfile.armGearColor or {1, 1, 1})
-        love.graphics.rectangle("fill", -math.floor(torsoW/2) - 2 - armOffset * 0.5, -2, 3, 2)
-        love.graphics.rectangle("fill", math.floor(torsoW/2) - 1 + armOffset * 0.5, -2, 3, 2)
+        local g = PlayerVisualProfile.armGear
+        if g == "both_sleeves" or g == "turf_tape" then
+            love.graphics.rectangle("fill", backArmX, -2, 3, 2)
+            love.graphics.rectangle("fill", frontArmX, -2, 3, 2)
+        elseif g == "left_sleeve" then
+            love.graphics.rectangle("fill", backArmX, -2, 3, 2)
+        elseif g == "right_sleeve" then
+            love.graphics.rectangle("fill", frontArmX, -2, 3, 2)
+        end
     end
     
     -- Hands / Gloves
@@ -394,8 +423,8 @@ function AssetManager.drawRetroPlayer(x, y, jerseyColor, pantsColor, helmetColor
     else
         love.graphics.setColor(skinColor)
     end
-    love.graphics.rectangle("fill", -math.floor(torsoW/2) - 2 - armOffset * 0.5, 2, 3, 2)
-    love.graphics.rectangle("fill", math.floor(torsoW/2) - 1 + armOffset * 0.5, 2, 3, 2)
+    love.graphics.rectangle("fill", backArmX, 2, 3, 2)
+    love.graphics.rectangle("fill", frontArmX, 2, 3, 2)
     
     -- Helmet
     love.graphics.setColor(helmetColor)
@@ -410,6 +439,11 @@ function AssetManager.drawRetroPlayer(x, y, jerseyColor, pantsColor, helmetColor
     -- Facemask & Visor
     love.graphics.setColor(isMyPlayer and PlayerVisualProfile.maskColor or {0.7, 0.7, 0.7})
     love.graphics.rectangle("fill", 2, -10, 3, 3)
+    
+    if isMyPlayer and PlayerVisualProfile.mouthguardColor then
+        love.graphics.setColor(PlayerVisualProfile.mouthguardColor)
+        love.graphics.rectangle("fill", 2, -7, 1, 1)
+    end
     
     love.graphics.setColor(visorColor)
     love.graphics.rectangle("fill", 2, -12, 4, 3, 1, 1)

@@ -85,7 +85,15 @@ function PauseOverlay.syncAndSave()
 end
 
 function PauseOverlay:enter()
-    self.viewMode = "MAIN"
+    local StateManager = require("src.states.state_manager")
+    self.isMainMenu = (StateManager.currentState == require("src.states.state_menu"))
+    
+    if self.isMainMenu then
+        self.viewMode = "SETTINGS"
+    else
+        self.viewMode = "MAIN"
+    end
+    
     self.activeTab = 1
     self.showAbandonConfirm = false
 end
@@ -512,7 +520,12 @@ function PauseOverlay:mousepressed(x, y, button)
         local backY = modalY + h - 52
         if inRect(x, y, backX, backY, backW, 40) then
             SoundManager.playSFX("click")
-            self.viewMode = "MAIN"
+            if self.isMainMenu then
+                local StateManager = require("src.states.state_manager")
+                StateManager.closeOverlay()
+            else
+                self.viewMode = "MAIN"
+            end
             return
         end
     end
@@ -523,7 +536,11 @@ function PauseOverlay:keypressed(key)
     if key == "escape" then
         SoundManager.playSFX("click")
         if self.viewMode == "SETTINGS" then
-            self.viewMode = "MAIN"
+            if self.isMainMenu then
+                StateManager.closeOverlay()
+            else
+                self.viewMode = "MAIN"
+            end
         else
             StateManager.closeOverlay()
         end

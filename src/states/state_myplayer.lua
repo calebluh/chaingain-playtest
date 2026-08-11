@@ -58,6 +58,12 @@ function StateMyPlayer:enter()
     self.creatorName = MyPlayerProfile.name or "Rookie"
     self.creatorPosition = MyPlayerProfile.position or "QB"
     self.focusedField = nil
+    
+    -- Camera for dynamic AAA locker room framing
+    self.camScale = 8.0
+    self.targetCamScale = 8.0
+    self.camY = 290
+    self.targetCamY = 290
 end
 
 function StateMyPlayer:exit()
@@ -65,6 +71,20 @@ function StateMyPlayer:exit()
 end
 
 function StateMyPlayer:update(dt)
+    -- AAA Camera Lerping
+    if self.tab == "HELMET" then
+        self.targetCamScale = 14.0
+        self.targetCamY = 380
+    elseif self.tab == "GEAR" then
+        self.targetCamScale = 9.0
+        self.targetCamY = 190
+    else
+        self.targetCamScale = 8.0
+        self.targetCamY = 290
+    end
+    
+    self.camScale = self.camScale + (self.targetCamScale - self.camScale) * 8 * dt
+    self.camY = self.camY + (self.targetCamY - self.camY) * 8 * dt
 end
 
 function StateMyPlayer:draw()
@@ -82,17 +102,36 @@ function StateMyPlayer:draw()
         drawShadowText(t.name, t.x, t.y + 10, 1, 1, 1, 0.95, "center", t.w)
     end
     
-    -- LEFT PANEL: Live Character Preview Box
-    love.graphics.setColor(0.1, 0.12, 0.16)
+    -- LEFT PANEL: 3D Locker Room Preview Box
+    love.graphics.setColor(0.08, 0.09, 0.11)
     love.graphics.rectangle("fill", 60, 120, 260, 340, 8, 8)
+    
+    -- Draw Locker details inside clip
+    love.graphics.setScissor(60, 120, 260, 340)
+    
+    -- Floor
+    love.graphics.setColor(0.12, 0.13, 0.15)
+    love.graphics.polygon("fill", 60, 420, 320, 420, 280, 460, 100, 460)
+    -- Lockers
+    love.graphics.setColor(0.15, 0.16, 0.18)
+    for i=0, 2 do
+        love.graphics.rectangle("line", 75 + i*75, 140, 65, 260, 4, 4)
+    end
+    -- Neon Logo
+    local time = love.timer.getTime()
+    love.graphics.setColor(0.0, 0.76, 1.0, 0.3 + 0.1 * math.sin(time*4))
+    drawShadowText("CHAIN GAIN", 190, 180, 0, 0.76, 1.0, 1.3, "center", 200)
+    
+    -- Character Portrait Preview
+    local AssetManager = require("src.engine.asset_manager")
+    AssetManager.drawRetroPlayer(190, self.camY, PlayerVisualProfile.primaryColor or {0.13, 0.34, 0.13}, {0.9, 0.9, 0.9}, PlayerVisualProfile.shellColor or {0.07, 0.13, 0.27}, 0, 0, true, time, false, true, self.camScale)
+    
+    love.graphics.setScissor()
+    
     love.graphics.setColor(C_NEON_BORDER)
     love.graphics.setLineWidth(2)
     love.graphics.rectangle("line", 60, 120, 260, 340, 8, 8)
     love.graphics.setLineWidth(1)
-    
-    -- Character Portrait Preview
-    local AssetManager = require("src.engine.asset_manager")
-    AssetManager.drawRetroPlayer(190, 290, PlayerVisualProfile.primaryColor or {0.13, 0.34, 0.13}, {0.9, 0.9, 0.9}, PlayerVisualProfile.shellColor or {0.07, 0.13, 0.27}, 0, 0, true, 0, false, true, 8.0)
     
     drawShadowText("OVR: " .. (MyPlayerProfile.ovr or 70) .. "  |  POSITION: " .. self.creatorPosition, 70, 415, 1, 0.84, 0, 0.95, "center", 240)
     
@@ -207,37 +246,60 @@ function StateMyPlayer:draw()
         drawShadowText("EQUIPMENT & ACCESSORIES", 360, 140, 1, 0.84, 0, 1.3)
         
         -- Arm Gear
-        drawShadowText("ARM SLEEVES:", 360, 185, 0.8, 0.8, 0.8, 0.9)
+        drawShadowText("SLEEVES:", 360, 185, 0.8, 0.8, 0.8, 0.9)
         for i, ag in ipairs(PlayerVisualProfile.armGearOptions) do
-            local agx = 500 + (i - 1) * 80
+            local agx = 480 + (i - 1) * 75
             local isSel = (PlayerVisualProfile.armGear == ag)
-            local h = checkHover(agx, 180, 75, 30)
+            local h = checkHover(agx, 180, 70, 30)
             love.graphics.setColor(isSel and C_BLUE or (h and {0.3, 0.4, 0.5} or {0.18, 0.22, 0.28}))
-            love.graphics.rectangle("fill", agx, 180, 75, 30, 5, 5)
-            drawShadowText(ag:upper(), agx, 187, 1, 1, 1, 0.75, "center", 75)
+            love.graphics.rectangle("fill", agx, 180, 70, 30, 5, 5)
+            drawShadowText(ag:upper(), agx, 187, 1, 1, 1, 0.65, "center", 70)
         end
         
         -- Hand Gear
-        drawShadowText("GLOVES:", 360, 235, 0.8, 0.8, 0.8, 0.9)
+        drawShadowText("GLOVES:", 360, 225, 0.8, 0.8, 0.8, 0.9)
         for i, hg in ipairs(PlayerVisualProfile.handGearOptions) do
-            local hgx = 500 + (i - 1) * 80
+            local hgx = 480 + (i - 1) * 75
             local isSel = (PlayerVisualProfile.handGear == hg)
-            local h = checkHover(hgx, 230, 75, 30)
+            local h = checkHover(hgx, 220, 70, 30)
             love.graphics.setColor(isSel and C_BLUE or (h and {0.3, 0.4, 0.5} or {0.18, 0.22, 0.28}))
-            love.graphics.rectangle("fill", hgx, 230, 75, 30, 5, 5)
-            drawShadowText(hg:upper(), hgx, 237, 1, 1, 1, 0.8, "center", 75)
+            love.graphics.rectangle("fill", hgx, 220, 70, 30, 5, 5)
+            drawShadowText(hg:upper(), hgx, 227, 1, 1, 1, 0.7, "center", 70)
+        end
+        
+        -- Calf Sleeves
+        drawShadowText("CALF SLVS:", 360, 265, 0.8, 0.8, 0.8, 0.9)
+        for i, cs in ipairs(PlayerVisualProfile.calfSleeveOptions) do
+            local csx = 480 + (i - 1) * 75
+            local isSel = (PlayerVisualProfile.calfSleeves == cs)
+            local h = checkHover(csx, 260, 70, 30)
+            love.graphics.setColor(isSel and C_BLUE or (h and {0.3, 0.4, 0.5} or {0.18, 0.22, 0.28}))
+            love.graphics.rectangle("fill", csx, 260, 70, 30, 5, 5)
+            drawShadowText(cs:upper(), csx, 267, 1, 1, 1, 0.65, "center", 70)
         end
         
         -- Cleats
-        drawShadowText("CLEATS CUT:", 360, 285, 0.8, 0.8, 0.8, 0.9)
+        drawShadowText("CLEATS:", 360, 305, 0.8, 0.8, 0.8, 0.9)
         for i, cl in ipairs(PlayerVisualProfile.cleatsOptions) do
-            local clx = 500 + (i - 1) * 80
+            local clx = 480 + (i - 1) * 75
             local isSel = (PlayerVisualProfile.cleats == cl)
-            local h = checkHover(clx, 280, 75, 30)
+            local h = checkHover(clx, 300, 70, 30)
             love.graphics.setColor(isSel and C_BLUE or (h and {0.3, 0.4, 0.5} or {0.18, 0.22, 0.28}))
-            love.graphics.rectangle("fill", clx, 280, 75, 30, 5, 5)
-            drawShadowText(cl:upper(), clx, 287, 1, 1, 1, 0.8, "center", 75)
+            love.graphics.rectangle("fill", clx, 300, 70, 30, 5, 5)
+            drawShadowText(cl:upper(), clx, 307, 1, 1, 1, 0.7, "center", 70)
         end
+        
+        -- Toggles (Tattoos, Mouthguard)
+        local hTat = checkHover(360, 345, 150, 30)
+        love.graphics.setColor(PlayerVisualProfile.tattoos and C_BLUE or (hTat and {0.3, 0.4, 0.5} or {0.18, 0.22, 0.28}))
+        love.graphics.rectangle("fill", 360, 345, 150, 30, 5, 5)
+        drawShadowText("TATTOOS", 360, 352, 1, 1, 1, 0.8, "center", 150)
+        
+        local hasMg = (PlayerVisualProfile.mouthguardColor ~= false)
+        local hMg = checkHover(530, 345, 150, 30)
+        love.graphics.setColor(hasMg and C_BLUE or (hMg and {0.3, 0.4, 0.5} or {0.18, 0.22, 0.28}))
+        love.graphics.rectangle("fill", 530, 345, 150, 30, 5, 5)
+        drawShadowText("MOUTHGUARD", 530, 352, 1, 1, 1, 0.8, "center", 150)
 
     elseif self.tab == "STATS" then
         drawShadowText("CAREER MILESTONES & STATS", 360, 140, 1, 0.84, 0, 1.3)
@@ -350,25 +412,44 @@ function StateMyPlayer:mousepressed(x, y, button, istouch, presses)
             end
         elseif self.tab == "GEAR" then
             for i, ag in ipairs(PlayerVisualProfile.armGearOptions) do
-                local agx = 500 + (i - 1) * 80
-                if checkHover(agx, 180, 75, 30) then
+                local agx = 480 + (i - 1) * 75
+                if checkHover(agx, 180, 70, 30) then
                     PlayerVisualProfile.armGear = ag
                     SoundManager.playSFX("click")
                 end
             end
             for i, hg in ipairs(PlayerVisualProfile.handGearOptions) do
-                local hgx = 500 + (i - 1) * 80
-                if checkHover(hgx, 230, 75, 30) then
+                local hgx = 480 + (i - 1) * 75
+                if checkHover(hgx, 220, 70, 30) then
                     PlayerVisualProfile.handGear = hg
                     SoundManager.playSFX("click")
                 end
             end
+            for i, cs in ipairs(PlayerVisualProfile.calfSleeveOptions) do
+                local csx = 480 + (i - 1) * 75
+                if checkHover(csx, 260, 70, 30) then
+                    PlayerVisualProfile.calfSleeves = cs
+                    SoundManager.playSFX("click")
+                end
+            end
             for i, cl in ipairs(PlayerVisualProfile.cleatsOptions) do
-                local clx = 500 + (i - 1) * 80
-                if checkHover(clx, 280, 75, 30) then
+                local clx = 480 + (i - 1) * 75
+                if checkHover(clx, 300, 70, 30) then
                     PlayerVisualProfile.cleats = cl
                     SoundManager.playSFX("click")
                 end
+            end
+            if checkHover(360, 345, 150, 30) then
+                PlayerVisualProfile.tattoos = not PlayerVisualProfile.tattoos
+                SoundManager.playSFX("click")
+            end
+            if checkHover(530, 345, 150, 30) then
+                if PlayerVisualProfile.mouthguardColor == false then
+                    PlayerVisualProfile.mouthguardColor = {1, 1, 1}
+                else
+                    PlayerVisualProfile.mouthguardColor = false
+                end
+                SoundManager.playSFX("click")
             end
         end
         

@@ -59,6 +59,18 @@ function StateMyPlayerTree:enter()
     self.dragStartY = 0
     
     self.hoveredNode = nil
+    
+    -- Generate Stars for Parallax
+    self.stars = {}
+    for i=1, 200 do
+        table.insert(self.stars, {
+            x = math.random(-2000, 2000),
+            y = math.random(-2000, 2000),
+            size = math.random(1, 3),
+            depth = math.random() * 0.8 + 0.2, -- 0.2 to 1.0
+            phase = math.random() * math.pi * 2
+        })
+    end
 end
 
 function StateMyPlayerTree:isUnlocked(id)
@@ -111,36 +123,43 @@ function StateMyPlayerTree:wheelmoved(x, y)
 end
 
 function StateMyPlayerTree:draw()
-    love.graphics.setColor(C_BG)
+    -- Deep space background
+    love.graphics.setColor(0.02, 0.03, 0.06)
     love.graphics.rectangle("fill", 0, 0, 960, 540)
     
-    -- Grid background
-    love.graphics.setColor(1, 1, 1, 0.05)
-    local gridOffX = self.camX % 40
-    local gridOffY = self.camY % 40
-    for i = 0, 960/40 + 1 do
-        love.graphics.line(i*40 + gridOffX, 0, i*40 + gridOffX, 540)
-    end
-    for i = 0, 540/40 + 1 do
-        love.graphics.line(0, i*40 + gridOffY, 960, i*40 + gridOffY)
+    local time = love.timer.getTime()
+    
+    -- Draw Parallax Stars
+    for _, star in ipairs(self.stars) do
+        local sx = (star.x + self.camX * star.depth) % 960
+        local sy = (star.y + self.camY * star.depth) % 540
+        local twinkle = 0.5 + 0.5 * math.sin(time * 3 + star.phase)
+        love.graphics.setColor(1, 1, 1, twinkle * star.depth)
+        love.graphics.rectangle("fill", sx, sy, star.size, star.size)
     end
     
     love.graphics.push()
     love.graphics.translate(self.camX, self.camY)
     love.graphics.scale(self.zoom, self.zoom)
     
-    -- Draw Connections
-    love.graphics.setLineWidth(4)
+    -- Draw Glowing Connections
     for _, node in ipairs(SkillTreeData.list) do
         if node.req then
             local pNode = SkillTreeData.dict[node.req]
             if pNode then
                 if self:isUnlocked(node.id) then
-                    love.graphics.setColor(node.color[1], node.color[2], node.color[3], 0.8)
+                    love.graphics.setLineWidth(6)
+                    love.graphics.setColor(node.color[1], node.color[2], node.color[3], 0.3)
+                    love.graphics.line(node.x, node.y, pNode.x, pNode.y)
+                    
+                    love.graphics.setLineWidth(3)
+                    love.graphics.setColor(node.color[1], node.color[2], node.color[3], 0.9 + 0.1 * math.sin(time*10))
                 elseif self:isUnlocked(pNode.id) then
-                    love.graphics.setColor(0.3, 0.3, 0.3, 0.8)
+                    love.graphics.setLineWidth(2)
+                    love.graphics.setColor(0.4, 0.4, 0.4, 0.6)
                 else
-                    love.graphics.setColor(0.1, 0.1, 0.1, 0.8)
+                    love.graphics.setLineWidth(2)
+                    love.graphics.setColor(0.1, 0.1, 0.1, 0.4)
                 end
                 love.graphics.line(node.x, node.y, pNode.x, pNode.y)
             end
@@ -156,6 +175,16 @@ function StateMyPlayerTree:draw()
         local unlocked = self:isUnlocked(node.id)
         local canUnlock = self:canUnlock(node)
         
+        -- Capstone Aura
+        if isCap and unlocked then
+            love.graphics.push()
+            love.graphics.translate(node.x, node.y)
+            love.graphics.rotate(time * 0.5)
+            love.graphics.setColor(node.color[1], node.color[2], node.color[3], 0.2 + 0.1 * math.sin(time*2))
+            love.graphics.rectangle("fill", -r*1.5, -r*1.5, r*3, r*3, 8, 8)
+            love.graphics.pop()
+        end
+        
         if unlocked then
             love.graphics.setColor(node.color[1], node.color[2], node.color[3], 1.0)
             love.graphics.circle("fill", node.x, node.y, r)
@@ -165,15 +194,17 @@ function StateMyPlayerTree:draw()
             love.graphics.setLineWidth(1)
         elseif canUnlock then
             -- Pulse effect
-            local pulse = 0.5 + 0.5 * math.sin(love.timer.getTime() * 5)
+            local pulse = 0.5 + 0.5 * math.sin(time * 5)
             love.graphics.setColor(node.color[1] * pulse, node.color[2] * pulse, node.color[3] * pulse, 1.0)
             love.graphics.circle("fill", node.x, node.y, r)
             love.graphics.setColor(0.5, 0.5, 0.5)
+            love.graphics.setLineWidth(2)
             love.graphics.circle("line", node.x, node.y, r)
+            love.graphics.setLineWidth(1)
         else
-            love.graphics.setColor(0.1, 0.1, 0.1, 1.0)
+            love.graphics.setColor(0.1, 0.15, 0.2, 1.0)
             love.graphics.circle("fill", node.x, node.y, r)
-            love.graphics.setColor(0.2, 0.2, 0.2)
+            love.graphics.setColor(0.25, 0.3, 0.4)
             love.graphics.circle("line", node.x, node.y, r)
         end
         
@@ -261,7 +292,15 @@ function StateMyPlayerTree:mousepressed(x, y, button)
             MyPlayerProfile.classPoints = MyPlayerProfile.classPoints - n.cost
             table.insert(MyPlayerProfile.unlockedNodes, n.id)
             MyPlayerProfile.save()
-            SoundManager.playSFX("coin")
+            
+            SoundManager.playSFX("slam")
+            if _G.triggerScreenShake then _G.triggerScreenShake(15, 0.3) end
+            
+            -- Convert world coords to screen for particles
+            local screenX = self.camX + (n.x * self.zoom)
+            local screenY = self.camY + (n.y * self.zoom)
+            FxManager.addBurstParticles(screenX, screenY, 60, n.color[1], n.color[2], n.color[3])
+            
             self.message = "Unlocked " .. n.name .. "!"
         else
             SoundManager.playSFX("click")
