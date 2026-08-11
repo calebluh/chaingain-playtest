@@ -11,6 +11,8 @@ local StatePackOpening = {}
 
 function StatePackOpening:enter()
     self.ripped = false
+    self.isRipping = false
+    self.ripTime = 0
     self.cards = {}
     self.drafted = false
     
@@ -115,7 +117,21 @@ function StatePackOpening:enter()
 end
 
 function StatePackOpening:update(dt)
-    if self.ripped then
+    if self.isRipping then
+        self.ripTime = self.ripTime + dt
+        if self.ripTime > 0.4 then
+            self.isRipping = false
+            self.ripped = true
+            SoundManager.playSFX("slam")
+            if _G.triggerScreenShake then _G.triggerScreenShake(20, 0.4) end
+            if _G.triggerHitStop then _G.triggerHitStop(0.1) end
+            FxManager.addBurstParticles(480, 270, 80, 1, 0.84, 0)
+            -- Spawn extra confetti for Mega packs
+            if self.packType == "MEGA" then
+                FxManager.addBurstParticles(480, 270, 100, 0.0, 0.76, 1.0)
+            end
+        end
+    elseif self.ripped then
         local spacing = 160
         local startX = 480 - ((#self.cards - 1) * spacing) / 2
         
@@ -175,12 +191,32 @@ function StatePackOpening:draw()
         -- Draw the pack
         love.graphics.push()
         love.graphics.translate(480, 270)
-        love.graphics.rotate(math.sin(love.timer.getTime() * 2) * 0.05)
         
-        love.graphics.setColor(1, 0.84, 0)
+        local alpha = 1.0
+        if self.isRipping then
+            -- Violent shake and scale up
+            local shakeX = (math.random() - 0.5) * 40
+            local shakeY = (math.random() - 0.5) * 40
+            love.graphics.translate(shakeX, shakeY)
+            
+            local sc = 1.0 + self.ripTime * 1.5
+            love.graphics.scale(sc, sc)
+            
+            alpha = math.max(0, 1.0 - (self.ripTime / 0.4))
+        else
+            love.graphics.rotate(math.sin(love.timer.getTime() * 2) * 0.05)
+        end
+        
+        -- Flash white at the end of the rip
+        if self.isRipping and self.ripTime > 0.25 then
+            love.graphics.setColor(1, 1, 1, alpha)
+        else
+            love.graphics.setColor(1, 0.84, 0, alpha)
+        end
+        
         love.graphics.rectangle("fill", -120, -160, 240, 320, 10, 10)
         
-        love.graphics.setColor(0, 0, 0, 0.9)
+        love.graphics.setColor(0, 0, 0, alpha * 0.9)
         local displayName = self.packType .. " PACK"
         if self.packType == "CONSUMABLE" then displayName = "SIDELINE\nADJUSTMENT"
         elseif self.packType == "PLAY" then displayName = "PLAYBOOK\nPACK"
@@ -265,13 +301,11 @@ end
 
 function StatePackOpening:mousepressed(x, y, button)
     if button == 1 then
-        if not self.ripped then
+        if not self.ripped and not self.isRipping then
             if x >= 360 and x <= 600 and y >= 110 and y <= 430 then
-                self.ripped = true
-                SoundManager.playSFX("slam")
-                if _G.triggerScreenShake then _G.triggerScreenShake(20, 0.4) end
-                if _G.triggerHitStop then _G.triggerHitStop(0.1) end
-                FxManager.addBurstParticles(480, 270, 50, 1, 0.84, 0)
+                self.isRipping = true
+                self.ripTime = 0
+                SoundManager.playSFX("tackle")
             end
             return
         end

@@ -266,7 +266,35 @@ function CardRender.drawPlayerCard(x, y, player, isHovered, dt)
         -- Archetype / Rarity Subheader
         local subTag = player.archetypeTag or player.rarity or player.tierName or "PLAYER"
         drawShadowText(subTag:upper(), cx + 4, cy + h/2 + 28, 0.8, 0.84, 0.9, 0.75, "center", w - 8)
-        
+
+        -- ── Holographic Shimmer for rare editions ────────────────────
+        if player.edition == "Franchise Player" or player.edition == "Fan Favorite" then
+            local t = love.timer.getTime()
+            -- Animated rainbow sweep overlay using additive blending
+            love.graphics.setBlendMode("add")
+            local shimPhase = (t * 0.6) % 1.0
+            for band = 0, 5 do
+                local bandPct = (band / 6 + shimPhase) % 1.0
+                local bx = cx + bandPct * w - 10
+                local hue = bandPct
+                -- HSV to RGB approximation
+                local r = math.max(0, math.min(1, math.abs(hue * 6 - 3) - 1))
+                local g = math.max(0, math.min(1, 2 - math.abs(hue * 6 - 2)))
+                local b2= math.max(0, math.min(1, 2 - math.abs(hue * 6 - 4)))
+                local shimAlpha = (player.edition == "Franchise Player") and 0.18 or 0.10
+                love.graphics.setColor(r, g, b2, shimAlpha)
+                love.graphics.rectangle("fill", bx, cy, 20, h, 2, 2)
+            end
+            love.graphics.setBlendMode("alpha")
+
+            -- Edition corner badge
+            local badgeText = (player.edition == "Franchise Player") and "🏈" or "⭐"
+            local badgeCol  = (player.edition == "Franchise Player") and {0.5,0.2,1.0} or {1.0,0.6,0.0}
+            love.graphics.setColor(badgeCol)
+            love.graphics.circle("fill", cx + w - 8, cy + h - 8, 8)
+            love.graphics.setColor(1,1,1,1)
+            love.graphics.printf(badgeText, cx + w - 20, cy + h - 18, 24, "center", 0, 0.7, 0.7)
+        end
     else
         -- -------------------------------------------------------------
         -- BACK FACE: Flipped Details Face

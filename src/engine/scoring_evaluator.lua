@@ -483,6 +483,17 @@ function ScoringEvaluator.finalizeDriveSlam()
         FxManager.addBurstParticles(480, 220, 40, 1, 0.84, 0)
         FxManager.addBurstParticles(860, 220, 30, 1, 0.84, 0)
         
+        -- Cinematic TD Replay Overlay
+        local scoringPlayerName = "CHAIN GAIN!"
+        if ScoringEvaluator.rosterQueue and #ScoringEvaluator.rosterQueue > 0 then
+            local lastPlayer = ScoringEvaluator.rosterQueue[#ScoringEvaluator.rosterQueue]
+            if lastPlayer and lastPlayer.player then
+                scoringPlayerName = lastPlayer.player.name
+            end
+        end
+        local TDReplay = require("src.ui.touchdown_replay")
+        TDReplay.trigger(scoringPlayerName, yardsGained, gs.currentPoints, gs.targetPoints)
+        
         if gs.currentPoints >= gs.targetPoints then
             gs.status = "GAME_WON"
             gs.gameWeek = gs.gameWeek + 1

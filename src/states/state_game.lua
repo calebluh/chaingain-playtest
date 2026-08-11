@@ -16,6 +16,8 @@ local SaveManager = require("src.engine.save_manager")
 local Loc = require("src.engine.loc_manager")
 local SettingsData = require("src.data.settings_data")
 local RPOMinigame = require("src.ui.rpo_minigame")
+local TDReplay   = require("src.ui.touchdown_replay")
+local BlindIntro = require("src.ui.blind_intro")
 
 local StateGame = {}
 
@@ -59,12 +61,18 @@ function StateGame:enter()
     self.justSelectedThisClick = false
     self.show4thDownPrompt = false
     self.was4thDown = false
+    self.crowdRoarTimer = 0
     
     if #DeckManager.hand == 0 then
         DeckManager.drawHand()
     end
     
     SoundManager.playMusic("gameplay_theme")
+    
+    -- Fire opponent trash-talk intro
+    if DefenseManager.activeBlind then
+        BlindIntro.trigger(DefenseManager.activeBlind)
+    end
     
     local TutorialOverlay = require("src.ui.tutorial_overlay")
     if SaveManager.data and not SaveManager.data.hasCompletedTutorial then
@@ -82,6 +90,27 @@ function StateGame:update(dt)
     local TutorialOverlay = require("src.ui.tutorial_overlay")
     TutorialOverlay.update(dt)
     if TutorialOverlay.active then return end
+
+    -- TD Replay blocks all input/updates while active
+    TDReplay.update(dt)
+    if TDReplay.active then return end
+
+    BlindIntro.update(dt)
+
+    -- Dynamic crowd roar based on StadiumPulse tier
+    self.crowdRoarTimer = (self.crowdRoarTimer or 0) - dt
+    if self.crowdRoarTimer <= 0 then
+        local pulse = StadiumPulse.pulse or 30
+        if pulse >= 76 then
+            SoundManager.playSFX("touchdown", 0.4 + math.random() * 0.1)
+            self.crowdRoarTimer = 4.0
+        elseif pulse >= 56 then
+            SoundManager.playSFX("coin", 0.6)
+            self.crowdRoarTimer = 6.0
+        else
+            self.crowdRoarTimer = 8.0
+        end
+    end
 
     if self.paused or self.showPlaybookModal then return end
     
@@ -117,8 +146,33 @@ function StateGame:update(dt)
             local StateShop = require("src.states.state_shop")
             StateManager.switch(StateShop)
         elseif GameStateData.status == "GAME_LOST" or GameStateData.status == "TURNOVER" then
-            local StateMenu = require("src.states.state_menu")
-            StateManager.switch(StateMenu)
+            -- Save run history entry
+            local runData = {
+                touchdownsThisRun = SaveManager.data and SaveManager.data.touchdownCount or 0,
+                totalYardsGained  = GameStateData.totalYardsGained or 0,
+                anteReached       = GameStateData.ante or 1,
+                weeksPlayed       = GameStateData.gameWeek or 1,
+                bestPlayName      = GameStateData.lastPlayResult and GameStateData.lastPlayResult:sub(1,24) or "N/A",
+                bestPlayYards     = GameStateData.totalYardsGained or 0,
+                didWin            = false,
+            }
+            -- Append to run history (last 10)
+            local sd = SaveManager.data
+            if sd then
+                sd.runHistory = sd.runHistory or {}
+                table.insert(sd.runHistory, 1, {
+                    ante = runData.anteReached,
+                    yards = runData.totalYardsGained,
+                    date = os.date and os.date("%m/%d") or "TODAY"
+                })
+                if #sd.runHistory > 10 then
+                    table.remove(sd.runHistory, 11)
+                end
+                SaveManager.save()
+            end
+            local StateSeasonReport = require("src.states.state_season_report")
+            StateSeasonReport.data = runData
+            StateManager.switch(StateSeasonReport)
         end
     end
     
@@ -606,9 +660,19 @@ function StateGame:draw()
 
     local TutorialOverlay = require("src.ui.tutorial_overlay")
     TutorialOverlay.draw()
+
+    -- TD Replay and Blind Intro overlays (drawn last, on top of everything)
+    BlindIntro.draw()
+    TDReplay.draw()
 end
 
 function StateGame:mousepressed(x, y, button, istouch, presses)
+    -- TD Replay consumes all clicks while active
+    if TDReplay.active then
+        TDReplay.mousepressed()
+        return
+    end
+
     local TutorialOverlay = require("src.ui.tutorial_overlay")
     if TutorialOverlay.active then
         TutorialOverlay.mousepressed(x, y, button)
