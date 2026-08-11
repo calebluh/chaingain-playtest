@@ -86,7 +86,7 @@ end
 
 function PauseOverlay:enter()
     local StateManager = require("src.states.state_manager")
-    self.isMainMenu = (StateManager.currentState == require("src.states.state_menu"))
+    self.isMainMenu = (StateManager.activeState == require("src.states.state_menu"))
     
     if self.isMainMenu then
         self.viewMode = "SETTINGS"

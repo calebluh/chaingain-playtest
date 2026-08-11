@@ -178,7 +178,6 @@ function StateMenu:mousepressed(x, y, button, istouch, presses)
                     end
                 elseif btn.id == "OPTIONS" then
                     local PauseOverlay = require("src.ui.pause_overlay")
-                    PauseOverlay.viewMode = "MAIN"
                     StateManager.openOverlay(PauseOverlay)
                 elseif btn.id == "SKILLS" then
                     local StateMyPlayerTree = require("src.states.state_myplayer_tree")
