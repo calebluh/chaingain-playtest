@@ -73,15 +73,40 @@ function FieldAnimator.startPlay(playType, yardsGained, yardLine, distanceToFirs
     table.insert(FieldAnimator.defense, { role = "DL_L", x = losX + 1 * YARD_PX, y = midY - 18, targetX = capX(losX - 0.5 * YARD_PX), targetY = midY - 18, speed = 15 })
     table.insert(FieldAnimator.defense, { role = "DL_R", x = losX + 1 * YARD_PX, y = midY + 18, targetX = capX(losX - 0.5 * YARD_PX), targetY = midY + 18, speed = 15 })
 
-    local function checkMyPlayer(posName)
+    local function getPlayerProfile(posName)
         if GameStateData.rosterSlots and GameStateData.rosterSlots[posName] and GameStateData.rosterSlots[posName].cards[1] then
-            return GameStateData.rosterSlots[posName].cards[1].isMyPlayer or false
+            local card = GameStateData.rosterSlots[posName].cards[1]
+            if card.isMyPlayer then return true end
+            return card.visualProfile
         end
-        return false
+        
+        -- Fallback profile for empty slots
+        return {
+            skinTone = math.random(1, 8),
+            visor = "clear",
+            armGear = "none",
+            calfSleeves = "none",
+            tattoos = false,
+            hairStyle = "none",
+            archetype = "stocky"
+        }
+    end
+    
+    local function genDefProfile(isHeavy)
+        return {
+            skinTone = math.random(1, 8),
+            visor = (math.random() > 0.9 and "dark" or "clear"),
+            armGear = (math.random() > 0.7 and "right_sleeve" or "none"),
+            calfSleeves = (math.random() > 0.7 and "black" or "none"),
+            tattoos = (math.random() > 0.8),
+            hairStyle = (math.random() > 0.7 and "dreads" or "none"),
+            hairColor = { math.random(20,80)/100, math.random(10,40)/100, 0.1 },
+            archetype = isHeavy and "heavy" or "lean"
+        }
     end
 
     -- 3. Create Quarterback (QB)
-    local qb = { role = "QB", x = losX - 4 * YARD_PX, y = midY, targetX = capX(losX - 8 * YARD_PX), targetY = midY, isMyPlayer = checkMyPlayer("QB") }
+    local qb = { role = "QB", x = losX - 4 * YARD_PX, y = midY, targetX = capX(losX - 8 * YARD_PX), targetY = midY, profile = getPlayerProfile("QB") }
     table.insert(FieldAnimator.offense, qb)
     FieldAnimator.ball.carrier = qb
 
@@ -93,7 +118,7 @@ function FieldAnimator.startPlay(playType, yardsGained, yardLine, distanceToFirs
             targetX = capX(losX + yardsGained * YARD_PX), targetY = targetY1,
             startX = losX - 1 * YARD_PX, startY = midY - 65,
             breakX = capX(losX + (yardsGained * 0.45) * YARD_PX), breakY = midY - 65,
-            isMyPlayer = checkMyPlayer("WR1")
+            profile = getPlayerProfile("WR1")
         }
         table.insert(FieldAnimator.offense, wr1)
         
@@ -103,7 +128,7 @@ function FieldAnimator.startPlay(playType, yardsGained, yardLine, distanceToFirs
             targetX = capX(losX + (yardsGained - 3) * YARD_PX), targetY = targetY2,
             startX = losX - 1 * YARD_PX, startY = midY + 65,
             breakX = capX(losX + ((yardsGained - 3) * 0.45) * YARD_PX), breakY = midY + 65,
-            isMyPlayer = checkMyPlayer("WR2")
+            profile = getPlayerProfile("WR2")
         }
         table.insert(FieldAnimator.offense, wr2)
 
@@ -112,32 +137,34 @@ function FieldAnimator.startPlay(playType, yardsGained, yardLine, distanceToFirs
             targetX = capX(losX + (yardsGained * 0.7) * YARD_PX), targetY = midY + 15,
             startX = losX - 1.5 * YARD_PX, startY = midY + 30,
             breakX = capX(losX + (yardsGained * 0.3) * YARD_PX), breakY = midY + 30,
-            isMyPlayer = checkMyPlayer("FLEX")
+            profile = getPlayerProfile("FLEX")
         }
         table.insert(FieldAnimator.offense, te)
 
-        local rb = { role = "RB", x = losX - 6 * YARD_PX, y = midY + 10, targetX = capX(losX - 4 * YARD_PX), targetY = midY + 35, isMyPlayer = checkMyPlayer("RB") }
+        local rb = { role = "RB", x = losX - 6 * YARD_PX, y = midY + 10, targetX = capX(losX - 4 * YARD_PX), targetY = midY + 35, profile = getPlayerProfile("RB") }
         table.insert(FieldAnimator.offense, rb)
 
         -- 5. Create Defenders (Pass Play)
-        table.insert(FieldAnimator.defense, { role = "DB1", x = losX + 6 * YARD_PX, y = midY - 65, targetX = wr1.targetX, targetY = wr1.targetY, speed = 44 })
-        table.insert(FieldAnimator.defense, { role = "DB2", x = losX + 6 * YARD_PX, y = midY + 65, targetX = wr2.targetX, targetY = wr2.targetY, speed = 44 })
-        table.insert(FieldAnimator.defense, { role = "DB3", x = losX + 12 * YARD_PX, y = midY, targetX = losX + 15 * YARD_PX, targetY = midY, speed = 40 })
-        table.insert(FieldAnimator.defense, { role = "LB1", x = losX + 4 * YARD_PX, y = midY - 25, targetX = te.targetX, targetY = te.targetY, speed = 36 })
-        table.insert(FieldAnimator.defense, { role = "LB2", x = losX + 4 * YARD_PX, y = midY + 25, targetX = rb.targetX, targetY = rb.targetY, speed = 36 })
+        table.insert(FieldAnimator.defense, { role = "DB1", x = losX + 6 * YARD_PX, y = midY - 65, targetX = wr1.targetX, targetY = wr1.targetY, speed = 44, profile = genDefProfile(false) })
+        table.insert(FieldAnimator.defense, { role = "DB2", x = losX + 6 * YARD_PX, y = midY + 65, targetX = wr2.targetX, targetY = wr2.targetY, speed = 44, profile = genDefProfile(false) })
+        table.insert(FieldAnimator.defense, { role = "DB3", x = losX + 12 * YARD_PX, y = midY, targetX = losX + 15 * YARD_PX, targetY = midY, speed = 40, profile = genDefProfile(false) })
+        table.insert(FieldAnimator.defense, { role = "LB1", x = losX + 4 * YARD_PX, y = midY - 25, targetX = te.targetX, targetY = te.targetY, speed = 36, profile = genDefProfile(true) })
+        table.insert(FieldAnimator.defense, { role = "LB2", x = losX + 4 * YARD_PX, y = midY + 25, targetX = rb.targetX, targetY = rb.targetY, speed = 36, profile = genDefProfile(true) })
     else
         -- Run Play
-        local rb = { role = "RB", x = losX - 6 * YARD_PX, y = midY, targetX = capX(losX + yardsGained * YARD_PX), targetY = midY + math.random(-15, 15), isMyPlayer = checkMyPlayer("RB") or checkMyPlayer("FLEX") }
+        local rbProfile = getPlayerProfile("RB")
+        if not rbProfile then rbProfile = getPlayerProfile("FLEX") end
+        local rb = { role = "RB", x = losX - 6 * YARD_PX, y = midY, targetX = capX(losX + yardsGained * YARD_PX), targetY = midY + math.random(-15, 15), profile = rbProfile }
         table.insert(FieldAnimator.offense, rb)
 
-        table.insert(FieldAnimator.offense, { role = "WR1", x = losX - 1 * YARD_PX, y = midY - 65, targetX = capX(losX + (yardsGained * 0.8) * YARD_PX), targetY = midY - 45, isMyPlayer = checkMyPlayer("WR1") })
-        table.insert(FieldAnimator.offense, { role = "WR2", x = losX - 1 * YARD_PX, y = midY + 65, targetX = capX(losX + (yardsGained * 0.8) * YARD_PX), targetY = midY + 45, isMyPlayer = checkMyPlayer("WR2") })
-        table.insert(FieldAnimator.offense, { role = "TE", x = losX - 1.5 * YARD_PX, y = midY + 30, targetX = capX(losX + 3 * YARD_PX), targetY = midY + 20, isMyPlayer = checkMyPlayer("FLEX") })
+        table.insert(FieldAnimator.offense, { role = "WR1", x = losX - 1 * YARD_PX, y = midY - 65, targetX = capX(losX + (yardsGained * 0.8) * YARD_PX), targetY = midY - 45, profile = getPlayerProfile("WR1") })
+        table.insert(FieldAnimator.offense, { role = "WR2", x = losX - 1 * YARD_PX, y = midY + 65, targetX = capX(losX + (yardsGained * 0.8) * YARD_PX), targetY = midY + 45, profile = getPlayerProfile("WR2") })
+        table.insert(FieldAnimator.offense, { role = "TE", x = losX - 1.5 * YARD_PX, y = midY + 30, targetX = capX(losX + 3 * YARD_PX), targetY = midY + 20, profile = getPlayerProfile("FLEX") })
 
-        table.insert(FieldAnimator.defense, { role = "LB1", x = losX + 4 * YARD_PX, y = midY - 25, speed = 48 })
-        table.insert(FieldAnimator.defense, { role = "LB2", x = losX + 4 * YARD_PX, y = midY + 25, speed = 48 })
-        table.insert(FieldAnimator.defense, { role = "DB1", x = losX + 7 * YARD_PX, y = midY - 55, speed = 45 })
-        table.insert(FieldAnimator.defense, { role = "DB2", x = losX + 7 * YARD_PX, y = midY + 55, speed = 45 })
+        table.insert(FieldAnimator.defense, { role = "LB1", x = losX + 4 * YARD_PX, y = midY - 25, speed = 48, profile = genDefProfile(true) })
+        table.insert(FieldAnimator.defense, { role = "LB2", x = losX + 4 * YARD_PX, y = midY + 25, speed = 48, profile = genDefProfile(true) })
+        table.insert(FieldAnimator.defense, { role = "DB1", x = losX + 7 * YARD_PX, y = midY - 55, speed = 45, profile = genDefProfile(false) })
+        table.insert(FieldAnimator.defense, { role = "DB2", x = losX + 7 * YARD_PX, y = midY + 55, speed = 45, profile = genDefProfile(false) })
     end
     
     FieldAnimator.cameraX = FieldAnimator.ball.x - FIELD_WIDTH / 2
@@ -720,7 +747,7 @@ function FieldAnimator.draw()
     local AssetManager = require("src.engine.asset_manager")
     for _, p in ipairs(FieldAnimator.defense) do
         local isTackled = FieldAnimator.completed and (FieldAnimator.ball.carrier == p)
-        AssetManager.drawRetroPlayer(p.x, p.y, defJersey, defPants, defHelmet, p.vx, p.vy, false, love.timer.getTime(), isTackled)
+        AssetManager.drawRetroPlayer(p.x, p.y, defJersey, defPants, defHelmet, p.vx, p.vy, false, love.timer.getTime(), isTackled, p.profile)
     end
     
     -- 13. Draw Offense Players (Retro Bowl Pixel Art Style!)
@@ -731,7 +758,7 @@ function FieldAnimator.draw()
     
     for _, p in ipairs(FieldAnimator.offense) do
         local isTackled = FieldAnimator.completed and (FieldAnimator.ball.carrier == p)
-        AssetManager.drawRetroPlayer(p.x, p.y, offJersey, offPants, offHelmet, p.vx, p.vy, true, love.timer.getTime(), isTackled, p.isMyPlayer)
+        AssetManager.drawRetroPlayer(p.x, p.y, offJersey, offPants, offHelmet, p.vx, p.vy, true, love.timer.getTime(), isTackled, p.profile)
     end
     
     -- 14. Draw Ball

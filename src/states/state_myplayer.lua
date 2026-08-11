@@ -103,34 +103,74 @@ function StateMyPlayer:draw()
     end
     
     -- LEFT PANEL: 3D Locker Room Preview Box
-    love.graphics.setColor(0.08, 0.09, 0.11)
-    love.graphics.rectangle("fill", 60, 120, 260, 340, 8, 8)
+    local bx, by, bw, bh = 60, 120, 260, 340
     
-    -- Draw Locker details inside clip (window coords due to 2x global scale)
-    love.graphics.setScissor(120, 240, 520, 680)
+    -- Base Wall
+    love.graphics.setColor(0.12, 0.15, 0.20)
+    love.graphics.rectangle("fill", bx, by, bw, bh, 8, 8)
     
-    -- Floor
-    love.graphics.setColor(0.12, 0.13, 0.15)
-    love.graphics.polygon("fill", 60, 420, 320, 420, 280, 460, 100, 460)
-    -- Lockers
-    love.graphics.setColor(0.15, 0.16, 0.18)
-    for i=0, 2 do
-        love.graphics.rectangle("line", 75 + i*75, 140, 65, 260, 4, 4)
+    -- Back Wall Panels
+    love.graphics.setColor(0.08, 0.10, 0.14)
+    love.graphics.rectangle("fill", bx, by + 40, bw, bh - 120)
+    
+    -- Metallic Lockers (3 columns)
+    for i = 0, 2 do
+        local lx = bx + 10 + i * 80
+        local ly = by + 30
+        local lw = 75
+        local lh = 220
+        
+        -- Locker Body
+        love.graphics.setColor(0.2, 0.22, 0.25)
+        love.graphics.rectangle("fill", lx, ly, lw, lh, 4, 4)
+        
+        -- Inner Shadow
+        love.graphics.setColor(0.1, 0.1, 0.1, 0.8)
+        love.graphics.rectangle("fill", lx + 4, ly + 4, lw - 8, lh - 8, 2, 2)
+        
+        -- Locker Door
+        love.graphics.setColor(0.25, 0.28, 0.32)
+        love.graphics.rectangle("fill", lx + 2, ly + 2, lw - 4, lh - 4, 2, 2)
+        
+        -- Vents
+        love.graphics.setColor(0.1, 0.1, 0.1, 0.6)
+        for v = 0, 4 do
+            love.graphics.rectangle("fill", lx + 15, ly + 15 + v * 8, lw - 30, 4)
+        end
+        
+        -- Nameplate
+        love.graphics.setColor(0.8, 0.7, 0.2)
+        love.graphics.rectangle("fill", lx + 20, ly + 70, lw - 40, 15, 2, 2)
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.rectangle("line", lx + 20, ly + 70, lw - 40, 15, 2, 2)
     end
-    -- Neon Logo
+    
+    -- Floor (Isometric style)
+    love.graphics.setColor(0.15, 0.18, 0.22)
+    love.graphics.polygon("fill", bx, by + 250, bx + bw, by + 250, bx + bw, by + bh, bx, by + bh)
+    
+    -- Wooden Bench (Foreground)
+    love.graphics.setColor(0.4, 0.25, 0.15)
+    love.graphics.rectangle("fill", bx + 10, by + 270, bw - 20, 25, 4, 4)
+    love.graphics.setColor(0.5, 0.3, 0.18)
+    love.graphics.rectangle("fill", bx + 10, by + 270, bw - 20, 8, 4, 4)
+    -- Bench legs
+    love.graphics.setColor(0.2, 0.2, 0.2)
+    love.graphics.rectangle("fill", bx + 30, by + 295, 10, 40)
+    love.graphics.rectangle("fill", bx + bw - 40, by + 295, 10, 40)
+    
+    -- Neon Logo (Overhead)
     local time = love.timer.getTime()
-    love.graphics.setColor(0.0, 0.76, 1.0, 0.3 + 0.1 * math.sin(time*4))
-    drawShadowText("CHAIN GAIN", 190, 180, 0, 0.76, 1.0, 1.3, "center", 200)
+    love.graphics.setColor(0.0, 0.76, 1.0, 0.4 + 0.1 * math.sin(time*4))
+    drawShadowText("CHAIN GAIN", bx + bw/2 - 50, by + 10, 0, 0.76, 1.0, 1.2)
     
     -- Character Portrait Preview
     local AssetManager = require("src.engine.asset_manager")
     AssetManager.drawRetroPlayer(190, self.camY, PlayerVisualProfile.primaryColor or {0.13, 0.34, 0.13}, {0.9, 0.9, 0.9}, PlayerVisualProfile.shellColor or {0.07, 0.13, 0.27}, 0, 0, true, time, false, true, self.camScale)
     
-    love.graphics.setScissor()
-    
     love.graphics.setColor(C_NEON_BORDER)
     love.graphics.setLineWidth(2)
-    love.graphics.rectangle("line", 60, 120, 260, 340, 8, 8)
+    love.graphics.rectangle("line", bx, by, bw, bh, 8, 8)
     love.graphics.setLineWidth(1)
     
     drawShadowText("OVR: " .. (MyPlayerProfile.ovr or 70) .. "  |  POSITION: " .. self.creatorPosition, 70, 415, 1, 0.84, 0, 0.95, "center", 240)

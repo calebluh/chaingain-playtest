@@ -63,22 +63,7 @@ function PlayerCard.new(name, position, rarity, multBonus, chipBonus, edition)
     end
 
     -- Editions: Standard, Pumped (+5 YDS), Juiced (+0.5 MTM), Fan Favorite (x1.5 MTM), Franchise Player (+1 Roster Slot)
-    if edition then
-        self.edition = edition
-    else
-        local roll = math.random(1, 100)
-        if roll > 96 then
-            self.edition = "Franchise Player"
-        elseif roll > 90 then
-            self.edition = "Fan Favorite"
-        elseif roll > 80 then
-            self.edition = "Juiced"
-        elseif roll > 70 then
-            self.edition = "Pumped"
-        else
-            self.edition = "Standard"
-        end
-    end
+    self.edition = edition or "Standard"
 
     -- Player Attributes (70..99)
     self.spd = math.clamp(math.floor(self.overall * 0.95 + math.random(-4, 4)), 60, 99)
@@ -114,6 +99,23 @@ function PlayerCard.new(name, position, rarity, multBonus, chipBonus, edition)
     self.flipProgress = 0
     self.jumpY = 0
     self.equippedBadges = {}
+    
+    local hairStyles = {"none", "dreads", "short", "mullet"}
+    local visors = {"clear", "clear", "dark", "iridescent", "gold_mirror"}
+    local sleeves = {"none", "none", "left_sleeve", "right_sleeve", "both_sleeves", "turf_tape"}
+    local calves = {"none", "none", "white", "black", "team_primary"}
+    
+    self.visualProfile = {
+        skinTone = math.random(1, 8),
+        visor = visors[math.random(#visors)],
+        armGear = sleeves[math.random(#sleeves)],
+        handGear = (math.random() > 0.5 and "none" or "receiver"),
+        tattoos = (math.random() > 0.8),
+        calfSleeves = calves[math.random(#calves)],
+        hairStyle = hairStyles[math.random(#hairStyles)],
+        hairColor = { math.random(20,90)/100, math.random(10,50)/100, math.random(0,20)/100 },
+        archetype = (posType == "TE" or posType == "DL" or posType == "OL") and "heavy" or ((posType == "WR" or posType == "CB") and "lean" or "stocky")
+    }
 
     return self
 end
@@ -132,12 +134,12 @@ function PlayerCard:trainPlayer()
     self.cth = math.min(99, self.cth + 2)
 end
 
-function PlayerCard:addEquippedBadge(badge)
-    if #self.equippedBadges < 2 then
-        table.insert(self.equippedBadges, badge)
-    else
-        self.equippedBadges[2] = badge
+function PlayerCard:equipBadge(badgeObj)
+    if #self.equippedBadges < self.maxBadges then
+        table.insert(self.equippedBadges, badgeObj)
+        return true
     end
+    return false
 end
 
 function PlayerCard:update(dt)

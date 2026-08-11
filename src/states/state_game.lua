@@ -545,11 +545,6 @@ function StateGame:draw()
         local drawCount = #DeckManager.drawPile
         local btnText = string.format("PLAYBOOK (%d/%d)", drawCount, totalCards)
         drawShadowText(btnText, 800, 483, 1, 1, 1, 0.85, "center", 145)
-        
-        if isPlaybookHover and not self.showPlaybookModal then
-            local mx, my = love.mouse.getPosition()
-            CardRender.drawDeckTooltip(mx, my)
-        end
     elseif GameStateData.status == "TOUCHDOWN" then
         drawShadowText("DRIVE COMPLETED! PRESS [SPACE] TO VISIT FRONT OFFICE SHOP", 20, 510, 1, 0.84, 0, 1.2)
     elseif GameStateData.status == "GAME_WON" then

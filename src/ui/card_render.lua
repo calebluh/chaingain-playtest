@@ -258,7 +258,7 @@ function CardRender.drawPlayerCard(x, y, player, isHovered, dt)
             teamColors.primary = _G.GameStateData.config.team.primaryColor or teamColors.primary
             teamColors.secondary = _G.GameStateData.config.team.secondaryColor or teamColors.secondary
         end
-        AssetManager.drawRetroPlayer(0, cy + 45, teamColors.primary, {0.9, 0.9, 0.9}, teamColors.secondary, 0, 0, true, 0, false, player.isMyPlayer, 4)
+        AssetManager.drawRetroPlayer(0, cy + 45, teamColors.primary, {0.9, 0.9, 0.9}, teamColors.secondary, 0, 0, true, 0, false, (player.isMyPlayer and true or player.visualProfile), 4)
         
         -- Player Name (Center Bottom Half)
         drawShadowText(player.name:sub(1, 14), cx + 4, cy + h/2 + 8, 1, 1, 1, 1.1, "center", w - 8)
