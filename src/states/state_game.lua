@@ -271,11 +271,15 @@ function StateGame:draw()
     drawShadowText("CLOCK", 740, panelY + 6, 0.8, 0.8, 0.8, 0.85, "center", 80)
     drawShadowText(string.format("%02d", clockSecs), 740, panelY + 28, isLowClock and 1 or 0, isLowClock and 0.2 or 0.84, isLowClock and 0.2 or 0, 1.8, "center", 80)
 
-    drawNeonPanel(827, panelY, 118, 68)
+    drawNeonPanel(825, panelY, 95, 68)
     local ballStr = GameStateData.yardLine < 50 and ("OWN " .. GameStateData.yardLine) or ("OPP " .. (100 - GameStateData.yardLine))
-    drawShadowText("DOWN: " .. GameStateData.down, 830, panelY + 6, 1, 1, 1, 0.85)
-    drawShadowText("DIST: " .. GameStateData.distance, 830, panelY + 24, 1, 1, 1, 0.85)
-    drawShadowText("BALL: " .. ballStr, 830, panelY + 44, 1, 0.84, 0, 0.9)
+    drawShadowText("DOWN:" .. GameStateData.down, 827, panelY + 6, 1, 1, 1, 0.8)
+    drawShadowText("DIST:" .. GameStateData.distance, 827, panelY + 24, 1, 1, 1, 0.8)
+    drawShadowText("BALL:" .. ballStr, 827, panelY + 44, 1, 0.84, 0, 0.8)
+
+    local hoverOpt = checkHover(925, panelY, 23, 68)
+    drawNeonPanel(925, panelY, 23, 68, hoverOpt and {0.0, 0.76, 1.0} or C_BORDER_NORMAL)
+    drawShadowText("⚙", 925, panelY + 22, 1, 1, 1, 1.2, "center", 23)
 
     -- Progress Bar
     love.graphics.setColor(0.08, 0.1, 0.14, 0.9)
@@ -613,6 +617,12 @@ function StateGame:mousepressed(x, y, button, istouch, presses)
     end
 
     if GameStateData.status == "PLAYING" and not self.paused then
+        if button == 1 and checkHover(925, 8, 23, 68) then
+            local PauseOverlay = require("src.ui.pause_overlay")
+            StateManager.openOverlay(PauseOverlay)
+            SoundManager.playSFX("click")
+            return
+        end
         if button == 1 and checkHover(800, 475, 145, 30) then
             self.showPlaybookModal = true
             SoundManager.playSFX("click")

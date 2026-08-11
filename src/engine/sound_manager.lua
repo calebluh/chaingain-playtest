@@ -113,15 +113,26 @@ function SoundManager.playSFX(name, pitch)
     end
 end
 
+function SoundManager.updateVolume()
+    local SettingsData = require("src.data.settings_data")
+    local master = SettingsData and SettingsData.masterVolume or 1.0
+    local musicVol = (_G.CONFIG_MUSIC_VOLUME or 0.5) * master
+    if currentMusic then
+        pcall(function() currentMusic:setVolume(musicVol) end)
+    end
+end
+
 function SoundManager.playMusic(trackName)
     local path = "assets/audio/music/" .. trackName .. ".ogg"
     if love.filesystem and love.filesystem.getInfo and love.filesystem.getInfo(path) then
         if currentMusic then currentMusic:stop() end
         local ok, src = pcall(love.audio.newSource, path, "stream")
         if ok and src then
+            local SettingsData = require("src.data.settings_data")
+            local master = SettingsData and SettingsData.masterVolume or 1.0
             currentMusic = src
             currentMusic:setLooping(true)
-            currentMusic:setVolume(_G.CONFIG_MUSIC_VOLUME or 0.5)
+            currentMusic:setVolume((_G.CONFIG_MUSIC_VOLUME or 0.5) * master)
             currentMusic:play()
         end
     end

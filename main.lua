@@ -284,12 +284,14 @@ function love.keypressed(key)
 end
 
 function love.mousepressed(x, y, button, istouch, presses)
-    StateManager.mousepressed(x / 2, y / 2, button, istouch, presses)
+    local winW, winH = love.graphics.getDimensions()
+    StateManager.mousepressed(x / (winW / 960), y / (winH / 540), button, istouch, presses)
 end
 
 function love.mousereleased(x, y, button, istouch, presses)
     if StateManager.mousereleased then
-        StateManager.mousereleased(x / 2, y / 2, button, istouch, presses)
+        local winW, winH = love.graphics.getDimensions()
+        StateManager.mousereleased(x / (winW / 960), y / (winH / 540), button, istouch, presses)
     end
 end
 
