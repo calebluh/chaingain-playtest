@@ -21,7 +21,7 @@ PlayerVisualProfile.jerseyCut = "standard"  -- "standard", "cropped", "sleeveles
 PlayerVisualProfile.primaryColor = {0.13, 0.34, 0.13}
 PlayerVisualProfile.secondaryColor = {1.0, 1.0, 1.0}
 PlayerVisualProfile.jerseyPattern = "solid" -- "solid", "shoulder_stripes", "sleeve_cuffs", "camo_panels"
-PlayerVisualProfile.jerseyNumber = 88
+PlayerVisualProfile.jerseyNumber = 1
 PlayerVisualProfile.numberFont = "classic_block" -- "classic_block", "modern_apex", "bold_outline"
 
 -- Accessories

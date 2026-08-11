@@ -74,7 +74,7 @@ local function generateAll()
     end
     
     -- 4. UI Elements
-    generateImage("assets/images/ui/ui_logo.png", 1024, 512, "GRIDIRON DECK LOGO", {0.1, 0.1, 0.1, 0.5}, {1, 0.8, 0})
+    generateImage("assets/images/ui/ui_logo.png", 1024, 512, "CHAIN GAIN LOGO", {0.1, 0.1, 0.1, 0.5}, {1, 0.8, 0})
     generateImage("assets/images/ui/ui_cap_coin.png", 128, 128, "COIN", {0.8, 0.6, 0}, {1, 1, 1})
     generateImage("assets/images/ui/ui_audible_icon.png", 128, 128, "AUDIBLE", {0.8, 0.2, 0.2}, {1, 1, 1})
     generateImage("assets/images/ui/ui_down_marker.png", 128, 128, "DOWN", {0.2, 0.2, 0.2}, {1, 0.5, 0})

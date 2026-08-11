@@ -181,10 +181,11 @@ function StateModeSelect:draw()
         drawShadowText("Play", mx + 430, actY + 8, 1, 1, 1, 1.2, "center", 170)
     end
     
-    -- Last Run (Fake button to match UI)
-    love.graphics.setColor(C_BTN_ORANGE)
-    love.graphics.rectangle("fill", mx + 630, actY, 150, 35, 6, 6)
-    drawShadowText("Last Run", mx + 630, actY + 8, 1, 1, 1, 1.0, "center", 150)
+    -- Mode Toggle Button
+    love.graphics.setColor(self.selectedMode == "roguelite" and {0.6, 0.2, 0.8} or C_BTN_ORANGE)
+    love.graphics.rectangle("fill", mx + 610, actY, 170, 35, 6, 6)
+    local modeText = self.selectedMode == "roguelite" and "Mode: MyPlayer" or "Mode: Franchise"
+    drawShadowText(modeText, mx + 610, actY + 8, 1, 1, 1, 1.0, "center", 170)
     
     -- Back Button (Large bottom bar)
     love.graphics.setColor(C_BTN_ORANGE)
@@ -544,6 +545,17 @@ function StateModeSelect:mousepressed(mx, my, button)
             StateManager.switch(StateGame)
             return
         end
+    end
+    
+    -- Mode Toggle Logic
+    if checkHover(bmx + 610, actY, 170, 35) then
+        SoundManager.playSFX("click")
+        if self.selectedMode == "roguelite" then
+            self.selectedMode = "roguelike"
+        else
+            self.selectedMode = "roguelite"
+        end
+        return
     end
     
     -- Back Button

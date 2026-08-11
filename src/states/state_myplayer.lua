@@ -433,11 +433,11 @@ function StateMyPlayer:mousepressed(x, y, button, istouch, presses)
                 end
             end
             if checkHover(490, 230, 25, 25) then
-                PlayerVisualProfile.jerseyNumber = tonumber(PlayerVisualProfile.jerseyNumber) or 12
+                PlayerVisualProfile.jerseyNumber = tonumber(PlayerVisualProfile.jerseyNumber) or 1
                 PlayerVisualProfile.jerseyNumber = math.max(0, PlayerVisualProfile.jerseyNumber - 1)
                 SoundManager.playSFX("click")
             elseif checkHover(575, 230, 25, 25) then
-                PlayerVisualProfile.jerseyNumber = tonumber(PlayerVisualProfile.jerseyNumber) or 12
+                PlayerVisualProfile.jerseyNumber = tonumber(PlayerVisualProfile.jerseyNumber) or 1
                 PlayerVisualProfile.jerseyNumber = math.min(99, PlayerVisualProfile.jerseyNumber + 1)
                 SoundManager.playSFX("click")
             elseif checkHover(525, 230, 40, 25) then
@@ -447,7 +447,7 @@ function StateMyPlayer:mousepressed(x, y, button, istouch, presses)
             else
                 if self.focusedField == "jersey" then
                     self.focusedField = nil
-                    if PlayerVisualProfile.jerseyNumber == "" then PlayerVisualProfile.jerseyNumber = 12 end
+                    if PlayerVisualProfile.jerseyNumber == "" then PlayerVisualProfile.jerseyNumber = 1 end
                 end
             end
         elseif self.tab == "GEAR" then
@@ -526,6 +526,10 @@ function StateMyPlayer:textinput(t)
     elseif self.focusedField == "jersey" then
         if t:match("%d") then
             local str = tostring(PlayerVisualProfile.jerseyNumber)
+            if str == "1" and PlayerVisualProfile.jerseyNumber == 1 then
+                -- Allow overwriting the default 1 if they just started typing
+                str = ""
+            end
             if #str < 2 then
                 PlayerVisualProfile.jerseyNumber = tonumber(str .. t)
             end
@@ -550,7 +554,7 @@ function StateMyPlayer:keypressed(key)
             end
         elseif key == "return" then
             self.focusedField = nil
-            if PlayerVisualProfile.jerseyNumber == "" then PlayerVisualProfile.jerseyNumber = 12 end
+            if PlayerVisualProfile.jerseyNumber == "" then PlayerVisualProfile.jerseyNumber = 1 end
         end
     end
 end

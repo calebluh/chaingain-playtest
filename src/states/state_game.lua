@@ -73,6 +73,9 @@ function StateGame:enter()
     self.was4thDown = false
     self.crowdRoarTimer = 0
     
+    FieldAnimator.active = false
+    FieldAnimator.completed = true
+    
     if #DeckManager.hand == 0 then
         DeckManager.drawHand()
     end
@@ -553,39 +556,6 @@ function StateGame:draw()
         drawShadowText("OUT OF DRIVES! PRESS [R] TO RESTART SEASON RUN", 20, 510, 1, 0.2, 0.2, 1.2)
     end
     
-    -- In-Game Pause Overlay Modal
-    if self.paused then
-        love.graphics.setColor(0, 0, 0, 0.8)
-        love.graphics.rectangle("fill", 0, 0, 960, 540)
-        
-        love.graphics.setColor(C_SLATE_CONTAINER)
-        love.graphics.rectangle("fill", 310, 120, 340, 300, 8, 8)
-        love.graphics.setColor(C_NEON_BORDER)
-        love.graphics.setLineWidth(2)
-        love.graphics.rectangle("line", 310, 120, 340, 300, 8, 8)
-        love.graphics.setLineWidth(1)
-        
-        drawShadowText("GAME PAUSED", 310, 140, 1, 1, 1, 2.0, "center", 340)
-        
-        -- Resume Button
-        local isResumeHover = checkHover(360, 200, 240, 45)
-        love.graphics.setColor(isResumeHover and {0.0, 0.76, 1.0} or C_CHIP_BLUE)
-        love.graphics.rectangle("fill", 360, 200, 240, 45, 6, 6)
-        drawShadowText("RESUME GAME", 360, 213, 1, 1, 1, 1.1, "center", 240)
-        
-        -- Save & Quit Button
-        local isSaveHover = checkHover(360, 265, 240, 45)
-        love.graphics.setColor(isSaveHover and {0.0, 0.76, 1.0} or C_NEON_ACCENT)
-        love.graphics.rectangle("fill", 360, 265, 240, 45, 6, 6)
-        drawShadowText("SAVE & QUIT TO MENU", 360, 278, 0, 0, 0, 1.0, "center", 240)
-        
-        -- Abandon Run Button
-        local isAbandonHover = checkHover(360, 330, 240, 45)
-        love.graphics.setColor(isAbandonHover and {1.0, 0.4, 0.4} or C_MULT_RED)
-        love.graphics.rectangle("fill", 360, 330, 240, 45, 6, 6)
-        drawShadowText("ABANDON RUN", 360, 343, 1, 1, 1, 1.1, "center", 240)
-    end
-
     -- In-Game Playbook Overlay Modal
     if self.showPlaybookModal then
         love.graphics.setColor(0, 0, 0, 0.75)
@@ -685,26 +655,6 @@ function StateGame:mousepressed(x, y, button, istouch, presses)
     end
 
     if ScoringEvaluator.active then return end
-    
-    if self.paused and button == 1 then
-        if checkHover(360, 200, 240, 45) then
-            self.paused = false
-            SoundManager.playSFX("click")
-        elseif checkHover(360, 265, 240, 45) then
-            SaveManager.saveActiveRun(GameStateData)
-            SoundManager.playSFX("click")
-            self.paused = false
-            local StateMenu = require("src.states.state_menu")
-            StateManager.switch(StateMenu)
-        elseif checkHover(360, 330, 240, 45) then
-            SaveManager.clearActiveRun()
-            SoundManager.playSFX("click")
-            self.paused = false
-            local StateMenu = require("src.states.state_menu")
-            StateManager.switch(StateMenu)
-        end
-        return
-    end
 
     if self.showPlaybookModal and button == 1 then
         if checkHover(420, 480, 120, 32) then
@@ -914,6 +864,7 @@ function StateGame:keypressed(key)
         return
     end
 
+    -- [ESC]: Pause
     if key == "escape" then
         self.paused = not self.paused
         return

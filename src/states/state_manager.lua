@@ -68,11 +68,6 @@ function StateManager.keypressed(key)
             StateManager.overlay:keypressed(key)
         end
     else
-        if key == "escape" then
-            local PauseOverlay = require("src.ui.pause_overlay")
-            StateManager.openOverlay(PauseOverlay)
-            return
-        end
         if StateManager.activeState and StateManager.activeState.keypressed then
             StateManager.activeState:keypressed(key)
         end

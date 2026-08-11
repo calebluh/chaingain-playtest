@@ -203,6 +203,10 @@ end
 function StateMenu:keypressed(key)
     if self.activeModal and key == "escape" then
         self.activeModal = nil
+    elseif key == "escape" then
+        local PauseOverlay = require("src.ui.pause_overlay")
+        local StateManager = require("src.states.state_manager")
+        StateManager.openOverlay(PauseOverlay)
     end
 end
 

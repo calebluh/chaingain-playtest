@@ -351,6 +351,9 @@ function AssetManager.drawRetroPlayer(x, y, jerseyColor, pantsColor, helmetColor
         if arch == "lean" then torsoW, torsoH = 7, 11
         elseif arch == "heavy" then torsoW, torsoH = 11, 10
         end
+        if profile.jerseyCut == "cropped" then
+            torsoH = torsoH - 2
+        end
         
         jerseyColor = profile.primaryColor or jerseyColor
         helmetColor = profile.shellColor or helmetColor
@@ -393,25 +396,37 @@ function AssetManager.drawRetroPlayer(x, y, jerseyColor, pantsColor, helmetColor
     local backArmX = -math.floor(torsoW/2) - 1 - armOffset
     local frontArmX = math.floor(torsoW/2) - 1 + armOffset
     
+    local armJerseyColor = (profile and profile.jerseyCut == "sleeveless") and skinColor or jerseyColor
+    local handGearColor = profile and profile.handGearColor or {1, 1, 1}
+    local cleatH, cleatY = 2, 11
+    if profile and profile.cleats == "mid" then cleatH = 3; cleatY = 10
+    elseif profile and profile.cleats == "high" then cleatH = 4; cleatY = 9 end
+
     -- Back Arm
-    love.graphics.setColor(jerseyColor[1]*0.8, jerseyColor[2]*0.8, jerseyColor[3]*0.8)
+    love.graphics.setColor(armJerseyColor[1]*0.8, armJerseyColor[2]*0.8, armJerseyColor[3]*0.8)
     love.graphics.rectangle("fill", backArmX, -4, 3.5, 6)
     if profile and profile.armGear and profile.armGear ~= "none" then
         love.graphics.setColor(1, 1, 1)
         love.graphics.rectangle("fill", backArmX, -2, 3.5, 3)
     end
-    love.graphics.setColor(skinColor[1]*0.8, skinColor[2]*0.8, skinColor[3]*0.8)
+    if profile and profile.handGear and profile.handGear ~= "none" then
+        love.graphics.setColor(handGearColor[1]*0.8, handGearColor[2]*0.8, handGearColor[3]*0.8)
+    else
+        love.graphics.setColor(skinColor[1]*0.8, skinColor[2]*0.8, skinColor[3]*0.8)
+    end
     love.graphics.rectangle("fill", backArmX, 2, 3.5, 3)
     
     -- Back Leg (Pants)
     love.graphics.setColor(pantsColor[1]*0.8, pantsColor[2]*0.8, pantsColor[3]*0.8)
     love.graphics.rectangle("fill", backLegX, 5, 3.5, 6)
     if profile and profile.calfSleeves and profile.calfSleeves ~= "none" then
-        love.graphics.setColor(1, 1, 1)
+        if profile.calfSleeves == "black" then love.graphics.setColor(0.15, 0.15, 0.15)
+        elseif profile.calfSleeves == "team_primary" then love.graphics.setColor(jerseyColor[1]*0.8, jerseyColor[2]*0.8, jerseyColor[3]*0.8)
+        else love.graphics.setColor(0.8, 0.8, 0.8) end
         love.graphics.rectangle("fill", backLegX, 8, 3.5, 3)
     end
-    love.graphics.setColor(0.1, 0.1, 0.1) -- Cleat
-    love.graphics.rectangle("fill", backLegX + 1, 11, 3.5, 2)
+    love.graphics.setColor(profile and profile.cleatsColor or {0.1, 0.1, 0.1})
+    love.graphics.rectangle("fill", backLegX + 1, cleatY, 3.5, cleatH)
     
     -- Hair (Back of helmet)
     if profile and profile.hairStyle and profile.hairStyle ~= "none" then
@@ -434,37 +449,73 @@ function AssetManager.drawRetroPlayer(x, y, jerseyColor, pantsColor, helmetColor
     love.graphics.setColor(pantsColor)
     love.graphics.rectangle("fill", frontLegX, 5, 3.5, 6)
     if profile and profile.calfSleeves and profile.calfSleeves ~= "none" then
-        love.graphics.setColor(1, 1, 1)
+        if profile.calfSleeves == "black" then love.graphics.setColor(0.2, 0.2, 0.2)
+        elseif profile.calfSleeves == "team_primary" then love.graphics.setColor(jerseyColor)
+        else love.graphics.setColor(1, 1, 1) end
         love.graphics.rectangle("fill", frontLegX, 8, 3.5, 3)
     end
-    love.graphics.setColor(0.1, 0.1, 0.1)
-    love.graphics.rectangle("fill", frontLegX + 1, 11, 3.5, 2)
+    love.graphics.setColor(profile and profile.cleatsColor or {0.1, 0.1, 0.1})
+    love.graphics.rectangle("fill", frontLegX + 1, cleatY, 3.5, cleatH)
     
     -- Helmet
-    love.graphics.setColor(helmetColor)
-    love.graphics.rectangle("fill", -4, -14, 8, 8, 2, 2)
-    love.graphics.setColor(1, 1, 1, 0.2) -- Helmet highlight
-    love.graphics.rectangle("fill", -3, -14, 4, 3)
+    if profile and profile.helmetStyle == "vintage" then
+        love.graphics.setColor(0.55, 0.27, 0.07) -- Leather
+        love.graphics.rectangle("fill", -4, -14, 8, 8, 3, 3)
+    else
+        love.graphics.setColor(helmetColor)
+        love.graphics.rectangle("fill", -4, -14, 8, 8, 2, 2)
+        love.graphics.setColor(1, 1, 1, 0.2)
+        love.graphics.rectangle("fill", -3, -14, 4, 3)
+    end
     
     -- Face & Visor area
     love.graphics.setColor(skinColor)
     love.graphics.rectangle("fill", 1, -11, 4, 4)
+    
+    if profile and profile.eyeBlack and profile.eyeBlack ~= "clean" then
+        love.graphics.setColor(0.1, 0.1, 0.1)
+        if profile.eyeBlack == "single_bar" then
+            love.graphics.rectangle("fill", 2, -10, 3, 1)
+        elseif profile.eyeBlack == "warpaint" then
+            love.graphics.rectangle("fill", 2, -10, 3, 2)
+        elseif profile.eyeBlack == "cross" then
+            love.graphics.rectangle("fill", 3, -11, 1, 3)
+            love.graphics.rectangle("fill", 2, -10, 3, 1)
+        end
+    end
+    
     love.graphics.setColor(visorColor)
     love.graphics.rectangle("fill", 1, -12, 4.5, 3)
     
     -- Facemask
-    love.graphics.setColor(0.7, 0.7, 0.7)
-    love.graphics.rectangle("fill", 4, -10, 2, 4)
-    love.graphics.rectangle("fill", 1, -7, 4, 1)
+    if not profile or profile.helmetStyle ~= "vintage" then
+        love.graphics.setColor(profile and profile.maskColor or {0.7, 0.7, 0.7})
+        if profile and profile.helmetStyle == "cage" then
+            love.graphics.rectangle("fill", 4, -11, 2, 5)
+            love.graphics.rectangle("fill", 1, -7, 5, 1)
+            love.graphics.rectangle("fill", 1, -9, 5, 1)
+        elseif profile and profile.helmetStyle == "classic_2bar" then
+            love.graphics.rectangle("fill", 2, -10, 1, 3)
+            love.graphics.rectangle("fill", 1, -7, 4, 1)
+            love.graphics.rectangle("fill", 1, -9, 4, 1)
+        else
+            love.graphics.rectangle("fill", 4, -10, 2, 4)
+            love.graphics.rectangle("fill", 1, -7, 4, 1)
+        end
+    end
     
     -- Front Arm
-    love.graphics.setColor(jerseyColor)
+    love.graphics.setColor(armJerseyColor)
     love.graphics.rectangle("fill", frontArmX, -4, 3.5, 6)
     if profile and profile.armGear and profile.armGear ~= "none" then
         love.graphics.setColor(1, 1, 1)
         love.graphics.rectangle("fill", frontArmX, -2, 3.5, 3)
     end
-    love.graphics.setColor(skinColor)
+    if profile and profile.handGear and profile.handGear ~= "none" then
+        love.graphics.setColor(handGearColor)
+    else
+        love.graphics.setColor(skinColor)
+    end
     love.graphics.rectangle("fill", frontArmX, 2, 3.5, 3)
     
     -- Tattoos
