@@ -185,6 +185,24 @@ if (Test-Path "web_build/index.html") {
     if (-not $html.Contains("rotate-prompt")) {
         $html = $html.Replace("<body>", "<body>`n$rotatePromptDiv")
     }
+
+    # 3.49 Add timestamp cache buster to script tags & purge IndexedDB in index.html
+    $ts = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+    $html = $html.Replace('src="game.js"', 'src="game.js?v=' + $ts + '"')
+    $html = $html.Replace('src="love.js"', 'src="love.js?v=' + $ts + '"')
+    $html = $html.Replace('src="coi-serviceworker.js"', 'src="coi-serviceworker.js?v=' + $ts + '"')
+
+    $purgeDbScript = @'
+    <script>
+      if (window.indexedDB) {
+        try { window.indexedDB.deleteDatabase('/balatrofb'); } catch(e){}
+        try { window.indexedDB.deleteDatabase('/game'); } catch(e){}
+      }
+    </script>
+'@
+    if (-not $html.Contains("deleteDatabase")) {
+        $html = $html.Replace("<head>", "<head>`n$purgeDbScript")
+    }
     
     Set-Content "web_build/index.html" $html -NoNewline
 }
