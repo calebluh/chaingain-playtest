@@ -62,7 +62,9 @@ function love.load(arg)
         end
     end)
 
-    love.window.setMode(1920, 1080, {fullscreen = true, vsync = true})
+    if love.window and love.system and love.system.getOS() ~= "Web" and _G.CONFIG_FULLSCREEN then
+        pcall(love.window.setFullscreen, true)
+    end
     love.window.setTitle("Chain Gain")
     
     if love.filesystem and love.filesystem.getInfo and love.filesystem.getInfo("assets/icon.png") then
