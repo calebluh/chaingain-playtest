@@ -66,9 +66,10 @@ function FieldAnimator.to25D(worldX, worldY, worldZ)
     -- worldX is in pixels. 10 pixels = 1 yard.
     local yard_depth = (worldX - FieldAnimator.cameraX) / 10.0
     
-    -- Field occupies screen Y from 115 (distant/top) to 510 (near/bottom)
+    -- Field occupies screen Y from 115 (distant/top) to 330 (near/bottom, just above tray)
+    -- With typical camera position, near-LOS players (t≈0.09) land at Y≈310.
     local top_y = 115
-    local bottom_y = 510
+    local bottom_y = 330
     local center_x = 480
     local top_width = 320   -- narrower at distance → stronger perspective
     local bottom_width = 700
@@ -587,9 +588,9 @@ function FieldAnimator.draw()
     
     love.graphics.push()
     
-    -- 1. 2.5D Angled Turf Base
+    -- 1. 2.5D Angled Turf Base — only fill down to Y=335 (tray shelf starts there)
     love.graphics.setColor(C_TURF)
-    love.graphics.rectangle("fill", 0, 50, 960, 430)
+    love.graphics.rectangle("fill", 0, 50, 960, 285)
     
     -- Alternating 2.5D angled dark green turf stripes
     love.graphics.setColor(C_TURF_DARK)

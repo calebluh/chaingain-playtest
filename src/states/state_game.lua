@@ -72,8 +72,8 @@ function StateGame:enter()
     self.show4thDownPrompt = false
     self.was4thDown = false
     self.crowdRoarTimer = 0
-    self.playbookShelfY = 380
-    self.targetShelfY = 380
+    self.playbookShelfY = 545  -- start hidden (off-screen below)
+    self.targetShelfY = 545
     
     FieldAnimator.startPlay("Run", 0, GameStateData.yardLine or 25, GameStateData.distance or 10, false, false)
     FieldAnimator.active = false
@@ -236,6 +236,16 @@ function StateGame:update(dt)
         self.selectedPlayIndex = nil
     end
 
+    -- Madden-style play-call tray: visible when it's time to pick, hidden during animation
+    local shouldShowCards = (GameStateData.status == "PLAYING")
+        and not FieldAnimator.active
+        and not ScoringEvaluator.active
+
+    self.targetShelfY = shouldShowCards and 335 or 545
+    -- Smooth lerp toward target (speed=8 → opens/closes in ~0.2s)
+    self.playbookShelfY = self.playbookShelfY
+        + (self.targetShelfY - self.playbookShelfY) * math.min(1, dt * 8)
+
     local mx, my = love.mouse.getPosition()
     local N = #DeckManager.hand
     -- Vertical card tray: cards are 128px wide with a computed gap so they fill ~900px centered
@@ -244,7 +254,7 @@ function StateGame:update(dt)
         and math.max(8, math.min(52, (860 - N * CARD_W) / (N - 1)))
         or 0
     local startX = 480 - ((N - 1) * (CARD_W + gap)) / 2
-    local TRAY_BASE_Y = 430  -- cards sit in the bottom tray region
+    local TRAY_BASE_Y = self.playbookShelfY + 95  -- cards float 95px below the shelf top
     
     for i, card in ipairs(DeckManager.hand) do
         local targetX = startX + (i - 1) * (CARD_W + gap)
@@ -311,18 +321,21 @@ function StateGame:draw()
     local weatherType = GameStateData.weather or "clear"
     FxManager.draw(weatherType)
 
-    -- ── Card Tray Shelf Background ───────────────────────────────────────
+    -- ── Card Tray Shelf Background (slides with playbookShelfY) ────────────────────
     -- Drawn BEFORE the HUD panels so the shelf never bleeds over the score bar.
-    love.graphics.setColor(0.05, 0.06, 0.09, 0.93)
-    love.graphics.rectangle("fill", 0, 335, 960, 205)
-    -- Accent top edge line
-    love.graphics.setColor(0.0, 0.76, 1.0, 0.35)
-    love.graphics.setLineWidth(2)
-    love.graphics.line(0, 337, 960, 337)
-    love.graphics.setLineWidth(1)
-    -- Subtle tray label
-    love.graphics.setColor(0.3, 0.35, 0.45, 0.7)
-    love.graphics.printf("PLAYBOOK", 0, 340, 960, "center", 0, 0.72, 0.72)
+    -- When tray is hidden (playbookShelfY≥540) nothing is drawn here.
+    if self.playbookShelfY < 538 then
+        love.graphics.setColor(0.05, 0.06, 0.09, 0.95)
+        love.graphics.rectangle("fill", 0, self.playbookShelfY, 960, 540 - self.playbookShelfY + 10)
+        -- Accent top edge line
+        love.graphics.setColor(0.0, 0.76, 1.0, math.min(1, (538 - self.playbookShelfY) / 60))
+        love.graphics.setLineWidth(2)
+        love.graphics.line(0, self.playbookShelfY + 2, 960, self.playbookShelfY + 2)
+        love.graphics.setLineWidth(1)
+        -- Subtle tray label
+        love.graphics.setColor(0.3, 0.35, 0.45, 0.6)
+        love.graphics.printf("PLAYBOOK", 0, self.playbookShelfY + 5, 960, "center", 0, 0.72, 0.72)
+    end
 
     local previewChips = 0
     local previewMult = 0
@@ -590,41 +603,47 @@ function StateGame:draw()
     
     RPOMinigame.draw()
 
-    -- Status Banners & Navigation
+    -- Status Banners & Navigation (slide with tray so they hide during play animation)
     if GameStateData.status == "PLAYING" then
-        if DefenseManager.currentPlay then
-            drawShadowText("DEFENSIVE TELL: " .. DefenseManager.currentPlay.hint, 20, 485, 0.8, 1, 0.8, 1.1)
+        local trayOpen = self.playbookShelfY < 520
+        -- Defensive tell and controls hint — only show when tray is visible
+        if trayOpen then
+            local hintY = self.playbookShelfY + 150
+            if DefenseManager.currentPlay then
+                drawShadowText("DEFENSIVE TELL: " .. DefenseManager.currentPlay.hint, 20, hintY, 0.8, 1, 0.8, 1.1)
+                hintY = hintY + 17
+            end
+            drawShadowText("[Click/Drag]: Call Play | [Right-Click]: Flip Card | [Q]: Audible | [ESC]: Pause", 20, hintY + 10, 1, 1, 1, 0.85)
+            
+            local btnY = self.playbookShelfY + 140
+            local isPlaybookHover = checkHover(800, btnY, 145, 28)
+            love.graphics.setColor(isPlaybookHover and {0.0, 0.76, 1.0} or {0.129, 0.149, 0.192})
+            love.graphics.rectangle("fill", 800, btnY, 145, 28, 6, 6)
+            love.graphics.setColor(C_NEON_BORDER)
+            love.graphics.setLineWidth(1.5)
+            love.graphics.rectangle("line", 800, btnY, 145, 28, 6, 6)
+            love.graphics.setLineWidth(1)
+            
+            local isRosterHover = checkHover(645, btnY, 145, 28)
+            love.graphics.setColor(isRosterHover and {0.0, 0.76, 1.0} or {0.129, 0.149, 0.192})
+            love.graphics.rectangle("fill", 645, btnY, 145, 28, 6, 6)
+            love.graphics.setColor(C_NEON_BORDER)
+            love.graphics.setLineWidth(1.5)
+            love.graphics.rectangle("line", 645, btnY, 145, 28, 6, 6)
+            love.graphics.setLineWidth(1)
+            drawShadowText("VIEW ROSTER", 645, btnY + 8, 1, 1, 1, 0.85, "center", 145)
+            
+            local totalCards = #DeckManager.playbook
+            local drawCount = #DeckManager.drawPile
+            local btnText = string.format("PLAYBOOK (%d/%d)", drawCount, totalCards)
+            drawShadowText(btnText, 800, btnY + 8, 1, 1, 1, 0.85, "center", 145)
         end
-        drawShadowText("[←/→/Click]: Play | [Right-Click]: Flip Card | [1/2]: Adjustments | [Q]: Audible | [ESC]: Pause", 20, 512, 1, 1, 1, 1.0)
-        
-        local isPlaybookHover = checkHover(800, 475, 145, 30)
-        love.graphics.setColor(isPlaybookHover and {0.0, 0.76, 1.0} or {0.129, 0.149, 0.192})
-        love.graphics.rectangle("fill", 800, 475, 145, 30, 6, 6)
-        love.graphics.setColor(C_NEON_BORDER)
-        love.graphics.setLineWidth(1.5)
-        love.graphics.rectangle("line", 800, 475, 145, 30, 6, 6)
-        love.graphics.setLineWidth(1)
-        
-        local isRosterHover = checkHover(645, 475, 145, 30)
-        love.graphics.setColor(isRosterHover and {0.0, 0.76, 1.0} or {0.129, 0.149, 0.192})
-        love.graphics.rectangle("fill", 645, 475, 145, 30, 6, 6)
-        love.graphics.setColor(C_NEON_BORDER)
-        love.graphics.setLineWidth(1.5)
-        love.graphics.rectangle("line", 645, 475, 145, 30, 6, 6)
-        love.graphics.setLineWidth(1)
-        drawShadowText("VIEW ROSTER", 645, 483, 1, 1, 1, 0.85, "center", 145)
-
-        
-        local totalCards = #DeckManager.playbook
-        local drawCount = #DeckManager.drawPile
-        local btnText = string.format("PLAYBOOK (%d/%d)", drawCount, totalCards)
-        drawShadowText(btnText, 800, 483, 1, 1, 1, 0.85, "center", 145)
     elseif GameStateData.status == "TOUCHDOWN" then
-        drawShadowText("DRIVE COMPLETED! PRESS [SPACE] TO VISIT FRONT OFFICE SHOP", 20, 510, 1, 0.84, 0, 1.2)
+        drawShadowText("DRIVE COMPLETED! PRESS [SPACE] TO VISIT FRONT OFFICE SHOP", 480, 290, 1, 0.84, 0, 1.3, "center", 920)
     elseif GameStateData.status == "GAME_WON" then
-        drawShadowText("GAME WON! TARGET REACHED! PRESS [SPACE] FOR NEXT WEEK", 20, 510, 0.2, 0.8, 0.4, 1.3)
+        drawShadowText("GAME WON! TARGET REACHED! PRESS [SPACE] FOR NEXT WEEK", 480, 290, 0.2, 0.8, 0.4, 1.3, "center", 920)
     elseif GameStateData.status == "TURNOVER" then
-        drawShadowText("OUT OF DRIVES! PRESS [R] TO RESTART SEASON RUN", 20, 510, 1, 0.2, 0.2, 1.2)
+        drawShadowText("OUT OF DRIVES! PRESS [R] TO RESTART SEASON RUN", 480, 290, 1, 0.2, 0.2, 1.3, "center", 920)
     end
     
     -- In-Game Playbook & Roster Overlay Modals
@@ -849,12 +868,13 @@ function StateGame:mousepressed(x, y, button, istouch, presses)
             SoundManager.playSFX("click")
             return
         end
-        if button == 1 and checkHover(800, 475, 145, 30) then
+        local btnY = self.playbookShelfY + 140
+        if button == 1 and checkHover(800, btnY, 145, 28) then
             self.showPlaybookModal = true
             SoundManager.playSFX("click")
             return
         end
-        if button == 1 and checkHover(645, 475, 145, 30) then
+        if button == 1 and checkHover(645, btnY, 145, 28) then
             self.showRosterModal = true
             SoundManager.playSFX("click")
             return

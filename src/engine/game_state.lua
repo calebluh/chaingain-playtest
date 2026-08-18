@@ -265,7 +265,7 @@ function GameState.nextRound(defenseType)
     
     GameState.audiblesRemaining = 3 + (GameState.bonusAudibles or 0)
     
-    DefenseManager.setNextBlind(defenseType)
+    DefenseManager.setNextBlind(defenseType, GameState)
     DefenseManager.callDefensivePlay()
     GameState.resetPlayClock()
     

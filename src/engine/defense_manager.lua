@@ -26,13 +26,18 @@ function DefenseManager.init()
     DefenseManager.currentPlay = nil
 end
 
-function DefenseManager.setNextBlind(defenseType)
+function DefenseManager.setNextBlind(defenseType, gameState)
     if defenseType == "standard" then
         local idx = math.random(#DefenseManager.proDefenses)
         DefenseManager.activeBlind = DefenseManager.proDefenses[idx]
     elseif defenseType == "boss" then
         local idx = math.random(#DefenseManager.legendaryDefenses)
         DefenseManager.activeBlind = DefenseManager.legendaryDefenses[idx]
+    end
+    -- Fire onActivate if the blind has a special startup effect
+    if DefenseManager.activeBlind and DefenseManager.activeBlind.onActivate then
+        local gs = gameState or (pcall(function() return require("src.engine.game_state") end) and require("src.engine.game_state") or nil)
+        pcall(DefenseManager.activeBlind.onActivate, gs)
     end
 end
 

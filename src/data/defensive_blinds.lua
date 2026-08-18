@@ -332,6 +332,107 @@ return {
             end
             return chips, mult
         end
+    },
+
+    -- ── 6 NEW STRATEGIC BLINDS (Chain Gain v2.0 Update) ─────────────
+    {
+        id = "zone_flood_defense",
+        name = "Zone Flood Defense",
+        type = "standard",
+        tier = "Pro Defense",
+        icon = "def_standard.png",
+        description = "Short Pass plays lose 4 Base Yards as receivers are flooded",
+        hint = "Attack the edges — short routes are covered!",
+        evaluate = function(playType, chips, mult)
+            if playType == "Short Pass" then
+                return math.max(0, chips - 4), mult
+            end
+            return chips, mult
+        end
+    },
+    {
+        id = "prevent_defense",
+        name = "Prevent Defense",
+        type = "standard",
+        tier = "Pro Defense",
+        icon = "def_standard.png",
+        description = "Deep Passes lose -60% MTM, but Run gains +2 YDS and +0.3 MTM",
+        hint = "Run it up the gut — they're scared of the clock!",
+        evaluate = function(playType, chips, mult)
+            if playType == "Deep Pass" then
+                return chips, math.max(1, mult * 0.4)
+            elseif playType == "Run" then
+                return chips + 2, mult + 0.3
+            end
+            return chips, mult
+        end
+    },
+    {
+        id = "storm_front_defense",
+        name = "Storm Front",
+        type = "standard",
+        tier = "Pro Defense",
+        icon = "def_weather_rain.png",
+        description = "Forces rain weather. All Pass plays lose -25% MTM.",
+        hint = "Run the ball — the rain is killing your passing game!",
+        evaluate = function(playType, chips, mult)
+            -- Also triggers weather via defense manager
+            if playType ~= "Run" then
+                return chips, math.max(1, mult * 0.75)
+            end
+            return chips, mult
+        end,
+        onActivate = function(gameState)
+            if gameState then gameState.weather = "rain" end
+        end
+    },
+    {
+        id = "spy_linebacker",
+        name = "Spy Linebacker",
+        type = "standard",
+        tier = "Pro Defense",
+        icon = "def_standard.png",
+        description = "Play Action loses half its Base Yards — QB can't escape!",
+        hint = "The spy is on your QB — call a real pass or a run!",
+        evaluate = function(playType, chips, mult)
+            if playType == "Play Action" then
+                return math.floor(chips * 0.5), mult
+            end
+            return chips, mult
+        end
+    },
+    {
+        id = "stack_the_box",
+        name = "Stack the Box",
+        type = "standard",
+        tier = "Pro Defense",
+        icon = "def_standard.png",
+        description = "Run plays lose 8 Base Yards. All other plays gain +0.5 MTM.",
+        hint = "They're stacking the box — spread it out!",
+        evaluate = function(playType, chips, mult)
+            if playType == "Run" then
+                return math.max(0, chips - 8), mult
+            else
+                return chips, mult + 0.5
+            end
+        end
+    },
+    {
+        id = "quarters_defense",
+        name = "Quarters Coverage",
+        type = "standard",
+        tier = "Pro Defense",
+        icon = "def_standard.png",
+        description = "Medium Pass -50% MTM, Short Pass -4 YDS, Deep Pass unaffected",
+        hint = "Go deep or run — the intermediate routes are locked!",
+        evaluate = function(playType, chips, mult)
+            if playType == "Medium Pass" then
+                return chips, math.max(1, mult * 0.5)
+            elseif playType == "Short Pass" then
+                return math.max(0, chips - 4), mult
+            end
+            return chips, mult
+        end
     }
 }
 
