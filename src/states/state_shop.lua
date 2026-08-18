@@ -45,7 +45,7 @@ end
 
 function StateShop:enter()
     FxManager.clear()
-    self.shopMessage = "Welcome to the Front Office Shop!"
+    self.shopMessage = self.shopMessage or "Welcome to the Front Office Shop!"
     self.pendingEquipment = nil
     self.pendingTraining = false
     
@@ -92,7 +92,7 @@ function StateShop:rerollShop()
 end
 
 function StateShop:exit()
-    self.shopItems = nil
+    -- Keep shopItems if switching to pack opening, cleared when starting next drive
 end
 
 function StateShop:update(dt)
@@ -298,6 +298,7 @@ function StateShop:mousepressed(x, y, button, istouch, presses)
         if checkHover(40, 480, 300, 45) then
             local StateGame = require("src.states.state_game")
             GameStateData.inShop = false
+            self.shopItems = nil
             if DefenseManager.activeBlind and DefenseManager.activeBlind.type == "standard" then
                 GameStateData.nextRound("boss")
             else
@@ -399,6 +400,7 @@ function StateShop:keypressed(key)
     elseif key == "space" then
         local StateGame = require("src.states.state_game")
         GameStateData.inShop = false
+        self.shopItems = nil
         if DefenseManager.activeBlind and DefenseManager.activeBlind.type == "standard" then
             GameStateData.nextRound("boss")
         else

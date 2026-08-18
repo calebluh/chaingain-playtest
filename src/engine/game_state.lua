@@ -362,78 +362,89 @@ function GameState.useConsumable(index)
 end
 
 function GameState.addRosterPlayer(playerCard, posOverride)
-    local pos = posOverride
-    if pos == "TE" or pos == "WR" then pos = nil end
-
-    if not pos then
-        if playerCard.position:match("QB") then
-            pos = "QB"
-        elseif playerCard.position:match("RB") then
-            if #GameState.rosterSlots.RB.cards < GameState.rosterSlots.RB.max then
-                pos = "RB"
-            elseif #GameState.rosterSlots.FLEX.cards < GameState.rosterSlots.FLEX.max then
-                pos = "FLEX"
-            else
-                pos = "RB"
-            end
-        elseif playerCard.position:match("WR") then
-            if #GameState.rosterSlots.WR1.cards < GameState.rosterSlots.WR1.max then
-                pos = "WR1"
-            elseif #GameState.rosterSlots.WR2.cards < GameState.rosterSlots.WR2.max then
-                pos = "WR2"
-            elseif #GameState.rosterSlots.FLEX.cards < GameState.rosterSlots.FLEX.max then
-                pos = "FLEX"
-            else
-                pos = "WR1"
-            end
-        elseif playerCard.position:match("TE") then
-            if #GameState.rosterSlots.WR2.cards < GameState.rosterSlots.WR2.max then
-                pos = "WR2"
-            elseif #GameState.rosterSlots.FLEX.cards < GameState.rosterSlots.FLEX.max then
-                pos = "FLEX"
-            else
-                pos = "WR2"
-            end
+    if not playerCard or not GameState.rosterSlots then return false end
+    
+    -- Determine position category
+    local cardPos = (posOverride or playerCard.pos or playerCard.position or "WR"):gsub("%d", "")
+    
+    -- Get list of candidate roster slot keys in preferred order
+    local candidateSlots = {}
+    if cardPos == "QB" then
+        candidateSlots = {"QB"}
+    elseif cardPos == "RB" then
+        candidateSlots = {"RB", "FLEX"}
+    elseif cardPos == "WR" then
+        candidateSlots = {"WR1", "WR2", "FLEX"}
+    elseif cardPos == "TE" then
+        candidateSlots = {"WR2", "FLEX"}
+    else
+        candidateSlots = {cardPos}
+    end
+    
+    -- Handle Franchise Player edition (+1 roster max)
+    if playerCard.edition == "Franchise Player" or playerCard.edition == "Franchise" or playerCard.edition == "Negative" then
+        local targetSlot = candidateSlots[1]
+        if targetSlot and GameState.rosterSlots[targetSlot] then
+            GameState.rosterSlots[targetSlot].max = GameState.rosterSlots[targetSlot].max + 1
         end
     end
     
-    if (playerCard.edition == "Franchise Player" or playerCard.edition == "Franchise" or playerCard.edition == "Negative") and pos and GameState.rosterSlots[pos] then
-        GameState.rosterSlots[pos].max = GameState.rosterSlots[pos].max + 1
-    end
-    
-    if pos and GameState.rosterSlots[pos] then
-        local slotData = GameState.rosterSlots[pos]
-        if #slotData.cards < slotData.max then
+    -- 1. Try to find any eligible slot that has empty space
+    for _, slotKey in ipairs(candidateSlots) do
+        local slotData = GameState.rosterSlots[slotKey]
+        if slotData and #slotData.cards < slotData.max then
+            playerCard.position = slotKey
             table.insert(slotData.cards, playerCard)
             return true
-        else
-            -- Slot is full: swap out lowest OVR non-MyPlayer card
-            local replaceIdx = nil
-            local minOvr = 999
+        end
+    end
+    
+    -- 2. If all eligible slots are full, find the lowest OVR non-MyPlayer card across ALL candidate slots
+    local bestSlotKey = nil
+    local bestReplaceIdx = nil
+    local minOvr = 9999
+    
+    for _, slotKey in ipairs(candidateSlots) do
+        local slotData = GameState.rosterSlots[slotKey]
+        if slotData then
             for i, c in ipairs(slotData.cards) do
                 if not c.isMyPlayer and c.overall < minOvr then
                     minOvr = c.overall
-                    replaceIdx = i
+                    bestSlotKey = slotKey
+                    bestReplaceIdx = i
                 end
-            end
-            if replaceIdx then
-                slotData.cards[replaceIdx] = playerCard
-                return true
             end
         end
     end
+    
+    -- 3. If a replaceable card was found, replace it!
+    if bestSlotKey and bestReplaceIdx then
+        playerCard.position = bestSlotKey
+        GameState.rosterSlots[bestSlotKey].cards[bestReplaceIdx] = playerCard
+        return true
+    end
+    
     return false
 end
 
 function GameState.hasSpaceForPosition(posName)
-    if posName == "QB" then
-        return #GameState.rosterSlots.QB.cards < GameState.rosterSlots.QB.max
-    elseif posName == "RB" then
-        return (#GameState.rosterSlots.RB.cards < GameState.rosterSlots.RB.max) or (#GameState.rosterSlots.FLEX.cards < GameState.rosterSlots.FLEX.max)
-    elseif posName == "WR" then
-        return (#GameState.rosterSlots.WR1.cards < GameState.rosterSlots.WR1.max) or (#GameState.rosterSlots.WR2.cards < GameState.rosterSlots.WR2.max) or (#GameState.rosterSlots.FLEX.cards < GameState.rosterSlots.FLEX.max)
-    elseif posName == "TE" then
-        return (#GameState.rosterSlots.WR2.cards < GameState.rosterSlots.WR2.max) or (#GameState.rosterSlots.FLEX.cards < GameState.rosterSlots.FLEX.max)
+    local candidateSlots = {}
+    if posName == "QB" then candidateSlots = {"QB"}
+    elseif posName == "RB" then candidateSlots = {"RB", "FLEX"}
+    elseif posName == "WR" then candidateSlots = {"WR1", "WR2", "FLEX"}
+    elseif posName == "TE" then candidateSlots = {"WR2", "FLEX"}
+    else candidateSlots = {posName} end
+    
+    for _, slotKey in ipairs(candidateSlots) do
+        local slotData = GameState.rosterSlots and GameState.rosterSlots[slotKey]
+        if slotData then
+            -- Empty space available
+            if #slotData.cards < slotData.max then return true end
+            -- Or a non-MyPlayer card that can be swapped out
+            for _, c in ipairs(slotData.cards) do
+                if not c.isMyPlayer then return true end
+            end
+        end
     end
     return false
 end

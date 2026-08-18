@@ -7,21 +7,21 @@ local rosterCatalog = {
     -- Quarterbacks (12)
     { name = "Marcus Vance", pos = "QB", rarity = "X-Factor", ovr = 96, chip = 0, mult = 0.0, tag = "SCALING QB", desc = "Permanently gains +1 YDS every time you play a Pass.", ability = function(self, playCard, gameState, c, m)
         self.passesThrown = self.passesThrown or 0
-        if playCard.type:match("Pass") then self.passesThrown = self.passesThrown + 1 end
+        if playCard and playCard.type and playCard.type:match("Pass") then self.passesThrown = self.passesThrown + 1 end
         return c + self.passesThrown, m
     end},
     { name = "Jalen Mercer", pos = "QB", rarity = "X-Factor", ovr = 98, chip = 0, mult = 0.0, tag = "CLUTCH GOD", desc = "x3.0 MTM if you have 0 Drives Remaining.", ability = function(self, playCard, gameState, c, m)
-        if gameState.drivesRemaining == 0 then return c, m * 3.0 end
+        if gameState and gameState.drivesRemaining == 0 then return c, m * 3.0 end
         return c, m
     end},
     { name = "Trevor Sterling", pos = "QB", rarity = "X-Factor", ovr = 94, chip = 0, mult = 0.0, tag = "DUAL THREAT QB", desc = "x2.0 MTM on Play Action, +5 YDS on Runs.", ability = function(self, playCard, gameState, c, m)
-        if playCard.type == "Play Action" then return c, m * 2.0
-        elseif playCard.type == "Run" then return c + 5, m end
+        if playCard and playCard.type == "Play Action" then return c, m * 2.0
+        elseif playCard and playCard.type == "Run" then return c + 5, m end
         return c, m
     end},
     { name = "Ceedee Thorne", pos = "QB", rarity = "X-Factor", ovr = 92, chip = 0, mult = 0.0, tag = "DEEP BALLER", desc = "Permanently gains +0.2 MTM every time you play a Deep Pass.", ability = function(self, playCard, gameState, c, m)
         self.deepPasses = self.deepPasses or 0
-        if playCard.type == "Deep Pass" then self.deepPasses = self.deepPasses + 1 end
+        if playCard and playCard.type == "Deep Pass" then self.deepPasses = self.deepPasses + 1 end
         return c, m + (self.deepPasses * 0.2)
     end},
     { name = "Micah Cross", pos = "QB", rarity = "Gold", ovr = 88, chip = 2, mult = 0.4, tag = "FIELD GENERAL", desc = "+2 YDS on Medium & Short Passes" },
@@ -35,16 +35,16 @@ local rosterCatalog = {
     
     -- Running Backs (15)
     { name = "Buster Iron", pos = "RB", rarity = "X-Factor", ovr = 96, chip = 0, mult = 0.0, tag = "MOMENTUM RB", desc = "x2.0 MTM if you played a Run on the previous down.", ability = function(self, playCard, gameState, c, m)
-        if gameState.lastPlayResult and gameState.lastPlayResult:match("Run") then return c, m * 2.0 end
+        if gameState and gameState.lastPlayResult and gameState.lastPlayResult:match("Run") then return c, m * 2.0 end
         return c, m
     end},
     { name = "Rex Thunder", pos = "RB", rarity = "X-Factor", ovr = 94, chip = 0, mult = 0.0, tag = "WORKHORSE", desc = "Permanently gains +1 YDS every time you play a Run.", ability = function(self, playCard, gameState, c, m)
         self.runsCalled = self.runsCalled or 0
-        if playCard.type == "Run" then self.runsCalled = self.runsCalled + 1 end
+        if playCard and playCard.type == "Run" then self.runsCalled = self.runsCalled + 1 end
         return c + self.runsCalled, m
     end},
     { name = "Colt Savage", pos = "RB", rarity = "X-Factor", ovr = 98, chip = 0, mult = 0.0, tag = "SCREEN KING", desc = "x2.5 MTM on Short Passes if you have 3+ Drives left.", ability = function(self, playCard, gameState, c, m)
-        if playCard.type == "Short Pass" and gameState.drivesRemaining >= 3 then return c, m * 2.5 end
+        if playCard and playCard.type == "Short Pass" and gameState and gameState.drivesRemaining and gameState.drivesRemaining >= 3 then return c, m * 2.5 end
         return c, m
     end},
     { name = "Brock Surge", pos = "RB", rarity = "Gold", ovr = 89, chip = 3, mult = 0.35, tag = "WRECKING BALL RB", desc = "+3 YDS on Inside Runs" },
@@ -62,29 +62,30 @@ local rosterCatalog = {
 
     -- Wide Receivers (20)
     { name = "Flash Gordon", pos = "WR", rarity = "X-Factor", ovr = 99, chip = 0, mult = 0.0, tag = "SPEEDSTER", desc = "Gains +5 YDS for every Audible remaining.", ability = function(self, playCard, gameState, c, m)
-        return c + (gameState.audiblesRemaining * 5), m
+        local aud = gameState and gameState.audiblesRemaining or 0
+        return c + (aud * 5), m
     end},
     { name = "Sonic Star", pos = "WR", rarity = "X-Factor", ovr = 98, chip = 0, mult = 0.0, tag = "DEEP THREAT WR", desc = "x1.5 MTM for every Deep Pass played this game.", ability = function(self, playCard, gameState, c, m)
         self.deepTotal = self.deepTotal or 0
-        if playCard.type == "Deep Pass" then self.deepTotal = self.deepTotal + 1 end
+        if playCard and playCard.type == "Deep Pass" then self.deepTotal = self.deepTotal + 1 end
         return c, m * (1.0 + (self.deepTotal * 0.5))
     end},
     { name = "Chase Skylark", pos = "WR", rarity = "X-Factor", ovr = 96, chip = 0, mult = 0.0, tag = "SLOT DEMON WR", desc = "+8 YDS if your hand contains a Screen.", ability = function(self, playCard, gameState, c, m)
         local hasScreen = false
         local DeckManager = require("src.engine.deck_manager")
         for _, handCard in ipairs(DeckManager.hand or {}) do
-            if handCard.name == "Screen Pass" then hasScreen = true end
+            if handCard and handCard.name == "Screen Pass" then hasScreen = true end
         end
         if hasScreen then return c + 8, m end
         return c, m
     end},
     { name = "Zane Apex", pos = "WR", rarity = "X-Factor", ovr = 95, chip = 0, mult = 0.0, tag = "ENDZONE THREAT", desc = "x3.0 MTM if in the Red Zone (Yard Line >= 80).", ability = function(self, playCard, gameState, c, m)
-        if gameState.yardLine >= 80 then return c, m * 3.0 end
+        if gameState and gameState.yardLine and gameState.yardLine >= 80 then return c, m * 3.0 end
         return c, m
     end},
     { name = "Jet Talon", pos = "WR", rarity = "X-Factor", ovr = 94, chip = 0, mult = 0.0, tag = "RETRIGGER", desc = "Permanently gains +1 YDS and +0.1 MTM every 1st Down.", ability = function(self, playCard, gameState, c, m)
         self.firstDowns = self.firstDowns or 0
-        if gameState.down == 1 then self.firstDowns = self.firstDowns + 1 end
+        if gameState and gameState.down == 1 then self.firstDowns = self.firstDowns + 1 end
         return c + self.firstDowns, m + (self.firstDowns * 0.1)
     end},
     { name = "Kip Dynamo", pos = "WR", rarity = "Gold", ovr = 89, chip = 3, mult = 0.4, tag = "SLOT DEMON WR", desc = "+3 YDS on 3rd Down Passes" },

@@ -58,7 +58,13 @@ local function buildAssetCandidates(relativePath)
         addCandidate("assets/images/ui/" .. normalizedNoExt:gsub("^ui/", "") .. ".png")
     end
 
-    if not normalized:match("^images/") and not normalized:match("^cards/") and not normalized:match("^blinds/") and not normalized:match("^players/") and not normalized:match("^ui/") then
+    if normalized:match("^sprites/") or normalizedNoExt:match("^sprites/") then
+        addCandidate("assets/sprites/" .. normalized:gsub("^sprites/", ""))
+        addCandidate("assets/sprites/" .. normalizedNoExt:gsub("^sprites/", "") .. ".png")
+    end
+
+    if not normalized:match("^images/") and not normalized:match("^cards/") and not normalized:match("^blinds/") and not normalized:match("^players/") and not normalized:match("^ui/") and not normalized:match("^sprites/") then
+        addCandidate("assets/sprites/" .. normalized)
         addCandidate("assets/images/" .. normalized)
         addCandidate("assets/" .. normalized)
         addCandidate("assets/images/cards/" .. normalized)

@@ -263,7 +263,7 @@ function StatePackOpening:draw()
                     love.graphics.setColor(0.8, 0.8, 0.8)
                     love.graphics.printf(card.item.description, -60, -30, 120 / 0.75, "center", 0, 0.75, 0.75)
                 else
-                    CardRender.drawPlayerCard(0, 0, card.item, false, love.timer.getTime())
+                    CardRender.drawPlayerCard(0, 0, card.item, false, love.timer.getDelta())
                 end
             end
             
