@@ -577,8 +577,6 @@ local function drawDashedLine(x1, y1, x2, y2, dashLength, gapLength)
 end
 
 function FieldAnimator.draw()
-    if not FieldAnimator.active then return end
-    
     local weatherType = GameStateData.weather or "clear"
     local t = math.min(1.0, FieldAnimator.timer / FieldAnimator.duration)
     

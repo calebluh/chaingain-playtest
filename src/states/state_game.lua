@@ -434,52 +434,7 @@ function StateGame:draw()
     -- Stadium Pulse Meter
     StadiumPulse.draw(935, 10)
 
-    -- Roster Slots
-    local drawOrder = {"QB", "RB", "WR1", "WR2", "FLEX"}
-    local totalSlots = 0
-    if GameStateData.rosterSlots then
-        for _, pos in ipairs(drawOrder) do
-            if GameStateData.rosterSlots[pos] then
-                totalSlots = totalSlots + GameStateData.rosterSlots[pos].max
-            end
-        end
-    end
-    
-    local startXRoster = 480 - ((totalSlots - 1) * 110) / 2
-    local currentSlotIdx = 0
-    self.hoveredRosterPlayer = nil
-    local mx, my = love.mouse.getPosition()
-    
-    if GameStateData.rosterSlots then
-        for _, pos in ipairs(drawOrder) do
-            local posData = GameStateData.rosterSlots[pos]
-            if posData then
-                for i = 1, posData.max do
-                    local rx = startXRoster + currentSlotIdx * 110
-                    local ry = 165
-                    local isRosterHover = (mx >= rx - 45 and mx <= rx + 45 and my >= ry - 55 and my <= ry + 55)
-                    
-                    local player = posData.cards[i]
-                    if player then
-                        if isRosterHover then self.hoveredRosterPlayer = player end
-                        CardRender.drawPlayerCard(rx, ry, player, isRosterHover, love.timer.getDelta())
-                    else
-                        love.graphics.push()
-                        love.graphics.translate(rx, ry)
-                        love.graphics.setColor(C_SLATE_CONTAINER)
-                        love.graphics.rectangle("fill", -50, -55, 100, 110, 6, 6)
-                        love.graphics.setColor(C_BORDER_NORMAL)
-                        love.graphics.rectangle("line", -50, -55, 100, 110, 6, 6)
-                        local label = (posData.max > 1) and (pos .. " " .. i) or pos
-                        drawShadowText("[" .. label .. "]", -50, -5, 0.5, 0.5, 0.5, 1.0, "center", 100)
-                        love.graphics.pop()
-                    end
-                    currentSlotIdx = currentSlotIdx + 1
-                end
-            end
-        end
-    end
-
+    -- Removed inline roster rendering to free up field view; moved to modal.
     -- 4th Down Decision Tree
     if self.show4thDownPrompt and GameStateData.status == "PLAYING" then
         love.graphics.setColor(0.12, 0.15, 0.22, 0.95)
@@ -583,10 +538,7 @@ function StateGame:draw()
         CardRender.drawTooltip(mx, my, self.hoveredPlayCard)
     end
     
-    local FieldAnimator = require("src.ui.field_animator")
-    if FieldAnimator.active then
-        FieldAnimator.draw()
-    end
+    -- RPOMinigame is drawn below
     
     RPOMinigame.draw()
 
@@ -605,6 +557,16 @@ function StateGame:draw()
         love.graphics.rectangle("line", 800, 475, 145, 30, 6, 6)
         love.graphics.setLineWidth(1)
         
+        local isRosterHover = checkHover(645, 475, 145, 30)
+        love.graphics.setColor(isRosterHover and {0.0, 0.76, 1.0} or {0.129, 0.149, 0.192})
+        love.graphics.rectangle("fill", 645, 475, 145, 30, 6, 6)
+        love.graphics.setColor(C_NEON_BORDER)
+        love.graphics.setLineWidth(1.5)
+        love.graphics.rectangle("line", 645, 475, 145, 30, 6, 6)
+        love.graphics.setLineWidth(1)
+        drawShadowText("VIEW ROSTER", 645, 483, 1, 1, 1, 0.85, "center", 145)
+
+        
         local totalCards = #DeckManager.playbook
         local drawCount = #DeckManager.drawPile
         local btnText = string.format("PLAYBOOK (%d/%d)", drawCount, totalCards)
@@ -617,7 +579,71 @@ function StateGame:draw()
         drawShadowText("OUT OF DRIVES! PRESS [R] TO RESTART SEASON RUN", 20, 510, 1, 0.2, 0.2, 1.2)
     end
     
-    -- In-Game Playbook Overlay Modal
+    -- In-Game Playbook & Roster Overlay Modals
+    if self.showRosterModal then
+        love.graphics.setColor(0, 0, 0, 0.75)
+        love.graphics.rectangle("fill", 0, 0, 960, 540)
+        
+        love.graphics.setColor(0.08, 0.1, 0.12, 0.98)
+        love.graphics.rectangle("fill", 40, 20, 880, 500, 10, 10)
+        love.graphics.setColor(C_NEON_BORDER)
+        love.graphics.setLineWidth(2.5)
+        love.graphics.rectangle("line", 40, 20, 880, 500, 10, 10)
+        love.graphics.setLineWidth(1)
+        
+        drawShadowText("YOUR TEAM ROSTER", 60, 35, 1, 0.84, 0, 1.4)
+        drawShadowText("(CLICK ANYWHERE OUTSIDE TO CLOSE)", 60, 65, 0.6, 0.6, 0.6, 0.9)
+        
+        local drawOrder = {"QB", "RB", "WR1", "WR2", "FLEX"}
+        local totalSlots = 0
+        if GameStateData.rosterSlots then
+            for _, pos in ipairs(drawOrder) do
+                if GameStateData.rosterSlots[pos] then
+                    totalSlots = totalSlots + GameStateData.rosterSlots[pos].max
+                end
+            end
+        end
+        
+        local startXRoster = 480 - ((totalSlots - 1) * 110) / 2
+        local currentSlotIdx = 0
+        self.hoveredRosterPlayer = nil
+        local mx, my = love.mouse.getPosition()
+        
+        if GameStateData.rosterSlots then
+            for _, pos in ipairs(drawOrder) do
+                local posData = GameStateData.rosterSlots[pos]
+                if posData then
+                    for i = 1, posData.max do
+                        local rx = startXRoster + currentSlotIdx * 110
+                        local ry = 250
+                        local isRosterHover = (mx >= rx - 45 and mx <= rx + 45 and my >= ry - 55 and my <= ry + 55)
+                        
+                        local player = posData.cards[i]
+                        if player then
+                            if isRosterHover then self.hoveredRosterPlayer = player end
+                            CardRender.drawPlayerCard(rx, ry, player, isRosterHover, love.timer.getDelta())
+                        else
+                            love.graphics.push()
+                            love.graphics.translate(rx, ry)
+                            love.graphics.setColor(C_SLATE_CONTAINER)
+                            love.graphics.rectangle("fill", -50, -55, 100, 110, 6, 6)
+                            love.graphics.setColor(C_BORDER_NORMAL)
+                            love.graphics.rectangle("line", -50, -55, 100, 110, 6, 6)
+                            local label = (posData.max > 1) and (pos .. " " .. i) or pos
+                            drawShadowText("[" .. label .. "]", -50, -5, 0.5, 0.5, 0.5, 1.0, "center", 100)
+                            love.graphics.pop()
+                        end
+                        currentSlotIdx = currentSlotIdx + 1
+                    end
+                end
+            end
+        end
+        
+        if self.hoveredRosterPlayer then
+            CardRender.drawTooltip(mx, my, self.hoveredRosterPlayer)
+        end
+    end
+    
     if self.showPlaybookModal then
         love.graphics.setColor(0, 0, 0, 0.75)
         love.graphics.rectangle("fill", 0, 0, 960, 540)
@@ -734,6 +760,14 @@ function StateGame:mousepressed(x, y, button, istouch, presses)
 
     if ScoringEvaluator.active then return end
 
+    if self.showRosterModal and button == 1 then
+        if x < 40 or x > 920 or y < 20 or y > 520 then
+            self.showRosterModal = false
+            SoundManager.playSFX("click")
+        end
+        return
+    end
+
     if self.showPlaybookModal and button == 1 then
         if checkHover(420, 480, 120, 32) then
             self.showPlaybookModal = false
@@ -760,6 +794,11 @@ function StateGame:mousepressed(x, y, button, istouch, presses)
         end
         if button == 1 and checkHover(800, 475, 145, 30) then
             self.showPlaybookModal = true
+            SoundManager.playSFX("click")
+            return
+        end
+        if button == 1 and checkHover(645, 475, 145, 30) then
+            self.showRosterModal = true
             SoundManager.playSFX("click")
             return
         end
@@ -936,6 +975,14 @@ function StateGame:keypressed(key)
 
     local FieldAnimator = require("src.ui.field_animator")
     if FieldAnimator.active and FieldAnimator.keypressed(key) then
+        return
+    end
+
+    if self.showRosterModal then
+        if key == "escape" or key == "space" or key == "return" or key == "enter" then
+            self.showRosterModal = false
+            SoundManager.playSFX("click")
+        end
         return
     end
 
