@@ -1,4 +1,4 @@
--- main.lua
+package.path = package.path .. ";src/?.lua;src/?/init.lua;?.lua;?/init.lua"
 math.clamp = math.clamp or function(val, min, max)
     return math.max(min, math.min(max, val))
 end

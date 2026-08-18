@@ -9,14 +9,32 @@ Write-Host "Building Chain Gain for the Web..." -ForegroundColor Cyan
 if (Test-Path "balatrofb.love") { Remove-Item "balatrofb.love" -Force }
 if (Test-Path "web_build") { Remove-Item "web_build" -Recurse -Force }
 
-# 2. Package into a .love file (Using tar.exe for POSIX forward slashes required by love.js)
-Write-Host "Zipping project into balatrofb.love with POSIX forward-slash paths..."
-if (Get-Command tar.exe -ErrorAction SilentlyContinue) {
-    tar.exe -a -c -f balatrofb.zip src assets main.lua conf.lua
-} else {
-    Get-ChildItem -Path "src", "assets", "main.lua", "conf.lua" | Compress-Archive -DestinationPath "balatrofb.zip" -Force
-}
+# 2. Package into a .love file with guaranteed POSIX forward-slash entries
+Write-Host "Zipping project into balatrofb.love with explicit POSIX forward-slash paths..."
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
 if (Test-Path "balatrofb.love") { Remove-Item "balatrofb.love" -Force }
+if (Test-Path "balatrofb.zip") { Remove-Item "balatrofb.zip" -Force }
+
+$zip = [System.IO.Compression.ZipFile]::Open((Join-Path (Get-Location).Path "balatrofb.zip"), [System.IO.Compression.ZipArchiveMode]::Create)
+$basePath = (Get-Location).Path
+$targets = @("src", "assets", "main.lua", "conf.lua")
+
+foreach ($target in $targets) {
+    if (Test-Path $target -PathType Container) {
+        $files = Get-ChildItem -Path $target -Recurse -File
+        foreach ($file in $files) {
+            $relPath = $file.FullName.Substring($basePath.Length + 1).Replace("\", "/")
+            [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $file.FullName, $relPath) | Out-Null
+        }
+    } elseif (Test-Path $target -PathType Leaf) {
+        $file = Get-Item $target
+        [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $file.FullName, $file.Name) | Out-Null
+    }
+}
+$zip.Dispose()
+
 Rename-Item -Path "balatrofb.zip" -NewName "balatrofb.love" -Force
 
 # 3. Compile to WebAssembly using love.js

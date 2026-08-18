@@ -12,13 +12,31 @@ if (Test-Path "desktop_build") { Remove-Item "desktop_build" -Recurse -Force }
 if (Test-Path "ChainGain_Windows.zip") { Remove-Item "ChainGain_Windows.zip" -Force }
 
 # 3. Package resources into a .love archive
-Write-Host "Packaging resources into balatrofb.love with POSIX paths..." -ForegroundColor Yellow
-if (Get-Command tar.exe -ErrorAction SilentlyContinue) {
-    tar.exe -a -c -f balatrofb.zip src assets main.lua conf.lua
-} else {
-    Get-ChildItem -Path "src", "assets", "main.lua", "conf.lua" | Compress-Archive -DestinationPath "balatrofb.zip" -Force
-}
+Write-Host "Packaging resources into balatrofb.love with explicit POSIX forward-slash paths..." -ForegroundColor Yellow
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
 if (Test-Path "balatrofb.love") { Remove-Item "balatrofb.love" -Force }
+if (Test-Path "balatrofb.zip") { Remove-Item "balatrofb.zip" -Force }
+
+$zip = [System.IO.Compression.ZipFile]::Open((Join-Path (Get-Location).Path "balatrofb.zip"), [System.IO.Compression.ZipArchiveMode]::Create)
+$basePath = (Get-Location).Path
+$targets = @("src", "assets", "main.lua", "conf.lua")
+
+foreach ($target in $targets) {
+    if (Test-Path $target -PathType Container) {
+        $files = Get-ChildItem -Path $target -Recurse -File
+        foreach ($file in $files) {
+            $relPath = $file.FullName.Substring($basePath.Length + 1).Replace("\", "/")
+            [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $file.FullName, $relPath) | Out-Null
+        }
+    } elseif (Test-Path $target -PathType Leaf) {
+        $file = Get-Item $target
+        [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $file.FullName, $file.Name) | Out-Null
+    }
+}
+$zip.Dispose()
+
 Rename-Item -Path "balatrofb.zip" -NewName "balatrofb.love" -Force
 
 # 4. Download Love2D redistribution files if not cached locally
