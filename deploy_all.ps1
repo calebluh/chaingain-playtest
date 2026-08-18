@@ -24,6 +24,11 @@ Write-Host ""
 Write-Host ">>> [STEP 2/3] Compiling WebAssembly & Deploying to gh-pages..." -ForegroundColor Yellow
 if (Test-Path "deploy_web.ps1") {
     .\deploy_web.ps1 -NoServe
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Error: deploy_web.ps1 failed!" -ForegroundColor Red
+        git checkout main 2>$null
+        exit 1
+    }
 } else {
     Write-Host "Error: deploy_web.ps1 missing!" -ForegroundColor Red
     exit 1
@@ -33,6 +38,7 @@ Write-Host ""
 
 # Step 3: Stage, Commit, and Push Source Code to main Branch
 Write-Host ">>> [STEP 3/3] Committing and Pushing Source Code to main..." -ForegroundColor Yellow
+git checkout main 2>$null
 git add .
 git commit -m $msg
 git push origin main --force

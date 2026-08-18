@@ -18,7 +18,12 @@ Rename-Item -Path "balatrofb.zip" -NewName "balatrofb.love"
 # 3. Compile to WebAssembly using love.js
 Write-Host "Compiling to WebAssembly via love.js (this may take a moment)..." -ForegroundColor Cyan
 # Using npx to automatically fetch and run Davidobot's love.js
-npx -y love.js balatrofb.love web_build -t "Chain Gain" -c
+npx -y --package=love.js love.js.cmd balatrofb.love web_build -t "Chain Gain" -c
+
+if (-not (Test-Path "web_build")) {
+    Write-Host "Error: Web build failed. 'web_build' directory does not exist." -ForegroundColor Red
+    exit 1
+}
 
 # 3.5 Inject game icon as browser tab favicon
 if (Test-Path "assets/icon.png") {
@@ -30,14 +35,17 @@ $remoteUrl = (git config --get remote.origin.url)
 if ($remoteUrl) {
     Write-Host "Deploying compiled web build directly to GitHub Pages (gh-pages)..." -ForegroundColor Yellow
     Push-Location web_build
-    git init -q
-    git checkout -B gh-pages
-    git remote add origin $remoteUrl.Trim() 2>$null
-    git add .
-    git commit -m "Automated GitHub Pages Deployment" -q
-    git push origin gh-pages --force
-    Pop-Location
-    Write-Host "GitHub Pages deployment complete!" -ForegroundColor Green
+    try {
+        git init -q
+        git checkout -B gh-pages
+        git remote add origin $remoteUrl.Trim() 2>$null
+        git add .
+        git commit -m "Automated GitHub Pages Deployment" -q
+        git push origin gh-pages --force
+        Write-Host "GitHub Pages deployment complete!" -ForegroundColor Green
+    } finally {
+        Pop-Location
+    }
 }
 
 Write-Host "Build complete! Output is in the 'web_build' folder." -ForegroundColor Green
