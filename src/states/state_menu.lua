@@ -155,6 +155,7 @@ end
 function StateMenu:mousepressed(x, y, button, istouch, presses)
     if button == 1 then
         SoundManager.playSFX("click")
+        print(string.format("[DEBUG] StateMenu.mousepressed received: x=%s y=%s button=%s", tostring(x), tostring(y), tostring(button)))
 
         
         for _, btn in ipairs(self.buttons) do
@@ -189,6 +190,7 @@ function StateMenu:mousepressed(x, y, button, istouch, presses)
                     local StateHallOfFame = require("src.states.state_hall_of_fame")
                     StateManager.switch(StateHallOfFame)
                 elseif btn.id == "PLAY" then
+                    print("[DEBUG] StateMenu.PLAY button clicked -> switching to StateModeSelect")
                     local StateModeSelect = require("src.states.state_mode_select")
                     StateManager.switch(StateModeSelect)
                 elseif btn.id == "CAREER" then

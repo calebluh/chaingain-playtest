@@ -36,11 +36,14 @@ function PlayCard:update(dt, isHovered, mouseRelX)
     local PhysicsUtils = require("src.engine.physics_utils")
     local targetRot = 0
     if isHovered and mouseRelX then
-        targetRot = math.clamp(mouseRelX * 0.006, -0.15, 0.15)
+        -- Smaller sensitivity and tighter clamp for gentle tilt
+        targetRot = math.clamp(mouseRelX * 0.004, -0.12, 0.12)
     end
+    -- Store a local rotation offset from hover; actual smoothing is handled by StateGame
     self.rot = self.rot or 0
     self.rotVelocity = self.rotVelocity or 0
-    self.rot, self.rotVelocity = PhysicsUtils.spring(self.rot, targetRot, self.rotVelocity, dt or 0.016, 14, 0.35, 0)
+    -- Store requested offset; keep it small so StateGame spring produces gentle float
+    self.rotOffset = targetRot
 end
 
 return PlayCard

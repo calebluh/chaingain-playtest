@@ -64,6 +64,8 @@ function StateMyPlayer:enter()
     self.targetCamScale = 8.0
     self.camY = 290
     self.targetCamY = 290
+    
+    love.keyboard.setTextInput(false)
 end
 
 function StateMyPlayer:exit()
@@ -406,8 +408,10 @@ function StateMyPlayer:mousepressed(x, y, button, istouch, presses)
             end
             if checkHover(500, 180, 240, 30) then
                 self.focusedField = "name"
+                love.keyboard.setTextInput(true)
             else
                 self.focusedField = nil
+                love.keyboard.setTextInput(false)
             end
         elseif self.tab == "HELMET" then
             for i, hStyle in ipairs(PlayerVisualProfile.helmetOptions) do
@@ -442,11 +446,13 @@ function StateMyPlayer:mousepressed(x, y, button, istouch, presses)
                 SoundManager.playSFX("click")
             elseif checkHover(525, 230, 40, 25) then
                 self.focusedField = "jersey"
+                love.keyboard.setTextInput(true)
                 PlayerVisualProfile.jerseyNumber = ""
                 SoundManager.playSFX("click")
             else
                 if self.focusedField == "jersey" then
                     self.focusedField = nil
+                    love.keyboard.setTextInput(false)
                     if PlayerVisualProfile.jerseyNumber == "" then PlayerVisualProfile.jerseyNumber = 1 end
                 end
             end
@@ -544,6 +550,7 @@ function StateMyPlayer:keypressed(key)
             self.creatorName = self.creatorName:sub(1, -2)
         elseif key == "return" then
             self.focusedField = nil
+            love.keyboard.setTextInput(false)
         end
     elseif self.focusedField == "jersey" then
         if key == "backspace" then
@@ -555,6 +562,7 @@ function StateMyPlayer:keypressed(key)
             end
         elseif key == "return" then
             self.focusedField = nil
+            love.keyboard.setTextInput(false)
             if PlayerVisualProfile.jerseyNumber == "" then PlayerVisualProfile.jerseyNumber = 1 end
         end
     end

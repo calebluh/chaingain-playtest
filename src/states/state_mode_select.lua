@@ -398,6 +398,7 @@ end
 
 function StateModeSelect:mousepressed(mx, my, button)
     if button ~= 1 then return end
+    print(string.format("[DEBUG] StateModeSelect.mousepressed received: mx=%s my=%s button=%s phase=%s", tostring(mx), tostring(my), tostring(button), tostring(self.phase)))
     
     local mw, mh = 800, 460
     local bmx, bmy = (960 - mw) / 2, (540 - mh) / 2 + 10
@@ -525,6 +526,7 @@ function StateModeSelect:mousepressed(mx, my, button)
         
         -- Play Button
         if checkHover(bmx + 430, actY, 170, 35) then
+            print(string.format("[DEBUG] StateModeSelect Play clicked (phase=%s selectedMode=%s selectedTeam=%s selectedArch=%s selectedStake=%s)", tostring(self.phase), tostring(self.selectedMode), tostring(self.selectedTeamIdx), tostring(self.selectedArchIdx), tostring(self.selectedStakeIdx)))
             SoundManager.playSFX("touchdown")
             
             _G.GAME_MODE = self.selectedMode

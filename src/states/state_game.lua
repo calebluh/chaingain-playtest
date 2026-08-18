@@ -79,6 +79,24 @@ function StateGame:enter()
     if #DeckManager.hand == 0 then
         DeckManager.drawHand()
     end
+
+    -- Ensure visual state for play cards is initialized so draw() won't error
+    do
+        local N = #DeckManager.hand
+        local startX = 480 - ((N - 1) * 95) / 2
+        for i, card in ipairs(DeckManager.hand) do
+            local targetX = startX + (i - 1) * 95
+            local targetY = 390
+            card.xOffset = card.xOffset or targetX
+            card.yOffset = card.yOffset or targetY
+            card.rot = card.rot or 0
+            card.scale = card.scale or 1.0
+            card.xVelocity = card.xVelocity or 0
+            card.yVelocity = card.yVelocity or 0
+            card.rotVelocity = card.rotVelocity or 0
+            card.scaleVelocity = card.scaleVelocity or 0
+        end
+    end
     
     SoundManager.playMusic("gameplay_theme")
     
@@ -125,7 +143,7 @@ function StateGame:update(dt)
         end
     end
 
-    if self.paused or self.showPlaybookModal then return end
+    if StateManager.isOverlayOpen() or self.showPlaybookModal then return end
     
     RPOMinigame.update(dt)
     if RPOMinigame.active then return end
@@ -242,7 +260,15 @@ function StateGame:update(dt)
         
         card.xOffset, card.xVelocity = PhysicsUtils.spring(card.xOffset, targetX, card.xVelocity, dt, 4, 0.7, 0)
         card.yOffset, card.yVelocity = PhysicsUtils.spring(card.yOffset, targetY, card.yVelocity, dt, 4, 0.6, 0)
-        card.rot, card.rotVelocity = PhysicsUtils.spring(card.rot, baseRot, card.rotVelocity, dt, 3, 0.6, 0)
+        local desiredRot = baseRot + (card.rotOffset or 0)
+        -- Clamp desired rotation to sane visual bounds
+        desiredRot = math.clamp(desiredRot, -0.28, 0.28)
+        -- Use a slightly faster, more damped spring for rotation so it floats but doesn't oscillate
+        card.rot, card.rotVelocity = PhysicsUtils.spring(card.rot, desiredRot, card.rotVelocity, dt, 6, 1.1, 0)
+        -- Prevent runaway angular velocity
+        if card.rotVelocity and math.abs(card.rotVelocity) > 8 then
+            card.rotVelocity = card.rotVelocity * 0.2
+        end
         card.scale, card.scaleVelocity = PhysicsUtils.spring(card.scale, targetScale, card.scaleVelocity, dt, 4, 0.6, 0)
     end
     
@@ -667,7 +693,7 @@ function StateGame:mousepressed(x, y, button, istouch, presses)
         return
     end
 
-    if GameStateData.status == "PLAYING" and not self.paused then
+    if GameStateData.status == "PLAYING" and not StateManager.isOverlayOpen() then
         if button == 1 and checkHover(886, 8, 36, 68) then
             local currentSpeed = SettingsData.gameSpeed or 1.0
             SettingsData.gameSpeed = (currentSpeed == 1.0) and 2.0 or ((currentSpeed == 2.0) and 4.0 or 1.0)
@@ -864,22 +890,10 @@ function StateGame:keypressed(key)
         return
     end
 
-    -- [ESC]: Pause
+    -- [ESC]: Pause (open pause overlay)
     if key == "escape" then
-        self.paused = not self.paused
-        return
-    end
-    
-    if self.paused then
-        if key == "r" then
-            self.paused = false
-            GameStateData.init(GameStateData.config)
-            DeckManager.drawHand()
-        elseif key == "q" then
-            self.paused = false
-            local StateMenu = require("src.states.state_menu")
-            StateManager.switch(StateMenu)
-        end
+        local PauseOverlay = require("src.ui.pause_overlay")
+        StateManager.openOverlay(PauseOverlay)
         return
     end
 
