@@ -244,7 +244,7 @@ function StateGame:update(dt)
         local baseTargetY = self.playbookShelfY + 70
         local targetY = baseTargetY
         
-        local isHovered = (mx >= targetX - 45 and mx <= targetX + 45 and my >= targetY - 60 and my <= targetY + 80)
+        local isHovered = (mx >= targetX - 65 and mx <= targetX + 65 and my >= targetY - 87 and my <= targetY + 87)
         local relX = mx - targetX
         if card.update then card:update(dt, isHovered, relX) end
         
@@ -255,10 +255,10 @@ function StateGame:update(dt)
             local dx = mx - self.dragLastX
             baseRot = dx * 0.015
         elseif i == self.selectedPlayIndex then
-            targetY = baseTargetY - 50
+            targetY = baseTargetY - 60
             baseRot = math.sin(self.time * 4) * 0.03
         elseif isHovered then
-            targetY = baseTargetY - 20
+            targetY = baseTargetY - 40
             baseRot = (i - (N + 1) / 2) * 0.05
         end
         
@@ -509,7 +509,7 @@ function StateGame:draw()
     self.hoveredPlayCard = nil
     local mx, my = love.mouse.getPosition()
     for i, card in ipairs(DeckManager.hand) do
-        local isHover = mx >= card.xOffset - 45 and mx <= card.xOffset + 45 and my >= card.yOffset - 60 and my <= card.yOffset + 60
+        local isHover = mx >= card.xOffset - 65 and mx <= card.xOffset + 65 and my >= card.yOffset - 87 and my <= card.yOffset + 87
         if isHover then
             self.hoveredPlayCard = card
         end
@@ -671,6 +671,12 @@ function StateGame:draw()
         if self.hoveredRosterPlayer then
             CardRender.drawTooltip(mx, my, self.hoveredRosterPlayer)
         end
+        
+        -- Draw close button
+        local isCloseHover = checkHover(420, 480, 120, 32)
+        love.graphics.setColor(isCloseHover and {0.9, 0.3, 0.3} or {0.7, 0.2, 0.2})
+        love.graphics.rectangle("fill", 420, 480, 120, 32, 6, 6)
+        drawShadowText("CLOSE", 420, 488, 1, 1, 1, 0.85, "center", 120)
     end
     
     if self.showPlaybookModal then
@@ -789,20 +795,23 @@ function StateGame:mousepressed(x, y, button, istouch, presses)
 
     if ScoringEvaluator.active then return end
 
-    if self.showRosterModal and button == 1 then
-        if x < 40 or x > 920 or y < 20 or y > 520 then
-            self.showRosterModal = false
-            SoundManager.playSFX("click")
-        end
-        return
-    end
-
     if self.showPlaybookModal and button == 1 then
         if checkHover(420, 480, 120, 32) then
             self.showPlaybookModal = false
             SoundManager.playSFX("click")
         elseif x < 40 or x > 920 or y < 20 or y > 520 then
             self.showPlaybookModal = false
+            SoundManager.playSFX("click")
+        end
+        return
+    end
+
+    if self.showRosterModal and button == 1 then
+        if checkHover(420, 480, 120, 32) then
+            self.showRosterModal = false
+            SoundManager.playSFX("click")
+        elseif x < 40 or x > 920 or y < 20 or y > 520 then
+            self.showRosterModal = false
             SoundManager.playSFX("click")
         end
         return
@@ -869,7 +878,7 @@ function StateGame:mousepressed(x, y, button, istouch, presses)
 
             local clickedCardIdx = nil
             for i, c in ipairs(DeckManager.hand) do
-                if checkHover(c.xOffset - 45, c.yOffset - 60, 90, 140) then
+                if checkHover(c.xOffset - 65, c.yOffset - 87, 130, 175) then
                     clickedCardIdx = i
                     break
                 end

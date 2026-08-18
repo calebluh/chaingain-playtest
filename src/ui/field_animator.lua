@@ -117,6 +117,8 @@ function FieldAnimator.startPlay(playType, yardsGained, yardLine, distanceToFirs
     FieldAnimator.skillCheckSuccess = nil
     FieldAnimator.skillCheckTriggered = false
 
+    local function capX(val) return math.min(110 * YARD_PX, math.max(10 * YARD_PX, val)) end
+
     local Formations = {
         gun_spread = {
             -- Offense
@@ -192,6 +194,8 @@ function FieldAnimator.startPlay(playType, yardsGained, yardLine, distanceToFirs
             local pDat = {
                 role = p.role,
                 x = wX, y = wY,
+                startX = wX, startY = wY,
+                breakX = capX(wX + (yardsGained * 0.45) * YARD_PX), breakY = wY,
                 targetX = capX(wX + math.max(2, yardsGained) * YARD_PX), targetY = wY,
                 profile = getPlayerProfile(p.role:sub(1,2))
             }
