@@ -26,9 +26,59 @@ if (-not (Test-Path "web_build")) {
 
 # 3.4 Inject Cross-Origin Isolation Service Worker for GitHub Pages SharedArrayBuffer support
 if (Test-Path "web_build/index.html") {
-    Write-Host "Injecting Cross-Origin Isolation Service Worker for GitHub Pages..." -ForegroundColor Yellow
+    Write-Host "Creating local coi-serviceworker.js for same-origin GitHub Pages deployment..." -ForegroundColor Yellow
+    $coiJsCode = @'
+/*! coi-serviceworker v0.1.7 - Guido Zufolo (MIT) */
+if (typeof window !== "undefined") {
+    const n = navigator;
+    if (n.serviceWorker) {
+        n.serviceWorker.register(document.currentScript.src).then(
+            (registration) => {
+                registration.addEventListener("updatefound", () => {
+                    window.location.reload();
+                });
+            },
+            (err) => {
+                console.error("COOP/COEP Service Worker failed to register:", err);
+            }
+        );
+    }
+} else {
+    self.addEventListener("install", () => self.skipWaiting());
+    self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
+
+    self.addEventListener("fetch", (event) => {
+        const request = event.request;
+        if (request.cache === "only-if-cached" && request.mode !== "same-origin") {
+            return;
+        }
+
+        event.respondWith(
+            fetch(request)
+                .then((response) => {
+                    if (response.status === 0) {
+                        return response;
+                    }
+
+                    const newHeaders = new Headers(response.headers);
+                    newHeaders.set("Cross-Origin-Opener-Policy", "same-origin");
+                    newHeaders.set("Cross-Origin-Embedder-Policy", "credentialless");
+
+                    return new Response(response.body, {
+                        status: response.status,
+                        statusText: response.statusText,
+                        headers: newHeaders,
+                    });
+                })
+                .catch((e) => console.error(e))
+        );
+    });
+}
+'@
+    Set-Content "web_build/coi-serviceworker.js" $coiJsCode -NoNewline
+
     $html = Get-Content "web_build/index.html" -Raw
-    $coiScript = '<script src="https://cdn.jsdelivr.net/npm/coi-serviceworker@0.1.7/coi-serviceworker.min.js"></script>'
+    $coiScript = '<script src="coi-serviceworker.js"></script>'
     if (-not $html.Contains("coi-serviceworker")) {
         $html = $html.Replace("<head>", "<head>`n    $coiScript")
         Set-Content "web_build/index.html" $html -NoNewline
