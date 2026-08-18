@@ -111,10 +111,10 @@ function SoundManager.playSFX(name, pitch)
     -- Fallback synthetic SFX
     if sfxCache[name] then
         pcall(function()
-            sfxCache[name]:stop()
-            sfxCache[name]:setVolume(sfxVol)
-            sfxCache[name]:setPitch(pitch or 1.0)
-            sfxCache[name]:play()
+            local src = sfxCache[name]:clone()
+            src:setVolume(sfxVol)
+            src:setPitch(pitch or 1.0)
+            src:play()
         end)
     end
 end
@@ -131,7 +131,7 @@ end
 function SoundManager.playMusic(trackName)
     local path = "assets/audio/music/" .. trackName .. ".ogg"
     if love.filesystem and love.filesystem.getInfo and love.filesystem.getInfo(path) then
-        if currentMusic then currentMusic:stop() end
+        if currentMusic then pcall(function() currentMusic:stop() end) end
         local ok, src = pcall(love.audio.newSource, path, "stream")
         if ok and src then
             local SettingsData = require("src.data.settings_data")
