@@ -32,8 +32,11 @@ if (Test-Path "web_build/index.html") {
 if (typeof window !== "undefined") {
     const n = navigator;
     if (n.serviceWorker) {
-        n.serviceWorker.register(document.currentScript.src).then(
+        n.serviceWorker.register("coi-serviceworker.js").then(
             (registration) => {
+                if (registration.active && !n.serviceWorker.controller) {
+                    window.location.reload();
+                }
                 registration.addEventListener("updatefound", () => {
                     window.location.reload();
                 });
@@ -42,6 +45,9 @@ if (typeof window !== "undefined") {
                 console.error("COOP/COEP Service Worker failed to register:", err);
             }
         );
+        n.serviceWorker.addEventListener("controllerchange", () => {
+            window.location.reload();
+        });
     }
 } else {
     self.addEventListener("install", () => self.skipWaiting());
