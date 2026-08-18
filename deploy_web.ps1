@@ -24,6 +24,17 @@ if (-not (Test-Path "web_build")) {
     exit 1
 }
 
+# 3.4 Inject Cross-Origin Isolation Service Worker for GitHub Pages SharedArrayBuffer support
+if (Test-Path "web_build/index.html") {
+    Write-Host "Injecting Cross-Origin Isolation Service Worker for GitHub Pages..." -ForegroundColor Yellow
+    $html = Get-Content "web_build/index.html" -Raw
+    $coiScript = '<script src="https://cdn.jsdelivr.net/npm/coi-serviceworker@0.1.7/coi-serviceworker.min.js"></script>'
+    if (-not $html.Contains("coi-serviceworker")) {
+        $html = $html.Replace("<head>", "<head>`n    $coiScript")
+        Set-Content "web_build/index.html" $html -NoNewline
+    }
+}
+
 # 3.5 Inject game icon as browser tab favicon
 if (Test-Path "assets/icon.png") {
     Copy-Item "assets/icon.png" "web_build/favicon.ico" -Force
