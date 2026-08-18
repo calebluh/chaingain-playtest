@@ -241,7 +241,10 @@ function StateGame:update(dt)
     
     for i, card in ipairs(DeckManager.hand) do
         local targetX = startX + (i - 1) * 95
-        local targetY = 390
+        
+        local baseTargetY = self.playbookShelfY + 70
+        local targetY = baseTargetY
+        
         local isHovered = (mx >= targetX - 45 and mx <= targetX + 45 and my >= targetY - 60 and my <= targetY + 80)
         local relX = mx - targetX
         if card.update then card:update(dt, isHovered, relX) end
@@ -253,10 +256,10 @@ function StateGame:update(dt)
             local dx = mx - self.dragLastX
             baseRot = dx * 0.015
         elseif i == self.selectedPlayIndex then
-            targetY = 340
+            targetY = baseTargetY - 50
             baseRot = math.sin(self.time * 4) * 0.03
         elseif isHovered then
-            targetY = 370
+            targetY = baseTargetY - 20
             baseRot = (i - (N + 1) / 2) * 0.05
         end
         
@@ -331,79 +334,108 @@ function StateGame:draw()
         end
     end
 
-    local function drawNeonPanel(px, py, pw, ph, colorOverride)
-        love.graphics.setColor(C_SLATE_CONTAINER)
-        love.graphics.rectangle("fill", px, py, pw, ph, 6, 6)
-        love.graphics.setColor(colorOverride or C_BORDER_NORMAL)
+    local function drawHDPanel(px, py, pw, ph, colorOverride, innerColor)
+        love.graphics.setColor(innerColor or {0.18, 0.22, 0.28, 0.95})
+        love.graphics.rectangle("fill", px, py, pw, ph, 8, 8)
+        
+        -- Top gradient highlight
+        love.graphics.setColor(1, 1, 1, 0.08)
+        love.graphics.rectangle("fill", px, py, pw, ph/2, 8, 8)
+        
+        love.graphics.setColor(colorOverride or {0.3, 0.35, 0.45, 1})
         love.graphics.setLineWidth(2)
-        love.graphics.rectangle("line", px, py, pw, ph, 6, 6)
+        love.graphics.rectangle("line", px, py, pw, ph, 8, 8)
         love.graphics.setLineWidth(1)
     end
 
     local panelY = 8
-    drawNeonPanel(12, panelY, 155, 68)
+    
+    -- 1. OPPONENT DEFENSE (Width: 190)
+    drawHDPanel(12, panelY, 190, 68)
+    drawShadowText("OPPONENT DEFENSE", 12, panelY + 6, 0.8, 0.8, 0.8, 0.85, "center", 190)
+    -- Shield Icon Placeholder
+    love.graphics.setColor(0.9, 0.9, 0.9, 0.8)
+    love.graphics.polygon("fill", 25, panelY + 30, 45, panelY + 30, 45, panelY + 45, 35, panelY + 55, 25, panelY + 45)
+    love.graphics.setColor(0.6, 0.6, 0.6, 0.8)
+    love.graphics.polygon("fill", 35, panelY + 30, 45, panelY + 30, 45, panelY + 45, 35, panelY + 55)
+    
     local tierStr = "DIFFICULTY: " .. (GameStateData.stakeTier or "white"):upper()
-    drawShadowText("OPPONENT DEFENSE", 12, panelY + 6, 0.8, 0.8, 0.8, 0.85, "center", 155)
     if DefenseManager.activeBlind then
-        drawShadowText(tierStr, 12, panelY + 26, 0.6, 0.6, 0.7, 0.7, "center", 155)
-        drawShadowText(DefenseManager.activeBlind.name, 12, panelY + 40, 1, 1, 1, 0.9, "center", 155)
+        drawShadowText(tierStr, 50, panelY + 28, 0.7, 0.7, 0.7, 0.7, "left")
+        drawShadowText(DefenseManager.activeBlind.name, 50, panelY + 42, 1, 1, 1, 0.85, "left")
     end
 
-    drawNeonPanel(174, panelY, 165, 68)
-    drawShadowText("POINTS SCORE", 174, panelY + 6, 0.8, 0.8, 0.8, 0.85, "center", 165)
-    drawShadowText(GameStateData.currentPoints .. " / " .. GameStateData.targetPoints .. " PTS", 174, panelY + 24, 1, 0.84, 0, 1.25, "center", 165)
-    drawShadowText("DRIVES LEFT: " .. GameStateData.drivesRemaining, 174, panelY + 46, 1, 1, 1, 0.85, "center", 165)
+    -- 2. POINTS SCORE (Width: 165)
+    drawHDPanel(210, panelY, 165, 68)
+    drawShadowText("POINTS SCORE", 210, panelY + 6, 0.8, 0.8, 0.8, 0.85, "center", 165)
+    drawShadowText(GameStateData.currentPoints .. " / " .. GameStateData.targetPoints .. " PTS", 210, panelY + 24, 1, 0.84, 0, 1.25, "center", 165)
+    drawShadowText("DRIVES LEFT: " .. GameStateData.drivesRemaining, 210, panelY + 46, 1, 1, 1, 0.85, "center", 165)
 
-    drawNeonPanel(346, panelY, 250, 68)
-    love.graphics.setColor(C_CHIP_BLUE)
-    love.graphics.rectangle("fill", 354, panelY + 10, 100, 48, 5, 5)
-    drawShadowText(tostring(previewChips) .. " YDS", 354, panelY + 24, 1, 1, 1, 1.2, "center", 100)
+    -- 3. YARDS & MULTIPLIER (Width: 260)
+    drawHDPanel(383, panelY, 260, 68, {0.3, 0.45, 0.6})
     
-    drawShadowText("X", 458, panelY + 24, 1, 0.3, 0.3, 1.2, "center", 25)
+    -- Blue Yards Pill
+    love.graphics.setColor(0.2, 0.4, 0.7, 1)
+    love.graphics.rectangle("fill", 391, panelY + 10, 100, 48, 8, 8)
+    love.graphics.setColor(0.4, 0.6, 0.9, 1)
+    love.graphics.setLineWidth(2)
+    love.graphics.rectangle("line", 391, panelY + 10, 100, 48, 8, 8)
+    love.graphics.setLineWidth(1)
+    drawShadowText(tostring(previewChips) .. " YDS", 391, panelY + 24, 1, 1, 1, 1.2, "center", 100)
     
-    love.graphics.setColor(C_MULT_RED)
-    love.graphics.rectangle("fill", 488, panelY + 10, 100, 48, 5, 5)
-    drawShadowText(string.format("x%.1f MTM", previewMult), 488, panelY + 24, 1, 1, 1, 1.2, "center", 100)
+    -- Red X
+    drawShadowText("X", 500, panelY + 24, 1, 0.3, 0.3, 1.2, "center", 20)
+    
+    -- Red Multiplier Pill
+    love.graphics.setColor(0.7, 0.2, 0.2, 1)
+    love.graphics.rectangle("fill", 531, panelY + 10, 104, 48, 8, 8)
+    love.graphics.setColor(0.9, 0.4, 0.4, 1)
+    love.graphics.setLineWidth(2)
+    love.graphics.rectangle("line", 531, panelY + 10, 104, 48, 8, 8)
+    love.graphics.setLineWidth(1)
+    drawShadowText(string.format("x%.1f MTM", previewMult), 531, panelY + 18, 1, 1, 1, 1.1, "center", 104)
+    drawShadowText(string.format("x%.1f MTM", previewMult), 531, panelY + 36, 1, 1, 1, 0.7, "center", 104)
 
-    drawNeonPanel(603, panelY, 130, 68, C_NEON_ACCENT)
-    drawShadowText("ADJUST", 603, panelY + 4, 1, 0.84, 0, 0.85, "center", 130)
+    -- 4. ADJUSTMENTS (Width: 140)
+    drawHDPanel(651, panelY, 140, 68, {1.0, 0.84, 0.0, 1})
+    drawShadowText("ADJUST", 651, panelY + 4, 1, 0.84, 0, 0.85, "center", 140)
     for ci = 1, GameStateData.maxConsumables do
-        local cx = 610 + (ci - 1) * 58
+        local cx = 659 + (ci - 1) * 64
         local cy = panelY + 20
         local item = GameStateData.consumables[ci]
         love.graphics.setColor(item and {0.8, 0.3, 0.1} or {0.18, 0.22, 0.28})
-        love.graphics.rectangle("fill", cx, cy, 52, 42, 4, 4)
-        love.graphics.setColor(C_BORDER_NORMAL)
-        love.graphics.rectangle("line", cx, cy, 52, 42, 4, 4)
+        love.graphics.rectangle("fill", cx, cy, 58, 42, 6, 6)
+        love.graphics.setColor({0.3, 0.35, 0.45})
+        love.graphics.rectangle("line", cx, cy, 58, 42, 6, 6)
         if item then
-            drawShadowText(item.name:sub(1, 7), cx + 2, cy + 14, 1, 1, 1, 0.75, "center", 48)
+            drawShadowText(item.name:sub(1, 7), cx + 2, cy + 14, 1, 1, 1, 0.75, "center", 54)
         else
-            drawShadowText("[EMPTY]", cx + 2, cy + 14, 0.5, 0.5, 0.5, 0.75, "center", 48)
+            drawShadowText("[EMPTY]", cx + 2, cy + 24, 0.5, 0.5, 0.5, 0.75, "center", 54)
         end
     end
 
+    -- 5. CLOCK AND DOWN/DISTANCE (Width: 120)
     local clockSecs = math.max(0, math.ceil(GameStateData.playClock))
     local isLowClock = clockSecs <= 5
-    local clockColor = isLowClock and {1.0, 0.2, 0.2} or C_NEON_BORDER
-    drawNeonPanel(740, panelY, 80, 68, clockColor)
-    drawShadowText("CLOCK", 740, panelY + 6, 0.8, 0.8, 0.8, 0.85, "center", 80)
-    drawShadowText(string.format("%02d", clockSecs), 740, panelY + 28, isLowClock and 1 or 0, isLowClock and 0.2 or 0.84, isLowClock and 0.2 or 0, 1.8, "center", 80)
-
-    drawNeonPanel(820, panelY, 63, 68)
+    drawHDPanel(799, panelY, 120, 68, isLowClock and {1.0, 0.2, 0.2, 1} or {0.2, 0.8, 0.8, 1})
+    drawShadowText("CLOCK", 799, panelY + 6, 0.8, 0.8, 0.8, 0.85, "left", 60, 10)
+    
+    -- Green glowing numbers
+    love.graphics.setColor(0, 1, 0, isLowClock and 0.2 or 0.8)
+    if isLowClock then love.graphics.setColor(1, 0, 0, 0.8) end
+    drawShadowText(string.format("%02d", clockSecs), 799, panelY + 24, 0, 1, 0, 2.0, "left", 60, 10)
+    
     local ballStr = GameStateData.yardLine < 50 and ("O" .. GameStateData.yardLine) or ("D" .. (100 - GameStateData.yardLine))
-    drawShadowText("D:" .. GameStateData.down, 822, panelY + 6, 1, 1, 1, 0.75)
-    drawShadowText("Y:" .. GameStateData.distance, 822, panelY + 24, 1, 1, 1, 0.75)
-    drawShadowText(ballStr, 822, panelY + 44, 1, 0.84, 0, 0.75)
+    drawShadowText("D:" .. GameStateData.down, 860, panelY + 12, 1, 1, 1, 0.8)
+    drawShadowText("Y:" .. GameStateData.distance, 860, panelY + 28, 1, 1, 1, 0.8)
+    drawShadowText(ballStr, 860, panelY + 44, 1, 0.84, 0, 0.8)
 
-    local hoverSpeed = checkHover(886, panelY, 36, 68)
+    -- 6. SPEED TOGGLE (Width: 36)
+    local hoverSpeed = checkHover(927, panelY, 36, 68)
     local speedStr = string.format("%.0fx", SettingsData.gameSpeed or 1.0)
-    drawNeonPanel(886, panelY, 36, 68, hoverSpeed and {1.0, 0.84, 0.0} or C_BORDER_NORMAL)
-    drawShadowText("⏩", 886, panelY + 12, 1, 0.84, 0, 0.9, "center", 36)
-    drawShadowText(speedStr, 886, panelY + 38, 1, 1, 1, 0.9, "center", 36)
-
-    local hoverOpt = checkHover(925, panelY, 23, 68)
-    drawNeonPanel(925, panelY, 23, 68, hoverOpt and {0.0, 0.76, 1.0} or C_BORDER_NORMAL)
-    drawShadowText("⚙", 925, panelY + 22, 1, 1, 1, 1.2, "center", 23)
+    drawHDPanel(927, panelY, 36, 68, hoverSpeed and {1.0, 0.84, 0.0, 1} or {0.3, 0.35, 0.45, 1})
+    drawShadowText("0", 927, panelY + 12, 1, 0.84, 0, 0.9, "center", 36)
+    drawShadowText(speedStr, 927, panelY + 38, 1, 1, 1, 0.9, "center", 36)
 
     -- Progress Bar (Turf Field + Team Branded End Zones)
     local activeTeam = GameStateData.config and GameStateData.config.team
@@ -478,9 +510,6 @@ function StateGame:draw()
     self.hoveredPlayCard = nil
     local mx, my = love.mouse.getPosition()
     for i, card in ipairs(DeckManager.hand) do
-        local cardY = self.playbookShelfY + 70
-        card.yOffset = PhysicsUtils.lerp(card.yOffset or cardY, cardY, 15 * (love.timer.getDelta() or 0.016))
-        
         local isHover = mx >= card.xOffset - 45 and mx <= card.xOffset + 45 and my >= card.yOffset - 60 and my <= card.yOffset + 60
         if isHover then
             self.hoveredPlayCard = card

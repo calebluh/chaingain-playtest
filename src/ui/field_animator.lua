@@ -61,19 +61,33 @@ FieldAnimator.targetCameraX = 0
 
 local YARD_PX = 10 -- pixels per yard
 
--- 2.5D Paper Mario Perspective Projection Matrix (45-degree angle tilt)
+-- 2.5D Vertical "Madden" Perspective Projection Matrix
 function FieldAnimator.to25D(worldX, worldY, worldZ)
     worldZ = worldZ or 0
+    -- relX is yards downfield relative to the camera
     local relX = worldX - FieldAnimator.cameraX
     
     local screenCenterX = 480
-    local screenBaseY = 240
-    local midY = 180
-    local distFromMidY = (worldY - midY)
+    -- Line of scrimmage will be anchored near the bottom
+    local screenBaseY = 400
     
-    local screenX = screenCenterX + (relX - 250) * (1.0 + distFromMidY * 0.0006)
-    local screenY = screenBaseY + distFromMidY * 0.75 - worldZ * 1.1
-    local scaleFactor = math.clamp(1.0 + (distFromMidY * 0.0012), 0.75, 1.3)
+    -- In the old system, worldY was 50 to 310 (center 180).
+    local relY = worldY - 180
+    
+    -- Dist downfield. positive relX means moving towards opponent endzone (UP the screen)
+    local distDownfield = relX
+    
+    -- Perspective: objects further downfield shrink, and horizontal spread narrows
+    local perspectiveStr = math.clamp(1.0 - (distDownfield * 0.001), 0.35, 1.2)
+    
+    -- Screen X is the sideline position.
+    -- Multiply by 2.5 to spread the 260 width (50 to 310) across the 960 screen
+    local screenX = screenCenterX + (relY * 2.5) * perspectiveStr
+    
+    -- Screen Y goes UP as you go downfield.
+    local screenY = screenBaseY - (distDownfield * 1.5) * perspectiveStr - worldZ * 1.1
+    
+    local scaleFactor = math.clamp(1.0 - (distDownfield * 0.0015), 0.45, 1.3)
     
     return screenX, screenY, scaleFactor
 end
@@ -639,19 +653,46 @@ function FieldAnimator.draw()
     love.graphics.setLineWidth(2)
     love.graphics.line(st1, sty1, st2, sty2)
     love.graphics.line(sb1, sby1, sb2, sby2)
+
+    -- Right Goal Line
+    love.graphics.setColor(1, 1, 1, 0.9)
+    love.graphics.setLineWidth(3)
+    love.graphics.line(rx1, ry1, rx4, ry4)
     love.graphics.setLineWidth(1)
     
+    -- 3. Draw Endzone Pylons (Orange Rectangles)
+    local function drawPylon(px, py, scale)
+        love.graphics.setColor(1.0, 0.4, 0.0, 1.0)
+        love.graphics.rectangle("fill", px - 2, py - 12 * scale, 4 * scale, 12 * scale, 1, 1)
+        love.graphics.setColor(1.0, 0.6, 0.2, 1.0)
+        love.graphics.rectangle("fill", px - 1, py - 11 * scale, 2 * scale, 10 * scale)
+    end
+    
+    local _, _, s1 = FieldAnimator.to25D(100, 50, 0)
+    local _, _, s2 = FieldAnimator.to25D(100, 310, 0)
+    drawPylon(ex2, ey2, s1)
+    drawPylon(ex3, ey3, s2)
+    
+    local _, _, s3 = FieldAnimator.to25D(1100, 50, 0)
+    local _, _, s4 = FieldAnimator.to25D(1100, 310, 0)
+    drawPylon(rx1, ry1, s3)
+    drawPylon(rx4, ry4, s4)
+
     -- 4. 2.5D Yard Lines
     for yard = 10, 90, 10 do
         local worldX = 100 + yard * YARD_PX
         local yx1, yy1 = FieldAnimator.to25D(worldX, 50, 0)
         local yx2, yy2 = FieldAnimator.to25D(worldX, 310, 0)
-        love.graphics.setColor(1, 1, 1, 0.75)
-        love.graphics.setLineWidth(2)
+        love.graphics.setColor(1, 1, 1, 0.85)
+        love.graphics.setLineWidth(4)
         love.graphics.line(yx1, yy1, yx2, yy2)
         
         local displayNum = yard > 50 and (100 - yard) or yard
-        drawShadowText(tostring(displayNum), yx1 - 10, yy1 + 8, 1, 1, 1, 0.9)
+        -- Draw numbers horizontally on both sidelines
+        local numScale = (1.0 - (worldX - FieldAnimator.cameraX) * 0.001)
+        local fs = math.max(1, 2.0 * numScale)
+        drawShadowText(tostring(displayNum), yx1 - 35, yy1 - 10, 1, 1, 1, 1.0, "right", 30, fs)
+        drawShadowText(tostring(displayNum), yx2 + 5, yy2 - 10, 1, 1, 1, 1.0, "left", 30, fs)
     end
     love.graphics.setLineWidth(1)
     
@@ -723,9 +764,13 @@ function FieldAnimator.draw()
         
         -- Upright Paper Cutout Sprite
         if entity.isOffense then
+            love.graphics.setColor(1, 1, 1, 1)
             AssetManager.drawRetroPlayer(entity.screenX, entity.screenY - 12, offJersey, {0.95, 0.95, 0.95}, offHelmet, entity.vx, entity.vy, true, love.timer.getTime(), entity.isTackled, entity.profile, entity.scale)
         else
+            -- Darken defense sprites to make them look distinct (facing away)
+            love.graphics.setColor(0.6, 0.6, 0.6, 1)
             AssetManager.drawRetroPlayer(entity.screenX, entity.screenY - 12, defJersey, defPants, defHelmet, entity.vx, entity.vy, false, love.timer.getTime(), entity.isTackled, entity.profile, entity.scale)
+            love.graphics.setColor(1, 1, 1, 1)
         end
         
         -- QB Cadence Speech Bubble

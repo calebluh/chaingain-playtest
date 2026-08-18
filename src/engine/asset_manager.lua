@@ -337,55 +337,32 @@ function AssetManager.drawRetroPlayer(x, y, jerseyColor, pantsColor, helmetColor
     end
     
     local skinColor = {0.85, 0.65, 0.45}
-    local visorColor = {0.7, 0.85, 1.0, 0.5}
-    local torsoW, torsoH = 9, 11
-    
+    local visorColor = {0.1, 0.1, 0.1, 0.85}
     if profile then
-        if profile.skinTone then
-            skinColor = PlayerVisualProfile.skinTones[profile.skinTone] or skinColor
-        elseif profile.getSkinColor then
-            skinColor = profile.getSkinColor()
-        end
-        
-        if profile.visor then
-            if profile.visor == "dark" then visorColor = {0.08, 0.08, 0.08, 0.95}
-            elseif profile.visor == "gold_mirror" then visorColor = {1.0, 0.8, 0.0, 0.85}
-            elseif profile.visor == "iridescent" then visorColor = {0.8, 0.3, 0.9, 0.8}
-            end
-        end
-        
-        local arch = profile.archetype or "stocky"
-        if arch == "lean" then torsoW, torsoH = 7, 11
-        elseif arch == "heavy" then torsoW, torsoH = 11, 10
-        end
-        if profile.jerseyCut == "cropped" then
-            torsoH = torsoH - 2
-        end
-        
-        jerseyColor = (profile.primaryColor) or jerseyColor
-        helmetColor = (profile.shellColor) or helmetColor
+        if profile.skinTone then skinColor = PlayerVisualProfile.skinTones[profile.skinTone] or skinColor
+        elseif profile.getSkinColor then skinColor = profile.getSkinColor() end
+        jerseyColor = profile.primaryColor or jerseyColor
+        helmetColor = profile.shellColor or helmetColor
     end
     
     love.graphics.push()
     love.graphics.translate(x, y)
-    if scaleOverride then love.graphics.scale(scaleOverride, scaleOverride) end
+    local scale = (scaleOverride or 1.0) * 1.5 -- Make them a bit larger for HD style
+    love.graphics.scale(scale, scale)
     
     if state == "tackled" then
         love.graphics.rotate(math.pi / 2)
         love.graphics.translate(0, -6)
     end
     
-    local dir = (state == "run" or state == "walk") and (vx > 0 and 1 or -1) or (isOffense and 1 or -1)
-    love.graphics.scale(dir, 1)
-    
     -- Animation Offsets
     local legOffset, armOffset, bobY = 0, 0, 0
     if state == "run" then
-        legOffset = math.sin(time * 15) * 6
-        armOffset = math.cos(time * 15) * 5
+        legOffset = math.sin(time * 15) * 4
+        armOffset = math.cos(time * 15) * 4
         bobY = math.abs(math.sin(time * 15)) * -1.5
     elseif state == "walk" then
-        legOffset = math.sin(time * 8) * 3
+        legOffset = math.sin(time * 8) * 2
         armOffset = math.cos(time * 8) * 2
         bobY = math.abs(math.sin(time * 8)) * -0.5
     elseif state == "idle" then
@@ -395,238 +372,104 @@ function AssetManager.drawRetroPlayer(x, y, jerseyColor, pantsColor, helmetColor
     love.graphics.translate(0, bobY)
     
     -- Shadow
-    love.graphics.setColor(0, 0, 0, 0.3)
-    love.graphics.ellipse("fill", 0, 14 - bobY, torsoW * 0.8, 2)
+    love.graphics.setColor(0, 0, 0, 0.4)
+    love.graphics.ellipse("fill", 0, 10 - bobY, 12, 4)
     
-    local backLegX = -math.floor(torsoW/2) + 1 + legOffset
-    local frontLegX = 1 - legOffset
-    local backArmX = -math.floor(torsoW/2) - 1 - armOffset
-    local frontArmX = math.floor(torsoW/2) - 1 + armOffset
+    -- HD Chibi Vector Rendering
+    love.graphics.setLineStyle("smooth")
+    love.graphics.setLineJoin("round")
     
-    local armJerseyColor = (profile and profile.jerseyCut == "sleeveless") and skinColor or jerseyColor
+    local isFacingDown = isOffense
     
-    -- Resolve glove color
-    local gc = profile and profile.handGearColor
-    local gloveColor = {1.0, 1.0, 1.0}
-    if type(gc) == "table" then
-        gloveColor = gc
-    elseif gc == "black" then
-        gloveColor = {0.15, 0.15, 0.15}
-    elseif gc == "team_primary" then
-        gloveColor = jerseyColor
-    elseif gc == "team_secondary" then
-        gloveColor = helmetColor
-    else
-        gloveColor = {1.0, 1.0, 1.0}
-    end
-    
-    local hg = profile and profile.handGear or "both_hands"
-    local backArmGlove = (hg == "both_hands" or hg == "both" or hg == "receiver" or hg == "lineman" or hg == "left_hand" or (dir == 1 and hg == "left") or (dir == -1 and hg == "right"))
-    local frontArmGlove = (hg == "both_hands" or hg == "both" or hg == "receiver" or hg == "lineman" or hg == "right_hand" or (dir == 1 and hg == "right") or (dir == -1 and hg == "left"))
-
-    local cleatH, cleatY = 2, 11
-    if profile and profile.cleats == "mid" then cleatH = 3; cleatY = 10
-    elseif profile and profile.cleats == "high" then cleatH = 4; cleatY = 9 end
-
-    -- Back Arm
-    love.graphics.setColor(armJerseyColor[1]*0.8, armJerseyColor[2]*0.8, armJerseyColor[3]*0.8)
-    love.graphics.rectangle("fill", backArmX, -4, 3.5, 6)
-    if profile and profile.armGear and profile.armGear ~= "none" then
-        love.graphics.setColor(1, 1, 1)
-        love.graphics.rectangle("fill", backArmX, -2, 3.5, 3)
-    end
-    if backArmGlove then
-        love.graphics.setColor(gloveColor[1]*0.8, gloveColor[2]*0.8, gloveColor[3]*0.8)
-    else
-        love.graphics.setColor(skinColor[1]*0.8, skinColor[2]*0.8, skinColor[3]*0.8)
-    end
-    love.graphics.rectangle("fill", backArmX, 2, 3.5, 3)
-    
-    -- Back Leg (Pants)
-    love.graphics.setColor(pantsColor[1]*0.8, pantsColor[2]*0.8, pantsColor[3]*0.8)
-    love.graphics.rectangle("fill", backLegX, 5, 3.5, 6)
-    if profile and profile.calfSleeves and profile.calfSleeves ~= "none" then
-        if profile.calfSleeves == "black" then love.graphics.setColor(0.15, 0.15, 0.15)
-        elseif profile.calfSleeves == "team_primary" then love.graphics.setColor(jerseyColor[1]*0.8, jerseyColor[2]*0.8, jerseyColor[3]*0.8)
-        else love.graphics.setColor(0.8, 0.8, 0.8) end
-        love.graphics.rectangle("fill", backLegX, 8, 3.5, 3)
-    end
-    love.graphics.setColor(profile and profile.cleatsColor or {0.1, 0.1, 0.1})
-    love.graphics.rectangle("fill", backLegX + 1, cleatY, 3.5, cleatH)
-    
-    -- Hair (Back of helmet)
-    if profile and profile.hairStyle and profile.hairStyle ~= "none" then
-        love.graphics.setColor(profile.hairColor or {0.1, 0.1, 0.1})
-        if profile.hairStyle == "dreads" then
-            love.graphics.rectangle("fill", -5, -8, 2, 6)
-            love.graphics.rectangle("fill", -3, -6, 2, 5)
-            love.graphics.rectangle("fill", -6, -7, 2, 4)
-        elseif profile.hairStyle == "afro" then
-            love.graphics.circle("fill", -1, -16, 5)
-        elseif profile.hairStyle == "braids" then
-            love.graphics.rectangle("fill", -5, -9, 2, 8)
-            love.graphics.rectangle("fill", -3, -8, 2, 7)
-        elseif profile.hairStyle == "mullet" then
-            love.graphics.rectangle("fill", -4, -8, 8, 2)
-            love.graphics.rectangle("fill", -5, -6, 2, 8)
-        else -- "short"
-            love.graphics.rectangle("fill", -4, -14, 8, 3)
-        end
-    end
-    
-    -- Torso (Jersey)
-    love.graphics.setColor(jerseyColor)
-    love.graphics.rectangle("fill", -math.floor(torsoW/2), -5, torsoW, torsoH, 1, 1)
-    love.graphics.setColor(1, 1, 1, 0.15) -- Jersey highlight
-    love.graphics.rectangle("fill", -math.floor(torsoW/2) + 1, -5, torsoW/2, torsoH)
-    if helmetColor then
-        love.graphics.setColor(helmetColor)
-        love.graphics.rectangle("fill", -math.floor(torsoW/2), -5, torsoW, 2) -- Collar trim
-    end
-    
-    -- Jersey Number (3x5 pixel digit font)
-    local jNum = profile and profile.jerseyNumber
-    if jNum and jNum > 0 and torsoW >= 8 then
-        local digits = {
-            [0] = {{1,1,1},{1,0,1},{1,0,1},{1,0,1},{1,1,1}},
-            [1] = {{0,1,0},{1,1,0},{0,1,0},{0,1,0},{1,1,1}},
-            [2] = {{1,1,1},{0,0,1},{1,1,1},{1,0,0},{1,1,1}},
-            [3] = {{1,1,1},{0,0,1},{1,1,1},{0,0,1},{1,1,1}},
-            [4] = {{1,0,1},{1,0,1},{1,1,1},{0,0,1},{0,0,1}},
-            [5] = {{1,1,1},{1,0,0},{1,1,1},{0,0,1},{1,1,1}},
-            [6] = {{1,1,1},{1,0,0},{1,1,1},{1,0,1},{1,1,1}},
-            [7] = {{1,1,1},{0,0,1},{0,0,1},{0,1,0},{0,1,0}},
-            [8] = {{1,1,1},{1,0,1},{1,1,1},{1,0,1},{1,1,1}},
-            [9] = {{1,1,1},{1,0,1},{1,1,1},{0,0,1},{1,1,1}},
-        }
-        local numStr = tostring(jNum)
-        local totalW = #numStr * 4 - 1
-        local startX = -math.floor(totalW / 2)
-        love.graphics.setColor(1, 1, 1, 0.85)
-        for ci = 1, #numStr do
-            local d = tonumber(numStr:sub(ci, ci))
-            local glyph = digits[d]
-            if glyph then
-                local ox = startX + (ci - 1) * 4
-                for row = 1, 5 do
-                    for col = 1, 3 do
-                        if glyph[row][col] == 1 then
-                            love.graphics.rectangle("fill", ox + col - 2, -3 + row, 1, 1)
-                        end
-                    end
-                end
-            end
-        end
-    end
-    
-    -- Front Leg
+    -- LEGS
     love.graphics.setColor(pantsColor)
-    love.graphics.rectangle("fill", frontLegX, 5, 3.5, 6)
-    if profile and profile.calfSleeves and profile.calfSleeves ~= "none" then
-        if profile.calfSleeves == "black" then love.graphics.setColor(0.2, 0.2, 0.2)
-        elseif profile.calfSleeves == "team_primary" then love.graphics.setColor(jerseyColor)
-        else love.graphics.setColor(1, 1, 1) end
-        love.graphics.rectangle("fill", frontLegX, 8, 3.5, 3)
-    end
-    love.graphics.setColor(profile and profile.cleatsColor or {0.1, 0.1, 0.1})
-    love.graphics.rectangle("fill", frontLegX + 1, cleatY, 3.5, cleatH)
+    love.graphics.setLineWidth(5)
+    love.graphics.line(-4, 3, -4, 8 + legOffset)
+    love.graphics.line(4, 3, 4, 8 - legOffset)
     
-    -- Helmet
-    local fm = profile and profile.facemask or 5
-    if profile and profile.helmetStyle == "vintage" then
-        love.graphics.setColor(0.55, 0.27, 0.07) -- Leather
-        love.graphics.rectangle("fill", -4, -14, 8, 8, 3, 3)
+    -- CLEATS
+    love.graphics.setColor(0.1, 0.1, 0.1)
+    if isFacingDown then
+        love.graphics.circle("fill", -4, 9 + legOffset, 2.5)
+        love.graphics.circle("fill", 4, 9 - legOffset, 2.5)
     else
-        love.graphics.setColor(helmetColor)
-        love.graphics.rectangle("fill", -4, -14, 8, 8, 2, 2)
-        love.graphics.setColor(jerseyColor)
-        love.graphics.rectangle("fill", -1, -14, 2, 8) -- Center Helmet Stripe
-        love.graphics.setColor(1, 1, 1, 0.25)
-        love.graphics.rectangle("fill", -3, -14, 3, 3) -- Specular Shine
+        love.graphics.circle("fill", -4, 8 + legOffset, 2)
+        love.graphics.circle("fill", 4, 8 - legOffset, 2)
     end
     
-    -- Face & Visor area
-    love.graphics.setColor(skinColor)
-    love.graphics.rectangle("fill", 1, -11, 4, 4)
-    
-    if profile and profile.eyeBlack and profile.eyeBlack ~= "clean" then
-        love.graphics.setColor(0.1, 0.1, 0.1)
-        if profile.eyeBlack == "single_bar" then
-            love.graphics.rectangle("fill", 2, -10, 3, 1)
-        elseif profile.eyeBlack == "warpaint" then
-            love.graphics.rectangle("fill", 2, -10, 3, 2)
-        elseif profile.eyeBlack == "cross" then
-            love.graphics.rectangle("fill", 3, -11, 1, 3)
-            love.graphics.rectangle("fill", 2, -10, 3, 1)
-        end
-    end
-    
-    -- Earrings
-    local earCount = profile and profile.earrings or 0
-    if earCount > 0 then
-        love.graphics.setColor(1.0, 0.84, 0.0) -- Gold studs
-        for ei = 1, math.min(earCount, 3) do
-            love.graphics.rectangle("fill", -4, -9 + (ei - 1) * 2, 1.5, 1.5)
-        end
-    end
-    
-    love.graphics.setColor(visorColor)
-    love.graphics.rectangle("fill", 1, -12, 4.5, 3)
-    
-    -- Facemask (6 styles)
-    if not profile or profile.helmetStyle ~= "vintage" then
-        love.graphics.setColor(profile and profile.maskColor or {0.7, 0.7, 0.7})
-        if fm == 1 then
-            -- Single bar
-            love.graphics.rectangle("fill", 1, -8, 5, 1)
-        elseif fm == 2 then
-            -- Classic 2-bar
-            love.graphics.rectangle("fill", 1, -9, 4, 1)
-            love.graphics.rectangle("fill", 1, -7, 4, 1)
-        elseif fm == 3 then
-            -- 3-bar cage
-            love.graphics.rectangle("fill", 1, -10, 5, 1)
-            love.graphics.rectangle("fill", 1, -8, 5, 1)
-            love.graphics.rectangle("fill", 1, -6, 5, 1)
-        elseif fm == 4 then
-            -- Full cage
-            love.graphics.rectangle("fill", 4, -11, 2, 5)
-            love.graphics.rectangle("fill", 1, -7, 5, 1)
-            love.graphics.rectangle("fill", 1, -9, 5, 1)
-            love.graphics.rectangle("fill", 1, -11, 5, 1)
-        elseif fm == 5 then
-            -- Speedflex open
-            love.graphics.rectangle("fill", 4, -10, 2, 4)
-            love.graphics.rectangle("fill", 1, -7, 4, 1)
-        elseif fm == 6 then
-            -- Bull-rush closed (lineman)
-            love.graphics.rectangle("fill", 3, -11, 3, 6)
-            love.graphics.setColor(0, 0, 0, 0.4)
-            love.graphics.rectangle("fill", 4, -10, 1, 4)
-        end
-    end
-    
-    -- Front Arm
-    love.graphics.setColor(armJerseyColor)
-    love.graphics.rectangle("fill", frontArmX, -4, 3.5, 6)
-    if profile and profile.armGear and profile.armGear ~= "none" then
-        love.graphics.setColor(1, 1, 1)
-        love.graphics.rectangle("fill", frontArmX, -2, 3.5, 3)
-    end
-    if frontArmGlove then
-        love.graphics.setColor(gloveColor)
-    else
+    -- ARMS (Back layer if facing up)
+    if not isFacingDown then
         love.graphics.setColor(skinColor)
+        love.graphics.setLineWidth(4)
+        love.graphics.line(-7, -2, -9, 4 - armOffset)
+        love.graphics.line(7, -2, 9, 4 + armOffset)
+        
+        love.graphics.setColor(jerseyColor)
+        love.graphics.line(-7, -2, -8, 1 - armOffset*0.5)
+        love.graphics.line(7, -2, 8, 1 + armOffset*0.5)
     end
-    love.graphics.rectangle("fill", frontArmX, 2, 3.5, 3)
-    love.graphics.rectangle("fill", frontArmX, 2, 3.5, 3)
     
-    -- Tattoos
-    if profile and profile.tattoos then
-        love.graphics.setColor(0.1, 0.1, 0.1, 0.7)
-        love.graphics.rectangle("fill", frontArmX + 1, 3, 1.5, 1.5)
+    -- TORSO
+    love.graphics.setColor(jerseyColor)
+    love.graphics.rectangle("fill", -7, -4, 14, 10, 3, 3)
+    
+    -- Jersey Number
+    local jNum = profile and profile.jerseyNumber
+    if jNum and jNum > 0 then
+        love.graphics.setColor(1, 1, 1, 0.9)
+        local font = AssetManager.getFont(8)
+        love.graphics.setFont(font)
+        love.graphics.printf(tostring(jNum), -10, -2, 20, "center")
     end
     
+    -- ARMS (Front layer if facing down)
+    if isFacingDown then
+        love.graphics.setColor(skinColor)
+        love.graphics.setLineWidth(4)
+        love.graphics.line(-7, -2, -9, 4 - armOffset)
+        love.graphics.line(7, -2, 9, 4 + armOffset)
+        
+        -- Sleeves
+        love.graphics.setColor(jerseyColor)
+        love.graphics.line(-7, -2, -8, 1 - armOffset*0.5)
+        love.graphics.line(7, -2, 8, 1 + armOffset*0.5)
+    end
+    
+    -- HEAD / HELMET
+    love.graphics.setColor(helmetColor)
+    love.graphics.circle("fill", 0, -10, 8)
+    
+    if isFacingDown then
+        -- Visor / Face cutout
+        love.graphics.setColor(0.1, 0.1, 0.15)
+        love.graphics.rectangle("fill", -5, -12, 10, 6, 2, 2)
+        
+        -- Skin visible
+        love.graphics.setColor(skinColor)
+        love.graphics.rectangle("fill", -4, -10, 8, 4, 1, 1)
+        
+        -- Visor tint
+        love.graphics.setColor(visorColor)
+        love.graphics.rectangle("fill", -5, -12, 10, 3, 1, 1)
+        
+        -- Facemask bars
+        love.graphics.setColor(0.85, 0.85, 0.85)
+        love.graphics.setLineWidth(1.5)
+        love.graphics.line(-6, -8, 6, -8)
+        love.graphics.line(-4, -6, 4, -6)
+        love.graphics.line(0, -12, 0, -6)
+        
+        -- Helmet Stripe
+        love.graphics.setColor(1, 1, 1, 0.8)
+        love.graphics.line(0, -18, 0, -13)
+    else
+        -- Back of helmet
+        love.graphics.setColor(1, 1, 1, 0.8)
+        love.graphics.setLineWidth(2)
+        love.graphics.line(0, -18, 0, -6)
+    end
+    
+    love.graphics.setLineWidth(1)
     love.graphics.pop()
 end
 
