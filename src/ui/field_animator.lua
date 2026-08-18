@@ -3,6 +3,23 @@ local PhysicsUtils = require("src.engine.physics_utils")
 local GameStateData = require("src.engine.game_state")
 local FieldAnimator = {}
 
+local function drawShadowText(text, x, y, r, g, b, scale, align, limit)
+    scale = scale or 1
+    love.graphics.setColor(0, 0, 0, 0.95)
+    if align and limit then
+        love.graphics.printf(text, x + 1, y + 1, limit / scale, align, 0, scale, scale)
+    else
+        love.graphics.print(text, x + 1, y + 1, 0, scale, scale)
+    end
+    
+    love.graphics.setColor(r or 1, g or 1, b or 1, 1)
+    if align and limit then
+        love.graphics.printf(text, x, y, limit / scale, align, 0, scale, scale)
+    else
+        love.graphics.print(text, x, y, 0, scale, scale)
+    end
+end
+
 local FIELD_WIDTH = 600
 local FIELD_HEIGHT = 220
 local FIELD_X = 480 - FIELD_WIDTH / 2
