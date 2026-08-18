@@ -11,14 +11,13 @@ if (Test-Path "web_build") { Remove-Item "web_build" -Recurse -Force }
 
 # 2. Package into a .love file
 Write-Host "Zipping project into balatrofb.love..."
-# We exclude node_modules, web_build, etc. just in case
-Compress-Archive -Path "src", "assets", "main.lua", "conf.lua" -DestinationPath "balatrofb.zip" -Force
+Get-ChildItem -Path "src", "assets", "main.lua", "conf.lua" | Compress-Archive -DestinationPath "balatrofb.zip" -Force
 Rename-Item -Path "balatrofb.zip" -NewName "balatrofb.love"
 
 # 3. Compile to WebAssembly using love.js
 Write-Host "Compiling to WebAssembly via love.js (this may take a moment)..." -ForegroundColor Cyan
-# Using npx to automatically fetch and run Davidobot's love.js
-npx -y --package=love.js love.js.cmd balatrofb.love web_build -t "Chain Gain" -c
+# Using npx to automatically fetch and run Davidobot's love.js (without -c for standard WebGL GitHub Pages compatibility)
+npx -y --package=love.js love.js.cmd balatrofb.love web_build -t "Chain Gain"
 
 if (-not (Test-Path "web_build")) {
     Write-Host "Error: Web build failed. 'web_build' directory does not exist." -ForegroundColor Red

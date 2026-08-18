@@ -13,7 +13,7 @@ if (Test-Path "ChainGain_Windows.zip") { Remove-Item "ChainGain_Windows.zip" -Fo
 
 # 3. Package resources into a .love archive
 Write-Host "Packaging resources into balatrofb.love..." -ForegroundColor Yellow
-Compress-Archive -Path "src", "assets", "main.lua", "conf.lua" -DestinationPath "balatrofb.zip" -Force
+Get-ChildItem -Path "src", "assets", "main.lua", "conf.lua" | Compress-Archive -DestinationPath "balatrofb.zip" -Force
 Rename-Item -Path "balatrofb.zip" -NewName "balatrofb.love"
 
 # 4. Download Love2D redistribution files if not cached locally
