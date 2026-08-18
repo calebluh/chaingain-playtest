@@ -75,9 +75,8 @@ function StateGame:enter()
     self.playbookShelfY = 380
     self.targetShelfY = 380
     
-    FieldAnimator.active = true
-    FieldAnimator.completed = true
     FieldAnimator.startPlay("Run", 0, GameStateData.yardLine or 25, GameStateData.distance or 10, false, false)
+    FieldAnimator.active = false
     
     if #DeckManager.hand == 0 then
         DeckManager.drawHand()

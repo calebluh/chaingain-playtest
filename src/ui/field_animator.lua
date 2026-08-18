@@ -242,9 +242,16 @@ function FieldAnimator.startPlay(playType, yardsGained, yardLine, distanceToFirs
         table.insert(FieldAnimator.defense, { role = "DB2", x = losX + 7 * YARD_PX, y = midY + 55, speed = 45, profile = genDefProfile(false) })
     end
     
-    FieldAnimator.cameraX = FieldAnimator.ball.x - FIELD_WIDTH / 2
-    FieldAnimator.cameraX = math.max(0, math.min(1200 - FIELD_WIDTH, FieldAnimator.cameraX))
-    FieldAnimator.targetCameraX = FieldAnimator.cameraX
+    FieldAnimator.targetCameraX = FieldAnimator.ball.x - 50
+    FieldAnimator.cameraX = FieldAnimator.targetCameraX
+    
+    -- Initialize screen coordinates immediately
+    for _, entity in ipairs(FieldAnimator.offense) do
+        entity.screenX, entity.screenY, entity.scale = FieldAnimator.to25D(entity.x, entity.y, 0)
+    end
+    for _, entity in ipairs(FieldAnimator.defense) do
+        entity.screenX, entity.screenY, entity.scale = FieldAnimator.to25D(entity.x, entity.y, 0)
+    end
 end
 
 function FieldAnimator.update(dt)
@@ -548,9 +555,7 @@ function FieldAnimator.update(dt)
     end
 
     -- Camera follow ball absolute coordinate
-    FieldAnimator.targetCameraX = FieldAnimator.ball.x - FIELD_WIDTH / 2
-    FieldAnimator.targetCameraX = math.max(0, math.min(1200 - FIELD_WIDTH, FieldAnimator.targetCameraX))
-    
+    FieldAnimator.targetCameraX = FieldAnimator.ball.x - 50
     local lerpFactor = math.min(1.0, 5.0 * dt)
     FieldAnimator.cameraX = FieldAnimator.cameraX + (FieldAnimator.targetCameraX - FieldAnimator.cameraX) * lerpFactor
 end
