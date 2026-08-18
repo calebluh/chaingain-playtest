@@ -96,6 +96,81 @@ if (typeof window !== "undefined") {
     }
 }
 
+# 3.45 Disable IndexedDB stale package caching in game.js
+if (Test-Path "web_build/game.js") {
+    Write-Host "Bypassing stale IndexedDB cache in game.js..." -ForegroundColor Yellow
+    $gameJs = Get-Content "web_build/game.js" -Raw
+    $gameJs = $gameJs.Replace("if (useCached) {", "if (false && useCached) {")
+    Set-Content "web_build/game.js" $gameJs -NoNewline
+}
+
+# 3.48 Inject Mobile Landscape & PWA WebApp Support (Manifest + Orientation Prompt + Touch CSS)
+if (Test-Path "web_build/index.html") {
+    Write-Host "Configuring PWA WebApp & Mobile Landscape optimization..." -ForegroundColor Yellow
+    
+    # Create manifest.json
+    $manifestJson = @'
+{
+  "name": "Chain Gain",
+  "short_name": "ChainGain",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0b0d13",
+  "theme_color": "#00c3ff",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "192x192 512x512",
+      "type": "image/png"
+    }
+  ]
+}
+'@
+    Set-Content "web_build/manifest.json" $manifestJson -NoNewline
+
+    $html = Get-Content "web_build/index.html" -Raw
+    $pwaMeta = @'
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Chain Gain">
+    <link rel="manifest" href="manifest.json">
+    <style>
+      html, body {
+        margin: 0; padding: 0; width: 100vw; height: 100vh;
+        background-color: #0b0d13; overflow: hidden;
+        touch-action: none; user-select: none;
+        -webkit-user-select: none; -webkit-touch-callout: none;
+      }
+      #canvas {
+        width: 100vw; height: 100vh; object-fit: contain;
+        display: block; margin: auto;
+      }
+      #rotate-prompt {
+        display: none; position: fixed; top: 0; left: 0;
+        width: 100vw; height: 100vh; background: #0f141f;
+        color: #00c3ff; font-family: system-ui, sans-serif;
+        font-size: 20px; font-weight: bold; z-index: 99999;
+        text-align: center; box-sizing: border-box; padding-top: 35vh;
+      }
+      @media screen and (orientation: portrait) and (max-width: 900px) {
+        #rotate-prompt { display: block; }
+      }
+    </style>
+'@
+    if (-not $html.Contains("manifest.json")) {
+        $html = $html.Replace("<head>", "<head>`n$pwaMeta")
+    }
+    
+    $rotatePromptDiv = '<div id="rotate-prompt">🏈 <b>CHAIN GAIN</b><br><br>🔄 Please rotate your phone/tablet to <b>Landscape Mode</b> to play!</div>'
+    if (-not $html.Contains("rotate-prompt")) {
+        $html = $html.Replace("<body>", "<body>`n$rotatePromptDiv")
+    }
+    
+    Set-Content "web_build/index.html" $html -NoNewline
+}
+
 # 3.5 Inject game icon as browser tab favicon
 if (Test-Path "assets/icon.png") {
     Copy-Item "assets/icon.png" "web_build/favicon.ico" -Force

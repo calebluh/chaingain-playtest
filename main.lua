@@ -348,6 +348,14 @@ function love.mousereleased(x, y, button, istouch, presses)
     end
 end
 
+function love.touchpressed(id, x, y, dx, dy, pressure)
+    love.mousepressed(x * 960, y * 540, 1, true, 1)
+end
+
+function love.touchreleased(id, x, y, dx, dy, pressure)
+    love.mousereleased(x * 960, y * 540, 1, true, 1)
+end
+
 function love.wheelmoved(x, y)
     StateManager.wheelmoved(x, y)
 end
