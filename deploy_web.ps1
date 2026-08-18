@@ -9,10 +9,15 @@ Write-Host "Building Chain Gain for the Web..." -ForegroundColor Cyan
 if (Test-Path "balatrofb.love") { Remove-Item "balatrofb.love" -Force }
 if (Test-Path "web_build") { Remove-Item "web_build" -Recurse -Force }
 
-# 2. Package into a .love file
-Write-Host "Zipping project into balatrofb.love..."
-Get-ChildItem -Path "src", "assets", "main.lua", "conf.lua" | Compress-Archive -DestinationPath "balatrofb.zip" -Force
-Rename-Item -Path "balatrofb.zip" -NewName "balatrofb.love"
+# 2. Package into a .love file (Using tar.exe for POSIX forward slashes required by love.js)
+Write-Host "Zipping project into balatrofb.love with POSIX forward-slash paths..."
+if (Get-Command tar.exe -ErrorAction SilentlyContinue) {
+    tar.exe -a -c -f balatrofb.zip src assets main.lua conf.lua
+} else {
+    Get-ChildItem -Path "src", "assets", "main.lua", "conf.lua" | Compress-Archive -DestinationPath "balatrofb.zip" -Force
+}
+if (Test-Path "balatrofb.love") { Remove-Item "balatrofb.love" -Force }
+Rename-Item -Path "balatrofb.zip" -NewName "balatrofb.love" -Force
 
 # 3. Compile to WebAssembly using love.js
 Write-Host "Compiling to WebAssembly via love.js (this may take a moment)..." -ForegroundColor Cyan

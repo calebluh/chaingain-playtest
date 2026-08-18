@@ -12,9 +12,14 @@ if (Test-Path "desktop_build") { Remove-Item "desktop_build" -Recurse -Force }
 if (Test-Path "ChainGain_Windows.zip") { Remove-Item "ChainGain_Windows.zip" -Force }
 
 # 3. Package resources into a .love archive
-Write-Host "Packaging resources into balatrofb.love..." -ForegroundColor Yellow
-Get-ChildItem -Path "src", "assets", "main.lua", "conf.lua" | Compress-Archive -DestinationPath "balatrofb.zip" -Force
-Rename-Item -Path "balatrofb.zip" -NewName "balatrofb.love"
+Write-Host "Packaging resources into balatrofb.love with POSIX paths..." -ForegroundColor Yellow
+if (Get-Command tar.exe -ErrorAction SilentlyContinue) {
+    tar.exe -a -c -f balatrofb.zip src assets main.lua conf.lua
+} else {
+    Get-ChildItem -Path "src", "assets", "main.lua", "conf.lua" | Compress-Archive -DestinationPath "balatrofb.zip" -Force
+}
+if (Test-Path "balatrofb.love") { Remove-Item "balatrofb.love" -Force }
+Rename-Item -Path "balatrofb.zip" -NewName "balatrofb.love" -Force
 
 # 4. Download Love2D redistribution files if not cached locally
 $loveZip = "love-11.5-win64.zip"
