@@ -40,22 +40,18 @@ end
 
 function StateModeSelect:enter()
     self.selectedTeamIdx = 1
-    self.selectedArchIdx = 1
+    self.selectedDeckIdx = 1
     self.selectedStakeIdx = 1
     self.selectedMode = "roguelite"
     self.activeTab = "NEW"
     
-    self.phase = "TEAM" -- "TEAM", "SCHEME", or "STAKE"
+    self.phase = "TEAM" -- "TEAM", "DECK", or "STAKE"
     self.currentPage = 1
     
     self.time = 0
     
-    self.archetypes = {
-        { id = "west_coast", playbookId = "west_coast", name = "West Coast", desc = "Start with +1 RB, +2 TE, +2 WR slots. Balanced attack approach based on short passing." },
-        { id = "air_raid", playbookId = "air_raid", name = "Air Coryell", desc = "Start with +1 RB, +1 TE, +3 WR slots. Focus on vertical passing and deep numbering concepts." },
-        { id = "ground_pound", playbookId = "shanahan_wide_zone", name = "Erhardt-Perkins", desc = "Start with +2 RB, +2 TE, +1 WR slots. Efficient 1-2 word playcalling. +1 Audible per drive." },
-        { id = "spread_rpo", playbookId = "spread_rpo", name = "Spread", desc = "Start with +4 WR slots, 0 TEs. Heavy shotgun formations utilizing wide receiver spacing." }
-    }
+    local FranchiseDecks = require("src.data.franchise_decks")
+    self.decks = FranchiseDecks
     
     self.stakes = {
         { id = "white", name = "White Stake", desc = "Standard championship rules. Recommended for beginners.", color = {0.9, 0.9, 0.9} },
@@ -112,8 +108,8 @@ function StateModeSelect:draw()
     
     if self.phase == "TEAM" then
         self:drawTeamGrid(innerX, innerY, innerW, innerH)
-    elseif self.phase == "SCHEME" then
-        self:drawSchemeGrid(innerX, innerY, innerW, innerH)
+    elseif self.phase == "DECK" then
+        self:drawDeckGrid(innerX, innerY, innerW, innerH)
     elseif self.phase == "DAILY" then
         self:drawDailyGrid(innerX, innerY, innerW, innerH)
     else
@@ -145,11 +141,11 @@ function StateModeSelect:draw()
         love.graphics.setColor(C_BTN_BLUE)
         love.graphics.rectangle("fill", mx + 600, botY, 180, 35, 6, 6)
         drawShadowText("Random Team", mx + 600, botY + 8, 1, 1, 1, 1.0, "center", 180)
-    elseif self.phase == "SCHEME" then
-        -- Random Scheme
+    elseif self.phase == "DECK" then
+        -- Random Deck
         love.graphics.setColor(C_BTN_BLUE)
         love.graphics.rectangle("fill", mx + 600, botY, 180, 35, 6, 6)
-        drawShadowText("Random Scheme", mx + 600, botY + 8, 1, 1, 1, 1.0, "center", 180)
+        drawShadowText("Random Deck", mx + 600, botY + 8, 1, 1, 1, 1.0, "center", 180)
     else
         -- Random Stake
         love.graphics.setColor(C_BTN_BLUE)
@@ -163,8 +159,8 @@ function StateModeSelect:draw()
     if self.phase == "TEAM" then
         love.graphics.setColor(C_BTN_BLUE)
         love.graphics.rectangle("fill", mx + 430, actY, 170, 35, 6, 6)
-        drawShadowText("Select Scheme >", mx + 430, actY + 8, 1, 1, 1, 1.0, "center", 170)
-    elseif self.phase == "SCHEME" then
+        drawShadowText("Select Deck >", mx + 430, actY + 8, 1, 1, 1, 1.0, "center", 170)
+    elseif self.phase == "DECK" then
         love.graphics.setColor(C_BTN_BLUE)
         love.graphics.rectangle("fill", mx + 20, actY, 160, 35, 6, 6)
         drawShadowText("< Select Team", mx + 20, actY + 8, 1, 1, 1, 1.0, "center", 160)
@@ -172,10 +168,14 @@ function StateModeSelect:draw()
         love.graphics.setColor(C_BTN_BLUE)
         love.graphics.rectangle("fill", mx + 430, actY, 170, 35, 6, 6)
         drawShadowText("Select Stake >", mx + 430, actY + 8, 1, 1, 1, 1.0, "center", 170)
+    elseif self.phase == "DAILY" then
+        love.graphics.setColor(C_BTN_GREEN)
+        love.graphics.rectangle("fill", mx + 430, actY, 170, 35, 6, 6)
+        drawShadowText("PLAY DAILY", mx + 430, actY + 8, 1, 1, 1, 1.2, "center", 170)
     else
         love.graphics.setColor(C_BTN_BLUE)
         love.graphics.rectangle("fill", mx + 20, actY, 160, 35, 6, 6)
-        drawShadowText("< Select Scheme", mx + 20, actY + 8, 1, 1, 1, 1.0, "center", 160)
+        drawShadowText("< Select Deck", mx + 20, actY + 8, 1, 1, 1, 1.0, "center", 160)
         
         love.graphics.setColor(C_BTN_GREEN)
         love.graphics.rectangle("fill", mx + 430, actY, 170, 35, 6, 6)
@@ -183,9 +183,17 @@ function StateModeSelect:draw()
     end
     
     -- Mode Toggle Button
-    love.graphics.setColor(self.selectedMode == "roguelite" and {0.6, 0.2, 0.8} or C_BTN_ORANGE)
+    local modeColor = C_BTN_ORANGE
+    local modeText = "Mode: Franchise"
+    if self.selectedMode == "roguelite" then
+        modeColor = {0.6, 0.2, 0.8}
+        modeText = "Mode: MyPlayer"
+    elseif self.selectedMode == "daily" then
+        modeColor = {0.2, 0.6, 0.3}
+        modeText = "Mode: Daily Run"
+    end
+    love.graphics.setColor(modeColor)
     love.graphics.rectangle("fill", mx + 610, actY, 170, 35, 6, 6)
-    local modeText = self.selectedMode == "roguelite" and "Mode: MyPlayer" or "Mode: Franchise"
     drawShadowText(modeText, mx + 610, actY + 8, 1, 1, 1, 1.0, "center", 170)
     
     -- Back Button (Large bottom bar)
@@ -234,19 +242,19 @@ function StateModeSelect:drawTeamGrid(x, y, w, h)
     end
 end
 
-function StateModeSelect:drawSchemeGrid(x, y, w, h)
+function StateModeSelect:drawDeckGrid(x, y, w, h)
     local cardW, cardH = 220, 110
     local paddingX = (w - (2 * cardW + 20)) / 2
     local paddingY = (h - (2 * cardH + 15)) / 2
     
-    for i, arch in ipairs(self.archetypes) do
+    for i, deck in ipairs(self.decks) do
         local col = (i - 1) % 2
         local row = math.floor((i - 1) / 2)
         
         local cx = x + paddingX + col * (cardW + 20)
         local cy = y + paddingY + row * (cardH + 15)
         
-        local isSelected = (self.selectedArchIdx == i)
+        local isSelected = (self.selectedDeckIdx == i)
         local isHover = checkHover(cx, cy, cardW, cardH)
         
         if isSelected then
@@ -257,7 +265,7 @@ function StateModeSelect:drawSchemeGrid(x, y, w, h)
             love.graphics.rectangle("fill", cx - 2, cy - 2, cardW + 4, cardH + 4, 6, 6)
         end
         
-        -- Draw Scheme Card
+        -- Draw Deck Card
         love.graphics.setColor(0.2, 0.3, 0.4)
         love.graphics.rectangle("fill", cx, cy, cardW, cardH, 4, 4)
         
@@ -266,7 +274,7 @@ function StateModeSelect:drawSchemeGrid(x, y, w, h)
         love.graphics.rectangle("line", cx + 4, cy + 4, cardW - 8, cardH - 8, 2, 2)
         love.graphics.setLineWidth(1)
         
-        drawShadowText(arch.name, cx + 4, cy + cardH/2 - 15, 1, 1, 1, 1.2, "center", cardW - 8)
+        drawShadowText(deck.name, cx + 4, cy + cardH/2 - 15, 1, 1, 1, 1.2, "center", cardW - 8)
     end
 end
 
@@ -455,32 +463,32 @@ function StateModeSelect:mousepressed(mx, my, button)
             SoundManager.playSFX("click")
         end
         
-        -- Next Phase (Select Scheme)
+        -- Next Phase (Select Deck)
         if checkHover(bmx + 430, actY, 170, 35) then
-            self.phase = "SCHEME"
+            self.phase = "DECK"
             SoundManager.playSFX("click")
         end
         
-    elseif self.phase == "SCHEME" then
+    elseif self.phase == "DECK" then
         -- Grid Clicks
         local cardW, cardH = 220, 110
         local paddingX = (innerW - (2 * cardW + 20)) / 2
         local paddingY = (innerH - (2 * cardH + 15)) / 2
-        for i, arch in ipairs(self.archetypes) do
+        for i, deck in ipairs(self.decks) do
             local col = (i - 1) % 2
             local row = math.floor((i - 1) / 2)
             local cx = innerX + paddingX + col * (cardW + 20)
             local cy = innerY + paddingY + row * (cardH + 15)
             
             if checkHover(cx, cy, cardW, cardH) then
-                self.selectedArchIdx = i
+                self.selectedDeckIdx = i
                 SoundManager.playSFX("click")
             end
         end
         
-        -- Random Scheme
+        -- Random Deck
         if checkHover(bmx + 600, botY, 180, 35) then
-            self.selectedArchIdx = math.random(1, #self.archetypes)
+            self.selectedDeckIdx = math.random(1, #self.decks)
             SoundManager.playSFX("click")
         end
         
@@ -518,30 +526,62 @@ function StateModeSelect:mousepressed(mx, my, button)
             SoundManager.playSFX("click")
         end
         
-        -- Prev Phase (Select Scheme)
+        -- Prev Phase (Select Deck)
         if checkHover(bmx + 20, actY, 160, 35) then
-            self.phase = "SCHEME"
+            self.phase = "DECK"
             SoundManager.playSFX("click")
         end
         
         -- Play Button
         if checkHover(bmx + 430, actY, 170, 35) then
-            print(string.format("[DEBUG] StateModeSelect Play clicked (phase=%s selectedMode=%s selectedTeam=%s selectedArch=%s selectedStake=%s)", tostring(self.phase), tostring(self.selectedMode), tostring(self.selectedTeamIdx), tostring(self.selectedArchIdx), tostring(self.selectedStakeIdx)))
+            print(string.format("[DEBUG] StateModeSelect Play clicked (phase=%s selectedMode=%s selectedTeam=%s selectedDeck=%s selectedStake=%s)", tostring(self.phase), tostring(self.selectedMode), tostring(self.selectedTeamIdx), tostring(self.selectedDeckIdx), tostring(self.selectedStakeIdx)))
             SoundManager.playSFX("touchdown")
             
             _G.GAME_MODE = self.selectedMode
             _G.STAKE_TIER = self.stakes[self.selectedStakeIdx].id
             
             local teamObj = FranchiseTeams[self.selectedTeamIdx]
-            local archObj = self.archetypes[self.selectedArchIdx]
+            local deckObj = self.decks[self.selectedDeckIdx]
             
             GameStateData.init({
                 team = teamObj,
-                archetype = archObj,
+                archetype = deckObj,
                 stakeTier = _G.STAKE_TIER
             })
             
-            DeckManager.init(archObj.playbookId or archObj.id)
+            DeckManager.init(deckObj.playbookId or deckObj.id)
+            DeckManager.drawHand()
+            
+            local StateGame = require("src.states.state_game")
+            StateManager.switch(StateGame)
+            return
+        end
+    elseif self.phase == "DAILY" then
+        if checkHover(bmx + 430, actY, 170, 35) then
+            SoundManager.playSFX("touchdown")
+            
+            _G.GAME_MODE = "daily"
+            _G.STAKE_TIER = "white"
+            
+            -- Seed based on date
+            local dateStr = os.date("%Y%m%d")
+            math.randomseed(tonumber(dateStr))
+            
+            local teamObj = FranchiseTeams[1]
+            local deckObj = self.decks[2] -- Air Raid
+            
+            GameStateData.init({
+                team = teamObj,
+                archetype = deckObj,
+                stakeTier = _G.STAKE_TIER
+            })
+            
+            -- Set up mutators
+            GameStateData.dailyMutator = "hail_mary"
+            GameStateData.passBonus = 20
+            GameStateData.ignoreRedZonePenalty = true
+            
+            DeckManager.init(deckObj.playbookId or deckObj.id)
             DeckManager.drawHand()
             
             local StateGame = require("src.states.state_game")
@@ -555,8 +595,13 @@ function StateModeSelect:mousepressed(mx, my, button)
         SoundManager.playSFX("click")
         if self.selectedMode == "roguelite" then
             self.selectedMode = "franchise"
+            self.phase = "TEAM"
+        elseif self.selectedMode == "franchise" then
+            self.selectedMode = "daily"
+            self.phase = "DAILY"
         else
             self.selectedMode = "roguelite"
+            self.phase = "TEAM"
         end
         return
     end
@@ -572,12 +617,13 @@ end
 function StateModeSelect:keypressed(key)
     if key == "escape" then
         if self.phase == "STAKE" then
-            self.phase = "SCHEME"
+            self.phase = "DECK"
             SoundManager.playSFX("click")
-        elseif self.phase == "SCHEME" then
+        elseif self.phase == "DECK" then
             self.phase = "TEAM"
             SoundManager.playSFX("click")
         else
+            SoundManager.playSFX("click")
             local StateMenu = require("src.states.state_menu")
             StateManager.switch(StateMenu)
         end

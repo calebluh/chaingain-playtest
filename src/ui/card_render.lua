@@ -44,8 +44,14 @@ function CardRender.drawPlayCard(x, y, card, isSelected, time)
     love.graphics.setColor(0, 0, 0, 0.8)
     love.graphics.rectangle("fill", cx + 4, cy + 4, w, h, 8, 8)
     
+    local SaveManager = require("src.engine.save_manager")
+    local isMastered = card.name and SaveManager.isCardMastered(card.name)
+
     if isSelected then
         love.graphics.setColor(C_BORDER_SELECTED)
+        love.graphics.rectangle("fill", cx - 3, cy - 3, w + 6, h + 6, 10, 10)
+    elseif isMastered then
+        love.graphics.setColor(1.0, 0.84, 0.0) -- Gold border
         love.graphics.rectangle("fill", cx - 3, cy - 3, w + 6, h + 6, 10, 10)
     else
         love.graphics.setColor(C_BORDER_NORMAL)

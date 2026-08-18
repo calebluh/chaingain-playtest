@@ -235,7 +235,12 @@ function GameState.nextRound(defenseType)
     elseif GameState.stakeTier == "purple" then stakeMult = 1.30
     elseif GameState.stakeTier == "gold" then stakeMult = 1.50 end
     
-    local anteMultiplier = 1 + math.max(0, (GameState.ante - 1) * 0.25)
+    local anteMultiplier = 1
+    if GameState.ante <= 8 then
+        anteMultiplier = 1 + math.max(0, (GameState.ante - 1) * 0.25)
+    else
+        anteMultiplier = 2.75 * math.pow(2.0, GameState.ante - 8)
+    end
     
     if GameState.gameWeek == 1 then
         GameState.targetPoints = math.floor(6 * anteMultiplier * stakeMult)

@@ -184,8 +184,12 @@ function StateGame:update(dt)
                 GameStateData.status = "GAME_LOST"
             end
         elseif GameStateData.status == "GAME_WON" then
-            local StateShop = require("src.states.state_shop")
-            StateManager.switch(StateShop)
+            if GameStateData.ante > 8 and not GameStateData.isEndless then
+                GameStateData.status = "RUN_WON_PROMPT"
+            else
+                local StateShop = require("src.states.state_shop")
+                StateManager.switch(StateShop)
+            end
         elseif GameStateData.status == "GAME_LOST" or GameStateData.status == "TURNOVER" then
             -- Save run history entry
             local runData = {
@@ -696,6 +700,23 @@ function StateGame:draw()
     -- TD Replay and Blind Intro overlays (drawn last, on top of everything)
     BlindIntro.draw()
     TDReplay.draw()
+
+    -- Run Won Prompt Overlay
+    if GameStateData.status == "RUN_WON_PROMPT" then
+        love.graphics.setColor(0, 0, 0, 0.85)
+        love.graphics.rectangle("fill", 0, 0, 960, 540)
+        
+        drawShadowText("CHAMPIONSHIP WON!", 480, 200, 1.0, 0.84, 0.0, 2.0, "center")
+        drawShadowText("You have completed the run. Choose your path:", 480, 260, 1, 1, 1, 1.0, "center")
+        
+        love.graphics.setColor(0.2, 0.8, 0.2)
+        love.graphics.rectangle("fill", 300, 320, 360, 40, 8, 8)
+        drawShadowText("[ENTER] CLAIM VICTORY", 480, 330, 1, 1, 1, 1.2, "center")
+        
+        love.graphics.setColor(0.8, 0.2, 0.8)
+        love.graphics.rectangle("fill", 300, 380, 360, 40, 8, 8)
+        drawShadowText("[SPACE] ENTER ENDLESS MODE", 480, 390, 1, 1, 1, 1.2, "center")
+    end
 end
 
 function StateGame:mousepressed(x, y, button, istouch, presses)
@@ -913,6 +934,11 @@ function StateGame:keypressed(key)
         return
     end
 
+    local FieldAnimator = require("src.ui.field_animator")
+    if FieldAnimator.active and FieldAnimator.keypressed(key) then
+        return
+    end
+
     if self.showPlaybookModal then
         if key == "escape" or key == "space" or key == "return" or key == "enter" then
             self.showPlaybookModal = false
@@ -963,6 +989,46 @@ function StateGame:keypressed(key)
                 self.selectedPlayIndex = nil
                 FxManager.addFloatingText("AUDIBLE!", 480, 260, 1, 0.84, 0, 1.5)
             end
+        end
+    elseif GameStateData.status == "RUN_WON_PROMPT" then
+        if key == "return" or key == "enter" then
+            SoundManager.playSFX("touchdown")
+            -- Mark Mastery
+            local SaveManager = require("src.engine.save_manager")
+            for _, card in ipairs(DeckManager.playbook or {}) do
+                SaveManager.markCardMastered(card.name)
+            end
+            
+            -- Transition to Season Report as a win
+            local runData = {
+                touchdownsThisRun = SaveManager.data and SaveManager.data.touchdownCount or 0,
+                totalYardsGained  = GameStateData.totalYardsGained or 0,
+                anteReached       = GameStateData.ante or 1,
+                weeksPlayed       = GameStateData.gameWeek or 1,
+                bestPlayName      = GameStateData.lastPlayResult and GameStateData.lastPlayResult:sub(1,24) or "N/A",
+                bestPlayYards     = GameStateData.totalYardsGained or 0,
+                didWin            = true,
+            }
+            local sd = SaveManager.data
+            if sd then
+                sd.runHistory = sd.runHistory or {}
+                table.insert(sd.runHistory, 1, {
+                    ante = runData.anteReached,
+                    yards = runData.totalYardsGained,
+                    date = os.date and os.date("%m/%d") or "TODAY",
+                    win = true
+                })
+                if #sd.runHistory > 10 then table.remove(sd.runHistory, 11) end
+                SaveManager.save()
+            end
+            local StateSeasonReport = require("src.states.state_season_report")
+            StateSeasonReport.data = runData
+            StateManager.switch(StateSeasonReport)
+        elseif key == "space" then
+            SoundManager.playSFX("click")
+            GameStateData.isEndless = true
+            local StateShop = require("src.states.state_shop")
+            StateManager.switch(StateShop)
         end
     elseif key == "space" and (GameStateData.status == "TOUCHDOWN" or GameStateData.status == "GAME_WON") then
          local StateShop = require("src.states.state_shop")

@@ -4,10 +4,10 @@ local BadgesData = require("src.data.badges")
 local PlayerCard = {}
 PlayerCard.__index = PlayerCard
 
-local firstNames = { "Marcus", "Jalen", "Trevor", "Ceedee", "Micah", "Justin", "Derrick", "Patrick", "Ja'Marr", "Davante",
-    "A.J.", "Lamar", "Josh", "Tyreek", "Travis", "Saquon", "Nick", "Christian", "Deebo" }
-local lastNames = { "Vance", "Carter", "Stiles", "Lamb", "Parsons", "Jefferson", "Henry", "Mahomes", "Chase", "Adams",
-    "Brown", "Jackson", "Allen", "Hill", "Kelce", "Barkley", "Bosa", "McCaffrey", "Samuel" }
+local firstNames = { "Dash", "Blitz", "Rocco", "Jax", "Tycho", "Zane", "Bo", "Talon", "Duke", "Maverick",
+    "Jace", "Kobe", "Ryder", "Rex", "Axel", "Soren", "Titus", "Colt", "Diesel" }
+local lastNames = { "Steel", "Thunder", "Vance", "Storm", "Volt", "Rider", "Blaze", "Fury", "Cannon", "Sterling",
+    "Gage", "Stone", "Cross", "Dash", "Justice", "Flash", "Griffin", "Hawk", "Spike" }
 
 local archetypes = {
     QB = {

@@ -47,6 +47,15 @@ FieldAnimator.offense = {}
 FieldAnimator.defense = {}
 FieldAnimator.dustParticles = {}
 
+FieldAnimator.skillCheckActive = false
+FieldAnimator.skillCheckTimer = 0
+FieldAnimator.skillCheckDuration = 0.8
+FieldAnimator.skillCheckSuccess = nil
+FieldAnimator.skillCheckTargetX = 0
+FieldAnimator.skillCheckTargetY = 0
+FieldAnimator.skillCheckType = ""
+FieldAnimator.skillCheckTriggered = false
+
 FieldAnimator.cameraX = 0
 FieldAnimator.targetCameraX = 0
 
@@ -90,6 +99,11 @@ function FieldAnimator.startPlay(playType, yardsGained, yardLine, distanceToFirs
     FieldAnimator.offense = {}
     FieldAnimator.defense = {}
     FieldAnimator.dustParticles = {}
+
+    FieldAnimator.skillCheckActive = false
+    FieldAnimator.skillCheckTimer = 0
+    FieldAnimator.skillCheckSuccess = nil
+    FieldAnimator.skillCheckTriggered = false
 
     -- Helper to cap coordinates inside the back line (1185px)
     local function capX(xVal)
@@ -296,6 +310,30 @@ function FieldAnimator.update(dt)
         dp.x = dp.x + dp.vx * dt
         dp.y = dp.y + dp.vy * dt
         if dp.life <= 0 then table.remove(FieldAnimator.dustParticles, i) end
+    end
+    
+    -- Trigger Skill Check
+    if not FieldAnimator.skillCheckTriggered and FieldAnimator.timer > 0.1 then
+        FieldAnimator.skillCheckTriggered = true
+        FieldAnimator.skillCheckActive = true
+        FieldAnimator.skillCheckTimer = 0
+        if FieldAnimator.playType:match("Pass") then
+            FieldAnimator.skillCheckType = "THROW"
+            FieldAnimator.skillCheckDuration = 0.8
+        else
+            FieldAnimator.skillCheckType = "JUKE"
+            FieldAnimator.skillCheckDuration = 1.0
+        end
+    end
+    
+    if FieldAnimator.skillCheckActive then
+        FieldAnimator.skillCheckTimer = FieldAnimator.skillCheckTimer + dt
+        if FieldAnimator.skillCheckTimer > FieldAnimator.skillCheckDuration then
+            FieldAnimator.skillCheckActive = false
+            FieldAnimator.skillCheckSuccess = false
+            local FxManager = require("src.engine.fx_manager")
+            FxManager.addFloatingText("MISSED " .. FieldAnimator.skillCheckType, 480, 200, 1.0, 0.2, 0.2, 1.5)
+        end
     end
     
     local losX = (FieldAnimator.yardLine + 10) * YARD_PX
@@ -546,9 +584,6 @@ function FieldAnimator.draw()
     
     love.graphics.push()
     
-    -- Full-Screen 2.5D Field Scissor Area (0 to 960, 50 to 480)
-    love.graphics.setScissor(0, 50 * 2, 960 * 2, 430 * 2)
-    
     -- 1. 2.5D Angled Turf Base
     love.graphics.setColor(C_TURF)
     love.graphics.rectangle("fill", 0, 50, 960, 430)
@@ -656,7 +691,7 @@ function FieldAnimator.draw()
             type = "player",
             isOffense = true,
             x = p.x, y = p.y, z = 0,
-            screenX = sx, screenY = sy, scale = sc * 4.5,
+            screenX = sx, screenY = sy, scale = sc * 2.0,
             vx = p.vx, vy = p.vy,
             profile = p.profile,
             role = p.role,
@@ -671,7 +706,7 @@ function FieldAnimator.draw()
             type = "player",
             isOffense = false,
             x = p.x, y = p.y, z = 0,
-            screenX = sx, screenY = sy, scale = sc * 4.5,
+            screenX = sx, screenY = sy, scale = sc * 2.0,
             vx = p.vx, vy = p.vy,
             profile = p.profile,
             role = p.role,
@@ -686,7 +721,7 @@ function FieldAnimator.draw()
     for _, entity in ipairs(renderQueue) do
         -- Flattened Cast Shadow on 2.5D Turf
         love.graphics.setColor(0, 0, 0, 0.4)
-        love.graphics.ellipse("fill", entity.screenX, entity.screenY + 4, 18 * (entity.scale / 4.5), 6 * (entity.scale / 4.5))
+        love.graphics.ellipse("fill", entity.screenX, entity.screenY + 4, 18 * (entity.scale / 2.0), 6 * (entity.scale / 2.0))
         
         -- Upright Paper Cutout Sprite
         if entity.isOffense then
@@ -718,10 +753,10 @@ function FieldAnimator.draw()
     local ballImg = AssetManager.getImage("sprites/football.png")
     if ballImg then
         love.graphics.setColor(1, 1, 1, 1)
-        love.graphics.draw(ballImg, bsx - 10, bsy - 8, 0, (20 * bsc) / ballImg:getWidth(), (16 * bsc) / ballImg:getHeight())
+        love.graphics.draw(ballImg, bsx - 6, bsy - 5, 0, (12 * bsc) / ballImg:getWidth(), (10 * bsc) / ballImg:getHeight())
     else
         love.graphics.setColor(0.48, 0.22, 0.05)
-        love.graphics.ellipse("fill", bsx, bsy, 6 * bsc, 4 * bsc)
+        love.graphics.ellipse("fill", bsx, bsy, 4 * bsc, 2.5 * bsc)
     end
     
     -- 8. Tackle BOOM! Graphic
@@ -732,8 +767,69 @@ function FieldAnimator.draw()
         love.graphics.print("BOOM!", bsx - 22, bsy - 27, 0, 1.3, 1.3)
     end
     
-    love.graphics.setScissor()
+    -- 9. Timed Skill Check UI
+    if FieldAnimator.skillCheckActive and FieldAnimator.ball.carrier then
+        local targetX = bsx
+        local targetY = bsy - 30
+        
+        local progress = FieldAnimator.skillCheckTimer / FieldAnimator.skillCheckDuration
+        local outerRadius = 50 * (1.0 - progress) + 15
+        local innerRadius = 15
+        
+        love.graphics.setColor(0, 0, 0, 0.5)
+        love.graphics.circle("fill", targetX, targetY, innerRadius)
+        
+        love.graphics.setColor(1, 1, 1, 0.9)
+        love.graphics.setLineWidth(2)
+        love.graphics.circle("line", targetX, targetY, innerRadius)
+        
+        -- Color transitions from Red -> Yellow -> Green as it gets closer
+        local r, g, b = 1, 0, 0
+        if progress > 0.5 then
+            r, g, b = 1, 1, 0
+        end
+        if progress > 0.85 then
+            r, g, b = 0, 1, 0
+        end
+        
+        love.graphics.setColor(r, g, b, 1)
+        love.graphics.circle("line", targetX, targetY, outerRadius)
+        love.graphics.setLineWidth(1)
+        
+        drawShadowText("PRESS [SPACE]", targetX - 100, targetY - 25, 1, 1, 1, 0.8, "center", 200)
+        -- translate to offset center alignment manually since x is center
+        -- actually drawShadowText doesn't auto-center unless limit is used at x. 
+        -- If x is center, we need to pass x - limit/2
+    end
+    
     love.graphics.pop()
+end
+
+function FieldAnimator.keypressed(key)
+    if FieldAnimator.skillCheckActive and key == "space" then
+        FieldAnimator.skillCheckActive = false
+        local progress = FieldAnimator.skillCheckTimer / FieldAnimator.skillCheckDuration
+        local FxManager = require("src.engine.fx_manager")
+        local SoundManager = require("src.engine.sound_manager")
+        
+        if progress >= 0.75 and progress <= 0.95 then
+            FieldAnimator.skillCheckSuccess = true
+            GameStateData.targetYards = GameStateData.targetYards + 2
+            FxManager.addFloatingText("PERFECT " .. FieldAnimator.skillCheckType .. "! +2 YDS", 480, 200, 0.2, 0.9, 0.2, 1.8)
+            SoundManager.playSFX("coin")
+        elseif progress >= 0.5 then
+            FieldAnimator.skillCheckSuccess = true
+            GameStateData.targetYards = GameStateData.targetYards + 1
+            FxManager.addFloatingText("GOOD " .. FieldAnimator.skillCheckType .. "! +1 YDS", 480, 200, 0.9, 0.9, 0.2, 1.4)
+            SoundManager.playSFX("click")
+        else
+            FieldAnimator.skillCheckSuccess = false
+            FxManager.addFloatingText("EARLY " .. FieldAnimator.skillCheckType .. "!", 480, 200, 0.9, 0.2, 0.2, 1.4)
+            SoundManager.playSFX("tackle")
+        end
+        return true
+    end
+    return false
 end
 
 return FieldAnimator

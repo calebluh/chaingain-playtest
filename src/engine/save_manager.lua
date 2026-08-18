@@ -17,6 +17,7 @@ SaveManager.data = {
     careerCapCash = 0,
     unlockedCards = {},
     unlockedBlinds = {},
+    masteredCards = {},
     settings = {
         enableCRT = false,
         screenshake = 1.0,
@@ -52,6 +53,7 @@ function SaveManager.load(idx)
         careerCapCash = 0,
         unlockedCards = {},
         unlockedBlinds = {},
+        masteredCards = {},
         settings = {
             enableCRT = false,
             screenshake = 1.0,
@@ -496,6 +498,19 @@ function SaveManager.recordTouchdown()
     SaveManager.data.totalTouchdowns = SaveManager.data.totalTouchdowns + 1
     SaveManager.save()
     SteamManager.unlockAchievement("ACH_FIRST_TD")
+end
+
+function SaveManager.markCardMastered(cardName)
+    if not SaveManager.data.masteredCards then SaveManager.data.masteredCards = {} end
+    if not SaveManager.data.masteredCards[cardName] then
+        SaveManager.data.masteredCards[cardName] = true
+        SaveManager.save()
+    end
+end
+
+function SaveManager.isCardMastered(cardName)
+    if not SaveManager.data or not SaveManager.data.masteredCards then return false end
+    return SaveManager.data.masteredCards[cardName] == true
 end
 
 function math.clamp(val, min, max)

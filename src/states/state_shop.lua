@@ -308,7 +308,13 @@ function StateShop:mousepressed(x, y, button, istouch, presses)
             end
             DeckManager.shuffle()
             DeckManager.drawHand()
-            StateManager.switch(StateGame)
+            
+            if _G.GAME_MODE == "roguelite" and math.random() < 0.25 and GameStateData.ante < 8 then
+                local StateEvent = require("src.states.state_event")
+                StateManager.switch(StateEvent)
+            else
+                StateManager.switch(StateGame)
+            end
             return
         end
     elseif button == 2 then
@@ -410,7 +416,13 @@ function StateShop:keypressed(key)
         end
         DeckManager.shuffle()
         DeckManager.drawHand()
-        StateManager.switch(StateGame)
+        
+        if _G.GAME_MODE == "roguelite" and math.random() < 0.25 and GameStateData.ante < 8 then
+            local StateEvent = require("src.states.state_event")
+            StateManager.switch(StateEvent)
+        else
+            StateManager.switch(StateGame)
+        end
     end
 end
 
