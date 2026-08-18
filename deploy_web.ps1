@@ -118,7 +118,7 @@ if (typeof window !== "undefined") {
 if (Test-Path "web_build/game.js") {
     Write-Host "Bypassing stale IndexedDB cache in game.js..." -ForegroundColor Yellow
     $gameJs = Get-Content "web_build/game.js" -Raw
-    $gameJs = $gameJs.Replace("if (useCached) {", "if (false && useCached) {")
+    $gameJs = $gameJs -replace 'if \((false && )?useCached\) \{', 'if (false && useCached) {'
     Set-Content "web_build/game.js" $gameJs -NoNewline
 }
 
@@ -188,9 +188,9 @@ if (Test-Path "web_build/index.html") {
 
     # 3.49 Add timestamp cache buster to script tags & purge IndexedDB in index.html
     $ts = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
-    $html = $html.Replace('src="game.js"', 'src="game.js?v=' + $ts + '"')
-    $html = $html.Replace('src="love.js"', 'src="love.js?v=' + $ts + '"')
-    $html = $html.Replace('src="coi-serviceworker.js"', 'src="coi-serviceworker.js?v=' + $ts + '"')
+    $html = $html -replace 'src="game\.js(\?v=\d+)?"', ('src="game.js?v=' + $ts + '"')
+    $html = $html -replace 'src="love\.js(\?v=\d+)?"', ('src="love.js?v=' + $ts + '"')
+    $html = $html -replace 'src="coi-serviceworker\.js(\?v=\d+)?"', ('src="coi-serviceworker.js?v=' + $ts + '"')
 
     $purgeDbScript = @'
     <script>
