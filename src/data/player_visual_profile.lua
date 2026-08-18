@@ -15,6 +15,11 @@ PlayerVisualProfile.shellColor = {0.07, 0.13, 0.27}
 PlayerVisualProfile.maskColor = {0.75, 0.75, 0.75}
 PlayerVisualProfile.visor = "clear"         -- "clear", "dark", "gold_mirror", "iridescent"
 PlayerVisualProfile.stripeColor = {1.0, 1.0, 1.0}
+PlayerVisualProfile.facemask = 2            -- 1-6 numeric style
+
+-- Hair
+PlayerVisualProfile.hairStyle = "none"      -- "none", "short", "dreads", "mullet", "afro", "braids"
+PlayerVisualProfile.hairColor = {0.1, 0.1, 0.1}
 
 -- Jersey
 PlayerVisualProfile.jerseyCut = "standard"  -- "standard", "cropped", "sleeveless"
@@ -31,6 +36,7 @@ PlayerVisualProfile.handGear = "receiver"   -- "none", "receiver", "lineman"
 PlayerVisualProfile.handGearColor = {1.0, 1.0, 1.0}
 PlayerVisualProfile.cleats = "low"          -- "low", "mid", "high"
 PlayerVisualProfile.cleatsColor = {0.1, 0.1, 0.1}
+PlayerVisualProfile.earrings = 0            -- 0-3
 
 -- AAA Overhaul Gear Additions
 PlayerVisualProfile.calfSleeves = "none"    -- "none", "white", "black", "team_primary"
@@ -64,10 +70,23 @@ PlayerVisualProfile.colorPalette = {
     {0.55, 0.0, 0.0},     -- Maroon
 }
 
+PlayerVisualProfile.hairColorPalette = {
+    {0.1, 0.1, 0.1},      -- Black
+    {0.35, 0.22, 0.10},   -- Dark Brown
+    {0.55, 0.38, 0.18},   -- Brown
+    {0.85, 0.72, 0.35},   -- Blonde
+    {0.65, 0.18, 0.10},   -- Red/Auburn
+    {0.9, 0.9, 0.9},      -- White/Platinum
+    {0.15, 0.30, 0.85},   -- Blue
+    {0.85, 0.15, 0.50},   -- Pink
+}
+
 PlayerVisualProfile.archetypeOptions = { "lean", "stocky", "heavy" }
 PlayerVisualProfile.eyeBlackOptions = { "clean", "single_bar", "warpaint", "cross" }
 PlayerVisualProfile.helmetOptions = { "vintage", "classic_2bar", "speedflex", "cage" }
 PlayerVisualProfile.visorOptions = { "clear", "dark", "gold_mirror", "iridescent" }
+PlayerVisualProfile.facemaskOptions = { 1, 2, 3, 4, 5, 6 }
+PlayerVisualProfile.hairStyleOptions = { "none", "short", "dreads", "mullet", "afro", "braids" }
 PlayerVisualProfile.jerseyCutOptions = { "standard", "cropped", "sleeveless" }
 PlayerVisualProfile.jerseyPatternOptions = { "solid", "shoulder_stripes", "sleeve_cuffs", "camo_panels" }
 PlayerVisualProfile.numberFontOptions = { "classic_block", "modern_apex", "bold_outline" }
@@ -75,6 +94,7 @@ PlayerVisualProfile.armGearOptions = { "none", "turf_tape", "left_sleeve", "righ
 PlayerVisualProfile.handGearOptions = { "none", "receiver", "lineman" }
 PlayerVisualProfile.cleatsOptions = { "low", "mid", "high" }
 PlayerVisualProfile.calfSleeveOptions = { "none", "white", "black", "team_primary" }
+PlayerVisualProfile.earringOptions = { 0, 1, 2, 3 }
 
 -- ─── Helpers ────────────────────────────────────────────────────
 function PlayerVisualProfile.getSkinColor()
@@ -113,6 +133,7 @@ function PlayerVisualProfile.randomize()
     PlayerVisualProfile.maskColor = PlayerVisualProfile.colorPalette[math.random(#PlayerVisualProfile.colorPalette)]
     PlayerVisualProfile.visor = PlayerVisualProfile.visorOptions[math.random(#PlayerVisualProfile.visorOptions)]
     PlayerVisualProfile.stripeColor = PlayerVisualProfile.colorPalette[math.random(#PlayerVisualProfile.colorPalette)]
+    PlayerVisualProfile.facemask = PlayerVisualProfile.facemaskOptions[math.random(#PlayerVisualProfile.facemaskOptions)]
     PlayerVisualProfile.jerseyCut = PlayerVisualProfile.jerseyCutOptions[math.random(#PlayerVisualProfile.jerseyCutOptions)]
     PlayerVisualProfile.primaryColor = PlayerVisualProfile.colorPalette[math.random(#PlayerVisualProfile.colorPalette)]
     PlayerVisualProfile.secondaryColor = PlayerVisualProfile.colorPalette[math.random(#PlayerVisualProfile.colorPalette)]
@@ -122,6 +143,9 @@ function PlayerVisualProfile.randomize()
     PlayerVisualProfile.armGear = PlayerVisualProfile.armGearOptions[math.random(#PlayerVisualProfile.armGearOptions)]
     PlayerVisualProfile.handGear = PlayerVisualProfile.handGearOptions[math.random(#PlayerVisualProfile.handGearOptions)]
     PlayerVisualProfile.cleats = PlayerVisualProfile.cleatsOptions[math.random(#PlayerVisualProfile.cleatsOptions)]
+    PlayerVisualProfile.hairStyle = PlayerVisualProfile.hairStyleOptions[math.random(#PlayerVisualProfile.hairStyleOptions)]
+    PlayerVisualProfile.hairColor = PlayerVisualProfile.hairColorPalette[math.random(#PlayerVisualProfile.hairColorPalette)]
+    PlayerVisualProfile.earrings = PlayerVisualProfile.earringOptions[math.random(#PlayerVisualProfile.earringOptions)]
 end
 
 function PlayerVisualProfile.save()

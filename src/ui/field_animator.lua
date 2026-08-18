@@ -101,7 +101,10 @@ function FieldAnimator.startPlay(playType, yardsGained, yardLine, distanceToFirs
             tattoos = (math.random() > 0.8),
             hairStyle = (math.random() > 0.7 and "dreads" or "none"),
             hairColor = { math.random(20,80)/100, math.random(10,40)/100, 0.1 },
-            archetype = isHeavy and "heavy" or "lean"
+            archetype = isHeavy and "heavy" or "lean",
+            facemask = isHeavy and math.random(4, 6) or math.random(1, 5),
+            earrings = (math.random() > 0.8 and math.random(1, 2) or 0),
+            jerseyNumber = math.random(50, 99),
         }
     end
 
@@ -521,10 +524,15 @@ function FieldAnimator.draw()
     end
     
     -- 2. Endzones
-    -- Left Endzone (Own)
-    love.graphics.setColor(0.12, 0.18, 0.35, 0.95)
+    local activeTeam = GameStateData.config and GameStateData.config.team
+    local homeJersey = activeTeam and activeTeam.primaryColor or {0.12, 0.18, 0.35}
+    local homeSec = activeTeam and activeTeam.secondaryColor or {1.0, 0.84, 0.0}
+    local homeName = activeTeam and activeTeam.name:upper() or "HOME"
+    
+    -- Left Endzone (Own Team)
+    love.graphics.setColor(homeJersey[1]*0.8, homeJersey[2]*0.8, homeJersey[3]*0.8, 0.95)
     love.graphics.rectangle("fill", 0, FIELD_Y, 100, FIELD_HEIGHT)
-    love.graphics.setColor(1, 1, 1, 0.15)
+    love.graphics.setColor(homeSec[1], homeSec[2], homeSec[3], 0.25)
     love.graphics.setLineWidth(10)
     for i = -30, FIELD_HEIGHT + 30, 30 do
         love.graphics.line(10, FIELD_Y + i, 80, FIELD_Y + i + 30)
@@ -535,14 +543,14 @@ function FieldAnimator.draw()
     love.graphics.setColor(1, 1, 1, 0.9)
     love.graphics.rectangle("fill", 100, FIELD_Y, 3, FIELD_HEIGHT)
     
-    -- Left Endzone Text "HOME"
+    -- Left Endzone Text (Team Name)
     love.graphics.push()
     love.graphics.translate(50, FIELD_Y + FIELD_HEIGHT/2)
     love.graphics.rotate(-math.pi/2)
-    love.graphics.setColor(1, 1, 1, 0.7)
+    love.graphics.setColor(homeSec[1], homeSec[2], homeSec[3], 0.9)
     local font = love.graphics.getFont()
-    local textW = font and font:getWidth("HOME") or 40
-    love.graphics.print("HOME", -textW/2, -8, 0, 1.2, 1.2)
+    local textW = font and font:getWidth(homeName) or 40
+    love.graphics.print(homeName, -textW/2, -8, 0, 1.2, 1.2)
     love.graphics.pop()
     
     -- Right Endzone (Opponent)
@@ -775,10 +783,16 @@ function FieldAnimator.draw()
         love.graphics.line(bx - 16, by - bz + 6, bx, by - bz)
     end
     
-    love.graphics.setColor(0.48, 0.22, 0.05)
-    love.graphics.ellipse("fill", bx, by - bz, 6, 4)
-    love.graphics.setColor(1, 1, 1)
-    love.graphics.line(bx - 2, by - bz, bx + 2, by - bz)
+    local ballImg = AssetManager.getImage("sprites/football.png")
+    if ballImg then
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.draw(ballImg, bx - 10, by - bz - 8, 0, 20 / ballImg:getWidth(), 16 / ballImg:getHeight())
+    else
+        love.graphics.setColor(0.48, 0.22, 0.05)
+        love.graphics.ellipse("fill", bx, by - bz, 6, 4)
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.line(bx - 2, by - bz, bx + 2, by - bz)
+    end
     
     -- 15. Draw BOOM! Tackle burst graphic
     if FieldAnimator.completed and FieldAnimator.timer < FieldAnimator.duration + 0.6 then

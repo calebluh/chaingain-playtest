@@ -393,11 +393,20 @@ function StateGame:draw()
     drawNeonPanel(925, panelY, 23, 68, hoverOpt and {0.0, 0.76, 1.0} or C_BORDER_NORMAL)
     drawShadowText("⚙", 925, panelY + 22, 1, 1, 1, 1.2, "center", 23)
 
-    -- Progress Bar
+    -- Progress Bar (Turf Field + Team Branded End Zones)
+    local activeTeam = GameStateData.config and GameStateData.config.team
+    local teamColor = activeTeam and activeTeam.primaryColor or {0.18, 0.72, 0.45}
+    local teamSecColor = activeTeam and activeTeam.secondaryColor or {1.0, 0.84, 0.0}
+    
     love.graphics.setColor(0.08, 0.1, 0.14, 0.9)
     love.graphics.rectangle("fill", 12, 82, 915, 18, 4, 4)
+    
+    -- End Zone (Right 10% Team Accent Stripe)
+    love.graphics.setColor(teamSecColor[1]*0.7, teamSecColor[2]*0.7, teamSecColor[3]*0.7, 0.85)
+    love.graphics.rectangle("fill", 12 + 915 * 0.9, 82, 915 * 0.1, 18, 0, 4)
+    
     local pct = math.min(1.0, GameStateData.yardLine / 100)
-    love.graphics.setColor(0.18, 0.72, 0.45, 1)
+    love.graphics.setColor(teamColor[1], teamColor[2], teamColor[3], 1)
     love.graphics.rectangle("fill", 12, 82, 915 * pct, 18, 4, 4)
     
     love.graphics.setColor(1, 0.84, 0, 0.8)

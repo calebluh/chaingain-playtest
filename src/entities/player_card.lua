@@ -100,10 +100,14 @@ function PlayerCard.new(name, position, rarity, multBonus, chipBonus, edition)
     self.jumpY = 0
     self.equippedBadges = {}
     
-    local hairStyles = {"none", "dreads", "short", "mullet"}
+    local hairStyles = {"none", "short", "dreads", "mullet", "afro", "braids"}
     local visors = {"clear", "clear", "dark", "iridescent", "gold_mirror"}
     local sleeves = {"none", "none", "left_sleeve", "right_sleeve", "both_sleeves", "turf_tape"}
     local calves = {"none", "none", "white", "black", "team_primary"}
+    local hairColors = {
+        {0.1, 0.1, 0.1}, {0.35, 0.22, 0.10}, {0.55, 0.38, 0.18},
+        {0.85, 0.72, 0.35}, {0.65, 0.18, 0.10}, {0.9, 0.9, 0.9}
+    }
     
     self.visualProfile = {
         skinTone = math.random(1, 8),
@@ -113,8 +117,11 @@ function PlayerCard.new(name, position, rarity, multBonus, chipBonus, edition)
         tattoos = (math.random() > 0.8),
         calfSleeves = calves[math.random(#calves)],
         hairStyle = hairStyles[math.random(#hairStyles)],
-        hairColor = { math.random(20,90)/100, math.random(10,50)/100, math.random(0,20)/100 },
-        archetype = (posType == "TE" or posType == "DL" or posType == "OL") and "heavy" or ((posType == "WR" or posType == "CB") and "lean" or "stocky")
+        hairColor = hairColors[math.random(#hairColors)],
+        archetype = (posType == "TE" or posType == "DL" or posType == "OL") and "heavy" or ((posType == "WR" or posType == "CB") and "lean" or "stocky"),
+        facemask = math.random(1, 6),
+        earrings = (math.random() > 0.7 and math.random(1, 3) or 0),
+        jerseyNumber = math.random(1, 99),
     }
 
     return self

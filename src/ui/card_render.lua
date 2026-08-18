@@ -193,6 +193,10 @@ function CardRender.drawPlayCard(x, y, card, isSelected, time)
         drawShadowText("D", sx - 5, sy - 8, 1, 1, 1, 1.2)
     end
     
+    -- Glass Specular Glare Overlay Sweep
+    love.graphics.setColor(1, 1, 1, 0.12)
+    love.graphics.polygon("fill", cx + 10, cy, cx + w, cy + h - 40, cx + w, cy + h, cx + 40, cy)
+    
     love.graphics.pop()
 end
 
@@ -336,6 +340,10 @@ function CardRender.drawPlayerCard(x, y, player, isHovered, dt)
         drawStatBar("AWR", player.awr or 80, 0, 20)
         drawStatBar("CTH", player.cth or 80, 1, 20)
     end
+    
+    -- Glass Specular Glare Overlay
+    love.graphics.setColor(1, 1, 1, 0.12)
+    love.graphics.polygon("fill", cx + 8, cy, cx + w, cy + h - 30, cx + w, cy + h, cx + 30, cy)
     
     love.graphics.pop()
 end

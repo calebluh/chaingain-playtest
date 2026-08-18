@@ -33,6 +33,28 @@ function love.load(arg)
         sf:close()
     end
 
+    -- Copy generated player assets from artifact directory
+    local playerAssets = {
+        { src = "C:/Users/caleb/.gemini/antigravity-ide/brain/70f523a0-7b3d-4dd8-88a0-6de40c012252/player_marcus_vance_pixel_1787069185076.png", dsts = {"assets/players/player_marcus_vance.png", "assets/images/players/player_marcus_vance.png"} },
+        { src = "C:/Users/caleb/.gemini/antigravity-ide/brain/70f523a0-7b3d-4dd8-88a0-6de40c012252/player_jalen_carter_pixel_1787069194670.png", dsts = {"assets/players/player_jalen_carter.png", "assets/images/players/player_jalen_carter.png"} },
+    }
+    os.execute('mkdir "assets\\players" 2>nul')
+    os.execute('mkdir "assets\\images\\players" 2>nul')
+    for _, item in ipairs(playerAssets) do
+        local psf = io.open(item.src, "rb")
+        if psf then
+            local data = psf:read("*all")
+            psf:close()
+            for _, dpath in ipairs(item.dsts) do
+                local pdf = io.open(dpath, "wb")
+                if pdf then
+                    pdf:write(data)
+                    pdf:close()
+                end
+            end
+        end
+    end
+
     love.window.setMode(1920, 1080, {fullscreen = true, vsync = true})
     love.window.setTitle("Chain Gain")
     
