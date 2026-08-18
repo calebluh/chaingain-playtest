@@ -212,11 +212,13 @@ function StateShop:draw()
 
     -- Navigation Text & Next Drive Button
     local isNextHover = checkHover(40, 480, 300, 45)
-    love.graphics.setColor(isNextHover and {0.0, 0.76, 1.0} or {0.0, 0.58, 1.0})
+    local btnLabel = (GameStateData.ante and GameStateData.ante >= 8) and ("ENDLESS DRIVE " .. GameStateData.ante) or "NEXT DRIVE"
+    local btnColor = (GameStateData.ante and GameStateData.ante >= 8) and (isNextHover and {1.0, 0.84, 0.0} or {0.85, 0.65, 0.0}) or (isNextHover and {0.0, 0.76, 1.0} or {0.0, 0.58, 1.0})
+    love.graphics.setColor(btnColor)
     love.graphics.rectangle("fill", 40, 480, 300, 45, 8, 8)
-    drawShadowText("NEXT DRIVE", 40, 492, 1, 1, 1, 1.1, "center", 300)
+    drawShadowText(btnLabel, 40, 492, 1, 1, 1, 1.1, "center", 300)
     
-    drawShadowText("Press [SPACE] or Click NEXT DRIVE | [R] Reroll ($" .. (GameStateData.rerollCost or 2) .. ")", 360, 492, 1, 1, 1, 1.0)
+    drawShadowText("Press [SPACE] or Click " .. btnLabel .. " | [R] Reroll ($" .. (GameStateData.rerollCost or 2) .. ")", 360, 492, 1, 1, 1, 1.0)
     drawShadowText(self.shopMessage, 360, 515, 1, 0.84, 0, 1.0)
     
     -- Draw Tooltips at the end of shop draw

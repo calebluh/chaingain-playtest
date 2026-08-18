@@ -79,24 +79,24 @@ function StatePackOpening:enter()
             -- Roll for Editions!
             if self.packType == "MEGA" then
                 local r = math.random()
-                if r < 0.02 then packItem.edition = "Franchise" -- Negative (+1 Slot)
-                elseif r < 0.10 then packItem.edition = "Polychrome"
-                elseif r < 0.30 then packItem.edition = "Holographic"
-                elseif r < 0.60 then packItem.edition = "Foil" 
+                if r < 0.02 then packItem.edition = "Cap Relief"
+                elseif r < 0.10 then packItem.edition = "Prism"
+                elseif r < 0.30 then packItem.edition = "Chrome"
+                elseif r < 0.60 then packItem.edition = "Gold Leaf" 
                 else packItem.edition = "Standard" end
             else
                 local r = math.random()
-                if r < 0.005 then packItem.edition = "Franchise"
-                elseif r < 0.02 then packItem.edition = "Polychrome"
-                elseif r < 0.05 then packItem.edition = "Holographic"
-                elseif r < 0.15 then packItem.edition = "Foil"
+                if r < 0.005 then packItem.edition = "Cap Relief"
+                elseif r < 0.02 then packItem.edition = "Prism"
+                elseif r < 0.05 then packItem.edition = "Chrome"
+                elseif r < 0.15 then packItem.edition = "Gold Leaf"
                 else packItem.edition = "Standard" end
             end
             
             -- Apply Edition Buffs
-            if packItem.edition == "Polychrome" then packItem.baseMult = packItem.baseMult * 1.5
-            elseif packItem.edition == "Holographic" then packItem.baseMult = packItem.baseMult + 0.5
-            elseif packItem.edition == "Foil" then packItem.baseChips = packItem.baseChips + 5 end
+            if packItem.edition == "Prism" then packItem.baseMult = packItem.baseMult * 1.5
+            elseif packItem.edition == "Chrome" then packItem.baseMult = packItem.baseMult + 0.5
+            elseif packItem.edition == "Gold Leaf" then packItem.baseChips = packItem.baseChips + 5 end
         end
         
         table.insert(self.cards, {

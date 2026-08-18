@@ -3,10 +3,10 @@ local PhysicsUtils = require("src.engine.physics_utils")
 local GameStateData = require("src.engine.game_state")
 local FieldAnimator = {}
 
-local FIELD_WIDTH = 500
-local FIELD_HEIGHT = 200
+local FIELD_WIDTH = 600
+local FIELD_HEIGHT = 220
 local FIELD_X = 480 - FIELD_WIDTH / 2
-local FIELD_Y = 80
+local FIELD_Y = 180
 
 local C_BORDER = { 0.1, 0.1, 0.1 }
 local C_TURF = { 94 / 255, 172 / 255, 68 / 255 }
@@ -18,13 +18,12 @@ FieldAnimator.active = false
 FieldAnimator.completed = true
 FieldAnimator.timer = 0
 FieldAnimator.duration = 1.5
+FieldAnimator.cadenceText = ""
 
 FieldAnimator.playType = "Run"
 FieldAnimator.yardsGained = 0
 FieldAnimator.yardLine = 25
 FieldAnimator.distanceToFirst = 1
-
-
 
 FieldAnimator.ball = { x = 0, y = 0, targetX = 0, targetY = 0, scale = 1, z = 0, carrier = nil }
 FieldAnimator.offense = {}
@@ -35,6 +34,23 @@ FieldAnimator.cameraX = 0
 FieldAnimator.targetCameraX = 0
 
 local YARD_PX = 10 -- pixels per yard
+
+-- 2.5D Paper Mario Perspective Projection Matrix (45-degree angle tilt)
+function FieldAnimator.to25D(worldX, worldY, worldZ)
+    worldZ = worldZ or 0
+    local relX = worldX - FieldAnimator.cameraX
+    
+    local screenCenterX = 480
+    local screenBaseY = 240
+    local midY = 180
+    local distFromMidY = (worldY - midY)
+    
+    local screenX = screenCenterX + (relX - 250) * (1.0 + distFromMidY * 0.0006)
+    local screenY = screenBaseY + distFromMidY * 0.75 - worldZ * 1.1
+    local scaleFactor = math.clamp(1.0 + (distFromMidY * 0.0012), 0.75, 1.3)
+    
+    return screenX, screenY, scaleFactor
+end
 
 function FieldAnimator.startPlay(playType, yardsGained, yardLine, distanceToFirst, isIntercepted, isFumbled)
     FieldAnimator.active = true
@@ -146,6 +162,17 @@ function FieldAnimator.startPlay(playType, yardsGained, yardLine, distanceToFirs
 
         local rb = { role = "RB", x = losX - 6 * YARD_PX, y = midY + 10, targetX = capX(losX - 4 * YARD_PX), targetY = midY + 35, profile = getPlayerProfile("RB") }
         table.insert(FieldAnimator.offense, rb)
+
+        -- Dynamic Target Receiver Selection based on Play Type
+        local receivers = { wr1, wr2, te }
+        if playType == "Screen Pass" then
+            receivers = { rb, te, wr2 }
+        elseif playType == "Short Pass" or playType == "Quick Slant" then
+            receivers = { wr2, te, wr1 }
+        elseif playType == "Deep Pass" or playType == "Hail Mary" then
+            receivers = { wr1, wr2 }
+        end
+        FieldAnimator.targetReceiver = receivers[math.random(#receivers)]
 
         -- 5. Create Defenders (Pass Play)
         table.insert(FieldAnimator.defense, { role = "DB1", x = losX + 6 * YARD_PX, y = midY - 65, targetX = wr1.targetX, targetY = wr1.targetY, speed = 44, profile = genDefProfile(false) })
@@ -340,6 +367,7 @@ function FieldAnimator.update(dt)
 
     -- Ball Flight
     if FieldAnimator.playType:match("Pass") then
+        local passTarget = FieldAnimator.targetReceiver or wr1
         if t < 0.25 then
             FieldAnimator.ball.carrier = qb
         elseif t < 0.9 then
@@ -348,13 +376,13 @@ function FieldAnimator.update(dt)
             if FieldAnimator.isIntercepted then
                 local db1
                 for _, d in ipairs(FieldAnimator.defense) do if d.role == "DB1" then db1 = d; break end end
-                local targetX = db1 and db1.x or wr1.targetX
-                local targetY = db1 and db1.y or wr1.targetY
+                local targetX = db1 and db1.x or passTarget.targetX
+                local targetY = db1 and db1.y or passTarget.targetY
                 FieldAnimator.ball.x = PhysicsUtils.lerp(qb.x, targetX, throwT)
                 FieldAnimator.ball.y = PhysicsUtils.lerp(qb.y, targetY, throwT)
             else
-                FieldAnimator.ball.x = PhysicsUtils.lerp(qb.x, wr1.targetX, throwT)
-                FieldAnimator.ball.y = PhysicsUtils.lerp(qb.y, wr1.targetY, throwT)
+                FieldAnimator.ball.x = PhysicsUtils.lerp(qb.x, passTarget.targetX, throwT)
+                FieldAnimator.ball.y = PhysicsUtils.lerp(qb.y, passTarget.targetY, throwT)
             end
             FieldAnimator.ball.z = math.sin(throwT * math.pi) * 40
         else
@@ -363,7 +391,7 @@ function FieldAnimator.update(dt)
                 for _, d in ipairs(FieldAnimator.defense) do if d.role == "DB1" then db1 = d; break end end
                 FieldAnimator.ball.carrier = db1
             else
-                FieldAnimator.ball.carrier = wr1
+                FieldAnimator.ball.carrier = passTarget
             end
             FieldAnimator.ball.z = 4
         end
@@ -501,324 +529,190 @@ function FieldAnimator.draw()
     
     love.graphics.push()
     
-    -- Draw outer dark border
-    love.graphics.setColor(C_BORDER)
-    love.graphics.rectangle("fill", FIELD_X - 4, FIELD_Y - 4, FIELD_WIDTH + 8, FIELD_HEIGHT + 8)
+    -- Full-Screen 2.5D Field Scissor Area (0 to 960, 50 to 480)
+    love.graphics.setScissor(0, 50 * 2, 960 * 2, 430 * 2)
     
-    -- Set viewport scissor (scaled by 2x to match canvas resolution)
-    love.graphics.setScissor(FIELD_X * 2, FIELD_Y * 2, FIELD_WIDTH * 2, FIELD_HEIGHT * 2)
-    
-    -- Apply Viewport Translation: Maps absolute X coordinates to the scissor area!
-    love.graphics.translate(FIELD_X - FieldAnimator.cameraX, 0)
-    
-    -- 1. Turf Base Colors (Stripe alternating pattern)
-    -- Light turf
+    -- 1. 2.5D Angled Turf Base
     love.graphics.setColor(C_TURF)
-    love.graphics.rectangle("fill", 100, FIELD_Y, 1000, FIELD_HEIGHT)
+    love.graphics.rectangle("fill", 0, 50, 960, 430)
     
-    -- Alternating dark green stripes every 10 yards (100 px wide, drawn at odd 10-yard intervals)
+    -- Alternating 2.5D angled dark green turf stripes
     love.graphics.setColor(C_TURF_DARK)
     for yard = 0, 90, 20 do
-        local sx = 100 + (yard + 10) * YARD_PX
-        love.graphics.rectangle("fill", sx, FIELD_Y, 10 * YARD_PX, FIELD_HEIGHT)
+        local worldX = 100 + (yard + 10) * YARD_PX
+        local x1, y1 = FieldAnimator.to25D(worldX, 50, 0)
+        local x2, y2 = FieldAnimator.to25D(worldX + 10 * YARD_PX, 50, 0)
+        local x3, y3 = FieldAnimator.to25D(worldX + 10 * YARD_PX, 310, 0)
+        local x4, y4 = FieldAnimator.to25D(worldX, 310, 0)
+        love.graphics.polygon("fill", x1, y1, x2, y2, x3, y3, x4, y4)
     end
     
-    -- 2. Endzones
+    -- 2. Endzones & Goal Lines
     local activeTeam = GameStateData.config and GameStateData.config.team
     local homeJersey = activeTeam and activeTeam.primaryColor or {0.12, 0.18, 0.35}
     local homeSec = activeTeam and activeTeam.secondaryColor or {1.0, 0.84, 0.0}
     local homeName = activeTeam and activeTeam.name:upper() or "HOME"
     
     -- Left Endzone (Own Team)
+    local ex1, ey1 = FieldAnimator.to25D(0, 50, 0)
+    local ex2, ey2 = FieldAnimator.to25D(100, 50, 0)
+    local ex3, ey3 = FieldAnimator.to25D(100, 310, 0)
+    local ex4, ey4 = FieldAnimator.to25D(0, 310, 0)
     love.graphics.setColor(homeJersey[1]*0.8, homeJersey[2]*0.8, homeJersey[3]*0.8, 0.95)
-    love.graphics.rectangle("fill", 0, FIELD_Y, 100, FIELD_HEIGHT)
-    love.graphics.setColor(homeSec[1], homeSec[2], homeSec[3], 0.25)
-    love.graphics.setLineWidth(10)
-    for i = -30, FIELD_HEIGHT + 30, 30 do
-        love.graphics.line(10, FIELD_Y + i, 80, FIELD_Y + i + 30)
-    end
-    love.graphics.setLineWidth(1)
+    love.graphics.polygon("fill", ex1, ey1, ex2, ey2, ex3, ey3, ex4, ey4)
     
-    -- Left Endzone Goal Line
+    -- Left Goal Line
     love.graphics.setColor(1, 1, 1, 0.9)
-    love.graphics.rectangle("fill", 100, FIELD_Y, 3, FIELD_HEIGHT)
-    
-    -- Left Endzone Text (Team Name)
-    love.graphics.push()
-    love.graphics.translate(50, FIELD_Y + FIELD_HEIGHT/2)
-    love.graphics.rotate(-math.pi/2)
-    love.graphics.setColor(homeSec[1], homeSec[2], homeSec[3], 0.9)
-    local font = love.graphics.getFont()
-    local textW = font and font:getWidth(homeName) or 40
-    love.graphics.print(homeName, -textW/2, -8, 0, 1.2, 1.2)
-    love.graphics.pop()
+    love.graphics.setLineWidth(3)
+    love.graphics.line(ex2, ey2, ex3, ey3)
     
     -- Right Endzone (Opponent)
+    local rx1, ry1 = FieldAnimator.to25D(1100, 50, 0)
+    local rx2, ry2 = FieldAnimator.to25D(1200, 50, 0)
+    local rx3, ry3 = FieldAnimator.to25D(1200, 310, 0)
+    local rx4, ry4 = FieldAnimator.to25D(1100, 310, 0)
     love.graphics.setColor(0.65, 0.1, 0.15, 0.95)
-    love.graphics.rectangle("fill", 1100, FIELD_Y, 100, FIELD_HEIGHT)
-    love.graphics.setColor(1, 1, 1, 0.15)
-    love.graphics.setLineWidth(10)
-    for i = -30, FIELD_HEIGHT + 30, 30 do
-        love.graphics.line(1110, FIELD_Y + i, 1180, FIELD_Y + i + 30)
-    end
+    love.graphics.polygon("fill", rx1, ry1, rx2, ry2, rx3, ry3, rx4, ry4)
+    
+    -- Right Goal Line
+    love.graphics.setColor(1, 1, 1, 0.9)
+    love.graphics.line(rx1, ry1, rx4, ry4)
     love.graphics.setLineWidth(1)
     
-    -- Right Endzone Goal Line
+    -- 3. 2.5D Sidelines & Hash Marks
+    local st1, sty1 = FieldAnimator.to25D(100, 50, 0)
+    local st2, sty2 = FieldAnimator.to25D(1100, 50, 0)
+    local sb1, sby1 = FieldAnimator.to25D(100, 310, 0)
+    local sb2, sby2 = FieldAnimator.to25D(1100, 310, 0)
+    
     love.graphics.setColor(1, 1, 1, 0.9)
-    love.graphics.rectangle("fill", 1100, FIELD_Y, 3, FIELD_HEIGHT)
+    love.graphics.setLineWidth(2)
+    love.graphics.line(st1, sty1, st2, sty2)
+    love.graphics.line(sb1, sby1, sb2, sby2)
+    love.graphics.setLineWidth(1)
     
-    -- Right Endzone Text "TOUCHDOWN"
-    love.graphics.push()
-    love.graphics.translate(1150, FIELD_Y + FIELD_HEIGHT/2)
-    love.graphics.rotate(-math.pi/2)
-    love.graphics.setColor(1.0, 0.84, 0.0, 0.8)
-    local touchdownW = font and font:getWidth("TOUCHDOWN") or 80
-    love.graphics.print("TOUCHDOWN", -touchdownW/2, -8, 0, 1.2, 1.2)
-    love.graphics.pop()
-    
-    -- Field Logo
-    love.graphics.setColor(1, 1, 1, 0.08)
-    local font = love.graphics.getFont()
-    local logoW = font and font:getWidth("CHAIN GAIN") or 100
-    love.graphics.print("CHAIN GAIN", 600 - logoW * 2, FIELD_Y + FIELD_HEIGHT/2 - 20, 0, 4.0, 4.0)
-
-    -- 3. Sidelines & Hash Marks
-    love.graphics.setColor(1, 1, 1, 0.9)
-    -- Top Sideline
-    love.graphics.rectangle("fill", 100, FIELD_Y + 15, 1000, 3)
-    -- Bottom Sideline
-    love.graphics.rectangle("fill", 100, FIELD_Y + FIELD_HEIGHT - 18, 1000, 3)
-    
-    -- Pixel Sideline Crowd/Bench
-    love.graphics.setColor(0.3, 0.3, 0.35)
-    love.graphics.rectangle("fill", 100, FIELD_Y - 5, 1000, 20)
-    for px = 100, 1100, 15 do
-        love.graphics.setColor(math.random(), math.random(), math.random(), 0.8)
-        love.graphics.rectangle("fill", px, FIELD_Y - 2, 4, 6)
-        love.graphics.rectangle("fill", px+5, FIELD_Y + 4, 4, 6)
-    end
-    
-    -- Hash Marks
-    love.graphics.setColor(1, 1, 1, 0.5)
-    for yard = 1, 99 do
-        if yard % 5 ~= 0 then
-            local hx = 100 + yard * YARD_PX
-            love.graphics.line(hx, FIELD_Y + 18, hx, FIELD_Y + 22)
-            love.graphics.line(hx, FIELD_Y + FIELD_HEIGHT - 25, hx, FIELD_Y + FIELD_HEIGHT - 21)
-        end
-    end
-    
-    -- 4. Yard Lines & Numbers
+    -- 4. 2.5D Yard Lines
     for yard = 10, 90, 10 do
-        local lx = 100 + yard * YARD_PX
-        love.graphics.setColor(1, 1, 1, 0.8)
+        local worldX = 100 + yard * YARD_PX
+        local yx1, yy1 = FieldAnimator.to25D(worldX, 50, 0)
+        local yx2, yy2 = FieldAnimator.to25D(worldX, 310, 0)
+        love.graphics.setColor(1, 1, 1, 0.75)
         love.graphics.setLineWidth(2)
-        drawDashedLine(lx, FIELD_Y + 15, lx, FIELD_Y + FIELD_HEIGHT - 18, 6, 4)
-        love.graphics.setLineWidth(1)
+        love.graphics.line(yx1, yy1, yx2, yy2)
         
-        -- Display yard number (10, 20, 30, 40, 50, 40, 30, 20, 10)
         local displayNum = yard > 50 and (100 - yard) or yard
-        love.graphics.setColor(1, 1, 1, 0.6)
-        
-        -- Directional arrow text
-        local numStr = tostring(displayNum)
-        if yard < 50 then numStr = numStr .. " >"
-        elseif yard > 50 then numStr = "< " .. numStr
-        end
-        
-        -- Draw top yard number
-        love.graphics.print(numStr, lx - 12, FIELD_Y + 30, 0, 1.2, 1.2)
-        -- Draw bottom yard number
-        love.graphics.print(numStr, lx - 12, FIELD_Y + FIELD_HEIGHT - 45, 0, 1.2, 1.2)
+        drawShadowText(tostring(displayNum), yx1 - 10, yy1 + 8, 1, 1, 1, 0.9)
     end
+    love.graphics.setLineWidth(1)
     
-    -- 5. Rain Ripple Splashes
-    if weatherType == "rain" then
-        for i = 1, 8 do
-            local rx = 100 + (i * 123 + math.sin(i * 123.45 + love.timer.getTime() * 0.5) * 50) % 1000
-            local ry = FIELD_Y + 20 + (i * 28 + love.timer.getTime() * 8) % (FIELD_HEIGHT - 40)
-            local rRadius = ((love.timer.getTime() * 1.5 + i * 0.15) % 1.0) * 12
-            local rAlpha = 1.0 - (rRadius / 12)
-            love.graphics.setColor(0.6, 0.8, 1.0, rAlpha * 0.25)
-            love.graphics.ellipse("line", rx, ry, rRadius, rRadius * 0.4)
-        end
-    end
-    
-    -- 6. Line of Scrimmage & First Down Line
-    local losX = (FieldAnimator.yardLine + 10) * YARD_PX
+    -- 5. Line of Scrimmage & First Down Markers (2.5D Lines)
+    local losWorldX = (FieldAnimator.yardLine + 10) * YARD_PX
+    local lx1, ly1 = FieldAnimator.to25D(losWorldX, 50, 0)
+    local lx2, ly2 = FieldAnimator.to25D(losWorldX, 310, 0)
     love.graphics.setColor(C_LOS)
-    love.graphics.setLineWidth(2)
-    love.graphics.line(losX, FIELD_Y + 15, losX, FIELD_Y + FIELD_HEIGHT - 18)
-    
-    local firstX = losX + FieldAnimator.distanceToFirst * YARD_PX
-    love.graphics.setColor(C_FIRST)
-    love.graphics.setLineWidth(2)
-    love.graphics.line(firstX, FIELD_Y + 15, firstX, FIELD_Y + FIELD_HEIGHT - 18)
-    
-    -- Target Spot Line (Neon Green Dotted Line)
-    if FieldAnimator.yardsGained > 0 and not FieldAnimator.isIntercepted then
-        local targetGainX = losX + FieldAnimator.yardsGained * YARD_PX
-        love.graphics.setColor(0.0, 0.9, 0.4, 0.6)
-        love.graphics.setLineWidth(2)
-        local steps = 12
-        for i = 0, steps do
-            if i % 2 == 0 then
-                local y1 = FIELD_Y + 15 + i * (FIELD_HEIGHT - 33) / steps
-                local y2 = FIELD_Y + 15 + (i + 1) * (FIELD_HEIGHT - 33) / steps
-                love.graphics.line(targetGainX, y1, targetGainX, y2)
-            end
-        end
-    end
-    love.graphics.setLineWidth(1)
-    
-    -- 7. Defensive Zone Coverages before snap
-    if t < 0.22 then
-        love.graphics.setColor(1.0, 0.2, 0.2, 0.08)
-        for _, def in ipairs(FieldAnimator.defense) do
-            local zoneRadius = def.role:match("DB") and 65 or 45
-            love.graphics.circle("fill", def.x, def.y, zoneRadius)
-            love.graphics.setColor(1.0, 0.2, 0.2, 0.3)
-            love.graphics.circle("line", def.x, def.y, zoneRadius)
-            love.graphics.setColor(1.0, 0.2, 0.2, 0.08)
-        end
-    end
-    
-    -- 8. Angled Routes
-    if FieldAnimator.playType:match("Pass") then
-        local pulseAlpha = 0.4 + 0.5 * (math.sin(love.timer.getTime() * 8) + 1) / 2
-        for _, p in ipairs(FieldAnimator.offense) do
-            if p.breakX and p.targetX then
-                love.graphics.setColor(1, 1, 1, 0.8 * pulseAlpha)
-                love.graphics.setLineWidth(3)
-                love.graphics.line(p.startX, p.startY, p.breakX, p.breakY)
-                love.graphics.line(p.breakX, p.breakY, p.targetX, p.targetY)
-                
-                love.graphics.setColor(0, 0.9, 0.2, 0.8 * pulseAlpha)
-                love.graphics.setLineWidth(1.5)
-                love.graphics.line(p.startX, p.startY, p.breakX, p.breakY)
-                love.graphics.line(p.breakX, p.breakY, p.targetX, p.targetY)
-                love.graphics.circle("fill", p.targetX, p.targetY, 4)
-            end
-        end
-        love.graphics.setLineWidth(1)
-    end
-    
-    -- 9. Dotted Pass Path while ball is in the air
-    if FieldAnimator.playType:match("Pass") and t > 0.25 and t < 0.9 then
-        local qb, wr1
-        for _, p in ipairs(FieldAnimator.offense) do
-            if p.role == "QB" then qb = p
-            elseif p.role == "WR1" then wr1 = p end
-        end
-        if qb and wr1 then
-            love.graphics.setColor(0.1, 0.8, 1.0, 0.45)
-            love.graphics.setLineWidth(2)
-            local steps = 15
-            for i = 0, steps do
-                local pt = i / steps
-                local px = PhysicsUtils.lerp(qb.x, wr1.targetX, pt)
-                local py = PhysicsUtils.lerp(qb.y, wr1.targetY, pt)
-                if i % 2 == 0 then
-                    love.graphics.circle("fill", px, py, 2.5)
-                end
-            end
-            love.graphics.setLineWidth(1)
-        end
-    end
-    
-    -- 10. Dust / Snow Particles
-    for _, dp in ipairs(FieldAnimator.dustParticles) do
-        if dp.isSnow then
-            love.graphics.setColor(1.0, 1.0, 1.0, 0.85)
-            love.graphics.circle("fill", dp.x, dp.y, 3 * (dp.life / 0.4))
-        else
-            love.graphics.setColor(0.8, 0.7, 0.5, 0.6)
-            love.graphics.circle("fill", dp.x, dp.y, 2 * (dp.life / 0.4))
-        end
-    end
-    
-    -- 11. Draw Goalposts
-    love.graphics.setColor(0.9, 0.8, 0.1)
     love.graphics.setLineWidth(3)
-    -- Left Goalpost (drawn at absolute X = 0)
-    love.graphics.line(0, FIELD_Y + FIELD_HEIGHT/2 - 20, 0, FIELD_Y + FIELD_HEIGHT/2 + 20)
-    love.graphics.line(0, FIELD_Y + FIELD_HEIGHT/2, 20, FIELD_Y + FIELD_HEIGHT/2)
-    -- Right Goalpost (drawn at absolute X = 1200)
-    love.graphics.line(1200, FIELD_Y + FIELD_HEIGHT/2 - 20, 1200, FIELD_Y + FIELD_HEIGHT/2 + 20)
-    love.graphics.line(1200, FIELD_Y + FIELD_HEIGHT/2, 1180, FIELD_Y + FIELD_HEIGHT/2)
+    love.graphics.line(lx1, ly1, lx2, ly2)
+    
+    local firstWorldX = losWorldX + FieldAnimator.distanceToFirst * YARD_PX
+    local fx1, fy1 = FieldAnimator.to25D(firstWorldX, 50, 0)
+    local fx2, fy2 = FieldAnimator.to25D(firstWorldX, 310, 0)
+    love.graphics.setColor(C_FIRST)
+    love.graphics.setLineWidth(3)
+    love.graphics.line(fx1, fy1, fx2, fy2)
     love.graphics.setLineWidth(1)
     
-    -- 12. Draw Defense Players (Retro Bowl Pixel Art Style!)
-    local defJersey = {0.85, 0.15, 0.15}
-    local defHelmet = {0.95, 0.95, 0.95}
-    local defPants = {0.95, 0.95, 0.95}
+    -- 6. Render Queue for Upright 2.5D Paper Mario Cutout Entities with Y-Sorting!
     local AssetManager = require("src.engine.asset_manager")
-    for _, p in ipairs(FieldAnimator.defense) do
-        local isTackled = FieldAnimator.completed and (FieldAnimator.ball.carrier == p)
-        AssetManager.drawRetroPlayer(p.x, p.y, defJersey, defPants, defHelmet, p.vx, p.vy, false, love.timer.getTime(), isTackled, p.profile)
-    end
-    
-    -- 13. Draw Offense Players (Retro Bowl Pixel Art Style!)
-    local activeTeam = GameStateData.config and GameStateData.config.team
     local PlayerVisualProfile = require("src.data.player_visual_profile")
     local offJersey = (activeTeam and activeTeam.primaryColor) or PlayerVisualProfile.primaryColor or {0.13, 0.34, 0.13}
     local offHelmet = (activeTeam and activeTeam.secondaryColor) or PlayerVisualProfile.shellColor or {1.0, 0.84, 0.0}
-    local offPants = {0.95, 0.95, 0.95}
+    local defJersey = {0.85, 0.15, 0.15}
+    local defHelmet = {0.95, 0.95, 0.95}
+    local defPants = {0.95, 0.95, 0.95}
     
+    local renderQueue = {}
+    
+    -- Add Offense
     for _, p in ipairs(FieldAnimator.offense) do
-        local isTackled = FieldAnimator.completed and (FieldAnimator.ball.carrier == p)
-        AssetManager.drawRetroPlayer(p.x, p.y, offJersey, offPants, offHelmet, p.vx, p.vy, true, love.timer.getTime(), isTackled, p.profile)
+        local sx, sy, sc = FieldAnimator.to25D(p.x, p.y, 0)
+        table.insert(renderQueue, {
+            type = "player",
+            isOffense = true,
+            x = p.x, y = p.y, z = 0,
+            screenX = sx, screenY = sy, scale = sc * 4.5,
+            vx = p.vx, vy = p.vy,
+            profile = p.profile,
+            role = p.role,
+            isTackled = FieldAnimator.completed and (FieldAnimator.ball.carrier == p)
+        })
     end
     
-    -- 14. Draw Ball
+    -- Add Defense
+    for _, p in ipairs(FieldAnimator.defense) do
+        local sx, sy, sc = FieldAnimator.to25D(p.x, p.y, 0)
+        table.insert(renderQueue, {
+            type = "player",
+            isOffense = false,
+            x = p.x, y = p.y, z = 0,
+            screenX = sx, screenY = sy, scale = sc * 4.5,
+            vx = p.vx, vy = p.vy,
+            profile = p.profile,
+            role = p.role,
+            isTackled = FieldAnimator.completed and (FieldAnimator.ball.carrier == p)
+        })
+    end
+    
+    -- Y-Depth Sorting: Draw players further up on screen first, so front players overlap correctly!
+    table.sort(renderQueue, function(a, b) return a.screenY < b.screenY end)
+    
+    -- Draw Render Queue
+    for _, entity in ipairs(renderQueue) do
+        -- Flattened Cast Shadow on 2.5D Turf
+        love.graphics.setColor(0, 0, 0, 0.4)
+        love.graphics.ellipse("fill", entity.screenX, entity.screenY + 4, 18 * (entity.scale / 4.5), 6 * (entity.scale / 4.5))
+        
+        -- Upright Paper Cutout Sprite
+        if entity.isOffense then
+            AssetManager.drawRetroPlayer(entity.screenX, entity.screenY - 12, offJersey, {0.95, 0.95, 0.95}, offHelmet, entity.vx, entity.vy, true, love.timer.getTime(), entity.isTackled, entity.profile, entity.scale)
+        else
+            AssetManager.drawRetroPlayer(entity.screenX, entity.screenY - 12, defJersey, defPants, defHelmet, entity.vx, entity.vy, false, love.timer.getTime(), entity.isTackled, entity.profile, entity.scale)
+        end
+        
+        -- QB Cadence Speech Bubble
+        if entity.role == "QB" and FieldAnimator.cadenceText ~= "" then
+            love.graphics.setColor(1, 1, 1, 0.95)
+            love.graphics.rectangle("fill", entity.screenX - 30, entity.screenY - 60, 60, 22, 6, 6)
+            love.graphics.setColor(0, 0.76, 1)
+            love.graphics.rectangle("line", entity.screenX - 30, entity.screenY - 60, 60, 22, 6, 6)
+            drawShadowText(FieldAnimator.cadenceText, entity.screenX - 30, entity.screenY - 55, 0, 0, 0, 0.9, "center", 60)
+        end
+    end
+    
+    -- 7. 2.5D Pigskin Football
     local bx, by, bz = FieldAnimator.ball.x, FieldAnimator.ball.y, FieldAnimator.ball.z
-    local shadowScale = math.max(0.2, 1.0 - (bz / 40))
+    local bsx, bsy, bsc = FieldAnimator.to25D(bx, by, bz)
+    local shadowSx, shadowSy = FieldAnimator.to25D(bx, by, 0)
+    
+    -- Ball Shadow
     love.graphics.setColor(0, 0, 0, 0.5)
-    love.graphics.ellipse("fill", bx, by + 12, 6 * shadowScale, 2 * shadowScale)
+    love.graphics.ellipse("fill", shadowSx, shadowSy + 2, 8 * bsc, 3 * bsc)
     
-    -- Ball Comet Trail
-    if bz > 10 then
-        love.graphics.setColor(1, 1, 1, 0.35)
-        love.graphics.line(bx - 12, by - bz + 4, bx, by - bz)
-        love.graphics.setColor(0.9, 0.8, 0.2, 0.4)
-        love.graphics.line(bx - 16, by - bz + 6, bx, by - bz)
-    end
-    
+    -- Ball Sprite
     local ballImg = AssetManager.getImage("sprites/football.png")
     if ballImg then
         love.graphics.setColor(1, 1, 1, 1)
-        love.graphics.draw(ballImg, bx - 10, by - bz - 8, 0, 20 / ballImg:getWidth(), 16 / ballImg:getHeight())
+        love.graphics.draw(ballImg, bsx - 10, bsy - 8, 0, (20 * bsc) / ballImg:getWidth(), (16 * bsc) / ballImg:getHeight())
     else
         love.graphics.setColor(0.48, 0.22, 0.05)
-        love.graphics.ellipse("fill", bx, by - bz, 6, 4)
-        love.graphics.setColor(1, 1, 1)
-        love.graphics.line(bx - 2, by - bz, bx + 2, by - bz)
+        love.graphics.ellipse("fill", bsx, bsy, 6 * bsc, 4 * bsc)
     end
     
-    -- 15. Draw BOOM! Tackle burst graphic
+    -- 8. Tackle BOOM! Graphic
     if FieldAnimator.completed and FieldAnimator.timer < FieldAnimator.duration + 0.6 then
         local progress = (FieldAnimator.timer - FieldAnimator.duration) / 0.6
         local starAlpha = 1.0 - progress
-        
         love.graphics.setColor(1, 0.84, 0, starAlpha)
-        love.graphics.push()
-        love.graphics.translate(bx, by)
-        love.graphics.rotate(love.timer.getTime() * 8)
-        local points = {}
-        local count = 10
-        for i = 1, count do
-            local r = (i % 2 == 0) and 18 or 9
-            local angle = (i / count) * math.pi * 2
-            table.insert(points, r * math.cos(angle))
-            table.insert(points, r * math.sin(angle))
-        end
-        love.graphics.polygon("fill", points)
-        love.graphics.pop()
-        
-        love.graphics.setColor(0, 0, 0, starAlpha)
-        love.graphics.print("BOOM!", bx - 21, by - 26, 0, 1.25, 1.25)
-        love.graphics.setColor(1, 0.2, 0.2, starAlpha)
-        love.graphics.print("BOOM!", bx - 22, by - 27, 0, 1.25, 1.25)
+        love.graphics.print("BOOM!", bsx - 22, bsy - 27, 0, 1.3, 1.3)
     end
     
     love.graphics.setScissor()

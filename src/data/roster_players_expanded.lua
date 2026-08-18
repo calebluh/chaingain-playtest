@@ -4,6 +4,26 @@ local PlayerCard = require("src.entities.player_card")
 -- chip = Base Yards bonus (realistic: 1-10 YDS)
 -- mult = Drive Momentum bonus (realistic: 0.1-0.9 MTM)
 local rosterCatalog = {
+    -- Legendary Hall of Famers
+    { name = "Tommy Sterling", pos = "QB", rarity = "Legendary", ovr = 99, chip = 4, mult = 1.2, tag = "HALL OF FAME", desc = "x3.5 MTM on 3rd & 4th Down plays.", ability = function(self, playCard, gameState, c, m)
+        if gameState and (gameState.down == 3 or gameState.down == 4) then return c + 8, m * 3.5 end
+        return c + 4, m * 1.5
+    end},
+    { name = "Bryce Vance", pos = "RB", rarity = "Legendary", ovr = 99, chip = 6, mult = 0.8, tag = "HALL OF FAME", desc = "x2.5 MTM on ALL Run plays. +$5 Cap Cash on play.", ability = function(self, playCard, gameState, c, m)
+        if playCard and playCard.type == "Run" then
+            if gameState then gameState.capCash = (gameState.capCash or 0) + 5 end
+            return c + 6, m * 2.5
+        end
+        return c + 2, m * 1.2
+    end},
+    { name = "Jerome Mercer", pos = "WR", rarity = "Legendary", ovr = 99, chip = 5, mult = 1.0, tag = "HALL OF FAME", desc = "x3.0 MTM on ALL Pass plays.", ability = function(self, playCard, gameState, c, m)
+        if playCard and playCard.type and playCard.type:match("Pass") then return c + 5, m * 3.0 end
+        return c + 2, m * 1.5
+    end},
+    { name = "Darius Cross", pos = "WR", rarity = "Legendary", ovr = 99, chip = 5, mult = 1.0, tag = "PRIME TIME", desc = "x3.0 MTM on ALL plays.", ability = function(self, playCard, gameState, c, m)
+        return c + 5, m * 3.0
+    end},
+
     -- Quarterbacks (12)
     { name = "Marcus Vance", pos = "QB", rarity = "X-Factor", ovr = 96, chip = 0, mult = 0.0, tag = "SCALING QB", desc = "Permanently gains +1 YDS every time you play a Pass.", ability = function(self, playCard, gameState, c, m)
         self.passesThrown = self.passesThrown or 0

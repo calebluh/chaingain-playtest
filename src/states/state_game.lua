@@ -72,9 +72,12 @@ function StateGame:enter()
     self.show4thDownPrompt = false
     self.was4thDown = false
     self.crowdRoarTimer = 0
+    self.playbookShelfY = 380
+    self.targetShelfY = 380
     
-    FieldAnimator.active = false
+    FieldAnimator.active = true
     FieldAnimator.completed = true
+    FieldAnimator.startPlay("Run", 0, GameStateData.yardLine or 25, GameStateData.distance or 10, false, false)
     
     if #DeckManager.hand == 0 then
         DeckManager.drawHand()
@@ -151,6 +154,13 @@ function StateGame:update(dt)
     self.time = self.time + dt
     local weatherType = GameStateData.weather or "clear"
     FxManager.update(dt, weatherType)
+    
+    if FieldAnimator.active or ScoringEvaluator.active then
+        self.targetShelfY = 540
+    else
+        self.targetShelfY = 380
+    end
+    self.playbookShelfY = PhysicsUtils.lerp(self.playbookShelfY, self.targetShelfY, 10 * dt)
     
     GameStateData.updatePlayClock(dt)
     ScoringEvaluator.update(dt)
@@ -279,11 +289,9 @@ function StateGame:draw()
     love.graphics.setColor(0.06, 0.08, 0.12)
     love.graphics.rectangle("fill", 0, 0, 960, 540)
     
-    love.graphics.setColor(0.12, 0.15, 0.22, 0.4)
-    for i = 0, 24 do
-        local yPos = (i * 25 + self.time * 15) % 560
-        love.graphics.line(0, yPos, 960, yPos)
-    end
+    -- Draw 2.5D Paper Mario Angled Field
+    local FieldAnimator = require("src.ui.field_animator")
+    FieldAnimator.draw()
     
     local weatherType = GameStateData.weather or "clear"
     FxManager.draw(weatherType)
@@ -496,9 +504,23 @@ function StateGame:draw()
         drawShadowText("PUNT BALL", 650, 248, 1, 1, 1, 0.9, "center", 140)
     end
 
+    -- Playbook Slide-Up Shelf Drawer Background
+    if self.playbookShelfY < 530 then
+        love.graphics.setColor(0.08, 0.1, 0.14, 0.94)
+        love.graphics.rectangle("fill", 0, self.playbookShelfY, 960, 160, 10, 10)
+        love.graphics.setColor(C_NEON_BORDER)
+        love.graphics.setLineWidth(2)
+        love.graphics.rectangle("line", 0, self.playbookShelfY, 960, 160, 10, 10)
+        love.graphics.setLineWidth(1)
+        drawShadowText("PLAYBOOK & PRE-SNAP CALLS [Q: AUDIBLE (" .. (GameStateData.audiblesRemaining or 3) .. " LEFT)]", 20, self.playbookShelfY + 6, 1, 0.84, 0, 0.85)
+    end
+
     -- Play Cards
     self.hoveredPlayCard = nil
     for i, card in ipairs(DeckManager.hand) do
+        local cardY = self.playbookShelfY + 70
+        card.yOffset = PhysicsUtils.lerp(card.yOffset or cardY, cardY, 15 * (love.timer.getDelta() or 0.016))
+        
         local isHover = mx >= card.xOffset - 45 and mx <= card.xOffset + 45 and my >= card.yOffset - 60 and my <= card.yOffset + 60
         if isHover then
             self.hoveredPlayCard = card

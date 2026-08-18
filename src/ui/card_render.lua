@@ -271,8 +271,8 @@ function CardRender.drawPlayerCard(x, y, player, isHovered, dt)
         local subTag = player.archetypeTag or player.rarity or player.tierName or "PLAYER"
         drawShadowText(subTag:upper(), cx + 4, cy + h/2 + 28, 0.8, 0.84, 0.9, 0.75, "center", w - 8)
 
-        -- ── Holographic Shimmer for rare editions ────────────────────
-        if player.edition == "Franchise Player" or player.edition == "Fan Favorite" then
+        -- ── Chrome / Prism / Legendary Shimmer ────────────────────
+        if player.edition == "Franchise Player" or player.edition == "Fan Favorite" or player.edition == "Prism" or player.edition == "Chrome" or player.rarity == "Legendary" then
             local t = love.timer.getTime()
             -- Animated rainbow sweep overlay using additive blending
             love.graphics.setBlendMode("add")
@@ -285,19 +285,19 @@ function CardRender.drawPlayerCard(x, y, player, isHovered, dt)
                 local r = math.max(0, math.min(1, math.abs(hue * 6 - 3) - 1))
                 local g = math.max(0, math.min(1, 2 - math.abs(hue * 6 - 2)))
                 local b2= math.max(0, math.min(1, 2 - math.abs(hue * 6 - 4)))
-                local shimAlpha = (player.edition == "Franchise Player") and 0.18 or 0.10
+                local shimAlpha = (player.rarity == "Legendary") and 0.28 or 0.16
                 love.graphics.setColor(r, g, b2, shimAlpha)
                 love.graphics.rectangle("fill", bx, cy, 20, h, 2, 2)
             end
             love.graphics.setBlendMode("alpha")
 
             -- Edition corner badge
-            local badgeText = (player.edition == "Franchise Player") and "🏈" or "⭐"
-            local badgeCol  = (player.edition == "Franchise Player") and {0.5,0.2,1.0} or {1.0,0.6,0.0}
+            local badgeText = (player.rarity == "Legendary") and "👑" or ((player.edition == "Prism" or player.edition == "Franchise Player") and "🏈" or "⭐")
+            local badgeCol  = (player.rarity == "Legendary") and {1.0, 0.84, 0.0} or ((player.edition == "Prism") and {0.0, 0.76, 1.0} or {1.0, 0.6, 0.0})
             love.graphics.setColor(badgeCol)
-            love.graphics.circle("fill", cx + w - 8, cy + h - 8, 8)
-            love.graphics.setColor(1,1,1,1)
-            love.graphics.printf(badgeText, cx + w - 20, cy + h - 18, 24, "center", 0, 0.7, 0.7)
+            love.graphics.circle("fill", cx + w - 8, cy + h - 8, 9)
+            love.graphics.setColor(1, 1, 1, 1)
+            love.graphics.printf(badgeText, cx + w - 20, cy + h - 18, 24, "center", 0, 0.75, 0.75)
         end
     else
         -- -------------------------------------------------------------

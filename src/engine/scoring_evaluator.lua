@@ -209,17 +209,17 @@ function ScoringEvaluator.evaluateCurrentRosterPlayer()
         FxManager.addFloatingText("IRONCLAD FRONT: YARDS NEGATED!", 480, 220, 1, 0.2, 0.2, 1.2)
     end
     
-    if player.edition == "Pumped" then
+    if player.edition == "Gold Leaf" or player.edition == "Pumped" then
         chipBonus = chipBonus + 5
-        FxManager.addFloatingText("PUMPED! +5 YDS", 480, 160, 1.0, 0.84, 0.0, 1.2)
-    elseif player.edition == "Juiced" then
+        FxManager.addFloatingText("GOLD LEAF! +5 YDS", 480, 160, 1.0, 0.84, 0.0, 1.2)
+    elseif player.edition == "Chrome" or player.edition == "Juiced" then
         multBonus = multBonus + 0.5
-        FxManager.addFloatingText("JUICED! +0.5 MTM", 480, 160, 0.0, 0.76, 1.0, 1.2)
-    elseif player.edition == "Fan Favorite" then
+        FxManager.addFloatingText("CHROME! +0.5 MTM", 480, 160, 0.0, 0.76, 1.0, 1.2)
+    elseif player.edition == "Prism" or player.edition == "Fan Favorite" then
         multBonus = multBonus * 1.5
-        FxManager.addFloatingText("FAN FAVORITE! x1.5 MTM", 480, 160, 1.0, 0.3, 0.3, 1.2)
-    elseif player.edition == "Franchise Player" then
-        FxManager.addFloatingText("FRANCHISE PLAYER! +1 ROSTER SLOT", 480, 160, 0.4, 0.2, 0.8, 1.2)
+        FxManager.addFloatingText("PRISM! x1.5 MTM", 480, 160, 1.0, 0.3, 1.0, 1.2)
+    elseif player.edition == "Cap Relief" or player.edition == "Franchise Player" then
+        FxManager.addFloatingText("CAP RELIEF! +1 ROSTER SLOT", 480, 160, 0.4, 0.2, 0.8, 1.2)
     end
     
     if ScoringEvaluator.gameState and ScoringEvaluator.gameState.globalRosterChips then
