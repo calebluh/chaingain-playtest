@@ -192,11 +192,17 @@ function love.load(arg)
     end
     
     if love.filesystem.getInfo("src/shaders/crt_shader.glsl") then
-        local shaderCode = love.filesystem.read("src/shaders/crt_shader.glsl")
-        crtShader = love.graphics.newShader(shaderCode)
+        local ok, shaderCode = pcall(love.filesystem.read, "src/shaders/crt_shader.glsl")
+        if ok and shaderCode then
+            local shaderOk, compiledShader = pcall(love.graphics.newShader, shaderCode)
+            if shaderOk then crtShader = compiledShader end
+        end
     end
     
-    mainCanvas = love.graphics.newCanvas(1920, 1080)
+    if love.graphics and love.graphics.newCanvas then
+        local ok, c = pcall(love.graphics.newCanvas, 960, 540)
+        if ok and c then mainCanvas = c end
+    end
 
     local oldGetPosition = love.mouse.getPosition
     love.mouse.getPosition = function()
@@ -224,7 +230,7 @@ function love.update(dt)
         crtShader:send("time", time)
     end
     if crtShader and crtShader:hasUniform("screen_size") then
-        crtShader:send("screen_size", {1920, 1080})
+        crtShader:send("screen_size", {960, 540})
     end
     if crtShader and crtShader:hasUniform("shake_intensity") then
         local currentShake = 0
@@ -253,11 +259,16 @@ end
 
 function love.draw()
     love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.setCanvas(mainCanvas)
-    love.graphics.clear(0, 0, 0, 1)
+    if mainCanvas then
+        love.graphics.setCanvas(mainCanvas)
+        love.graphics.clear(0.06, 0.08, 0.12, 1)
+    end
     
     love.graphics.push()
-    love.graphics.scale(2, 2)
+    if not mainCanvas then
+        local winW, winH = love.graphics.getDimensions()
+        love.graphics.scale(winW / 960, winH / 540)
+    end
     
     if shakeTimer > 0 then
         local progress = shakeTimer / shakeDuration
@@ -270,7 +281,7 @@ function love.draw()
     StateManager.draw()
     FxManager.draw()
     
-    if BotRunner.visualAutoPlay then
+    if BotRunner and BotRunner.visualAutoPlay then
         love.graphics.setColor(1, 0.2, 0.2, 0.85)
         love.graphics.rectangle("fill", 300, 10, 360, 30, 6, 6)
         love.graphics.setColor(1, 1, 1, 1)
@@ -278,15 +289,18 @@ function love.draw()
     end
     
     love.graphics.pop()
-    love.graphics.setCanvas()
     
-    love.graphics.setColor(1, 1, 1, 1)
-    if _G.CONFIG_ENABLE_CRT and crtShader then
-        love.graphics.setShader(crtShader)
+    if mainCanvas then
+        love.graphics.setCanvas()
+        
+        love.graphics.setColor(1, 1, 1, 1)
+        if _G.CONFIG_ENABLE_CRT and crtShader then
+            love.graphics.setShader(crtShader)
+        end
+        local winW, winH = love.graphics.getDimensions()
+        love.graphics.draw(mainCanvas, 0, 0, 0, winW / 960, winH / 540)
+        love.graphics.setShader()
     end
-    local winW, winH = love.graphics.getDimensions()
-    love.graphics.draw(mainCanvas, 0, 0, 0, winW / 1920, winH / 1080)
-    love.graphics.setShader()
     
     if _G.CONFIG_SHOW_FPS then
         love.graphics.setColor(0, 1, 0.4, 0.95)
