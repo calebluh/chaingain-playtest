@@ -10,6 +10,7 @@ local FxManager = require("src.engine.fx_manager")
 local StatePackOpening = {}
 
 function StatePackOpening:enter()
+    self.packType = self.packType or "OFFENSIVE"
     self.ripped = false
     self.isRipping = false
     self.ripTime = 0
@@ -217,11 +218,12 @@ function StatePackOpening:draw()
         love.graphics.rectangle("fill", -120, -160, 240, 320, 10, 10)
         
         love.graphics.setColor(0, 0, 0, alpha * 0.9)
-        local displayName = self.packType .. " PACK"
-        if self.packType == "CONSUMABLE" then displayName = "SIDELINE\nADJUSTMENT"
-        elseif self.packType == "PLAY" then displayName = "PLAYBOOK\nPACK"
-        elseif self.packType == "OFFENSIVE" then displayName = "OFFENSIVE\nSCOUT PACK"
-        elseif self.packType == "MEGA" then displayName = "MEGA\nSCOUT PACK" end
+        local pType = self.packType or "OFFENSIVE"
+        local displayName = pType .. " PACK"
+        if pType == "CONSUMABLE" then displayName = "SIDELINE\nADJUSTMENT"
+        elseif pType == "PLAY" then displayName = "PLAYBOOK\nPACK"
+        elseif pType == "OFFENSIVE" then displayName = "OFFENSIVE\nSCOUT PACK"
+        elseif pType == "MEGA" then displayName = "MEGA\nSCOUT PACK" end
         love.graphics.printf(displayName, -120, -30, 240, "center", 0, 1.2, 1.2)
         
         love.graphics.pop()
@@ -351,8 +353,9 @@ function StatePackOpening:mousepressed(x, y, button)
                             msg = "Swapped " .. oldName .. " for " .. card.item.name .. "!"
                         end
                     else
-                        success = GameStateData.addRosterPlayer(card.item, card.item.pos)
-                        if success then msg = "Drafted " .. card.item.name .. " from Scout Pack!"
+                        local cardPos = card.item and (card.item.pos or card.item.position)
+                        success = GameStateData.addRosterPlayer(card.item, cardPos)
+                        if success then msg = "Drafted " .. ((card.item and card.item.name) or "Player") .. " from Scout Pack!"
                         else msg = "ROSTER SLOT FULL!" end
                     end
                     

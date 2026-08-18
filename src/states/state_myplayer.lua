@@ -64,7 +64,7 @@ local function buildEditorRows()
         { label = "EARRINGS", field = "earrings", type = "cycle", options = PlayerVisualProfile.earringOptions },
         { label = "JERSEY CLR", field = "primaryColor", type = "color" },
         { label = "GLOVES", field = "handGear", type = "cycle", options = PlayerVisualProfile.handGearOptions },
-        { label = "GLOVE CLR", field = "handGearColor", type = "color" },
+        { label = "GLOVE CLR", field = "handGearColor", type = "cycle", options = PlayerVisualProfile.handGearColorOptions },
         { label = "HAIR", field = "hairStyle", type = "cycle", options = PlayerVisualProfile.hairStyleOptions },
         { label = "HAIR CLR", field = "hairColor", type = "haircolor" },
         { label = "SKIN TONE", field = "skinTone", type = "number", min = 1, max = 8 },
@@ -427,11 +427,13 @@ function StateMyPlayer:mousepressed(x, y, button)
         local ry = panelY + 8 + (vi - visStart) * rowH
         if x >= panelX and x <= panelX + panelW and y >= ry and y <= ry + rowH then
             self.selectedRow = vi
-            -- Check left/right arrow regions
-            if x < panelX + panelW / 2 + 40 then
+            -- Precise left/right arrow click hitboxes
+            if x >= panelX + panelW - 110 and x <= panelX + panelW - 60 then
                 self:adjustRow(-1)
-            else
+            elseif x >= panelX + panelW - 55 and x <= panelX + panelW then
                 self:adjustRow(1)
+            else
+                SoundManager.playSFX("click")
             end
             return
         end

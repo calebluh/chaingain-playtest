@@ -362,8 +362,8 @@ function AssetManager.drawRetroPlayer(x, y, jerseyColor, pantsColor, helmetColor
             torsoH = torsoH - 2
         end
         
-        jerseyColor = (profile.useCustomJersey and profile.primaryColor) or jerseyColor
-        helmetColor = (profile.useCustomHelmet and profile.shellColor) or helmetColor
+        jerseyColor = (profile.primaryColor) or jerseyColor
+        helmetColor = (profile.shellColor) or helmetColor
     end
     
     love.graphics.push()
@@ -404,7 +404,26 @@ function AssetManager.drawRetroPlayer(x, y, jerseyColor, pantsColor, helmetColor
     local frontArmX = math.floor(torsoW/2) - 1 + armOffset
     
     local armJerseyColor = (profile and profile.jerseyCut == "sleeveless") and skinColor or jerseyColor
-    local handGearColor = profile and profile.handGearColor or {1, 1, 1}
+    
+    -- Resolve glove color
+    local gc = profile and profile.handGearColor
+    local gloveColor = {1.0, 1.0, 1.0}
+    if type(gc) == "table" then
+        gloveColor = gc
+    elseif gc == "black" then
+        gloveColor = {0.15, 0.15, 0.15}
+    elseif gc == "team_primary" then
+        gloveColor = jerseyColor
+    elseif gc == "team_secondary" then
+        gloveColor = helmetColor
+    else
+        gloveColor = {1.0, 1.0, 1.0}
+    end
+    
+    local hg = profile and profile.handGear or "both_hands"
+    local backArmGlove = (hg == "both_hands" or hg == "both" or hg == "receiver" or hg == "lineman" or hg == "left_hand" or (dir == 1 and hg == "left") or (dir == -1 and hg == "right"))
+    local frontArmGlove = (hg == "both_hands" or hg == "both" or hg == "receiver" or hg == "lineman" or hg == "right_hand" or (dir == 1 and hg == "right") or (dir == -1 and hg == "left"))
+
     local cleatH, cleatY = 2, 11
     if profile and profile.cleats == "mid" then cleatH = 3; cleatY = 10
     elseif profile and profile.cleats == "high" then cleatH = 4; cleatY = 9 end
@@ -416,8 +435,8 @@ function AssetManager.drawRetroPlayer(x, y, jerseyColor, pantsColor, helmetColor
         love.graphics.setColor(1, 1, 1)
         love.graphics.rectangle("fill", backArmX, -2, 3.5, 3)
     end
-    if profile and profile.handGear and profile.handGear ~= "none" then
-        love.graphics.setColor(handGearColor[1]*0.8, handGearColor[2]*0.8, handGearColor[3]*0.8)
+    if backArmGlove then
+        love.graphics.setColor(gloveColor[1]*0.8, gloveColor[2]*0.8, gloveColor[3]*0.8)
     else
         love.graphics.setColor(skinColor[1]*0.8, skinColor[2]*0.8, skinColor[3]*0.8)
     end
@@ -594,11 +613,12 @@ function AssetManager.drawRetroPlayer(x, y, jerseyColor, pantsColor, helmetColor
         love.graphics.setColor(1, 1, 1)
         love.graphics.rectangle("fill", frontArmX, -2, 3.5, 3)
     end
-    if profile and profile.handGear and profile.handGear ~= "none" then
-        love.graphics.setColor(handGearColor)
+    if frontArmGlove then
+        love.graphics.setColor(gloveColor)
     else
         love.graphics.setColor(skinColor)
     end
+    love.graphics.rectangle("fill", frontArmX, 2, 3.5, 3)
     love.graphics.rectangle("fill", frontArmX, 2, 3.5, 3)
     
     -- Tattoos

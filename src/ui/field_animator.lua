@@ -760,8 +760,9 @@ function FieldAnimator.draw()
     
     -- 13. Draw Offense Players (Retro Bowl Pixel Art Style!)
     local activeTeam = GameStateData.config and GameStateData.config.team
-    local offJersey = activeTeam and activeTeam.primaryColor or {0.95, 0.95, 0.95}
-    local offHelmet = activeTeam and activeTeam.secondaryColor or {0.0, 0.58, 1.0}
+    local PlayerVisualProfile = require("src.data.player_visual_profile")
+    local offJersey = (activeTeam and activeTeam.primaryColor) or PlayerVisualProfile.primaryColor or {0.13, 0.34, 0.13}
+    local offHelmet = (activeTeam and activeTeam.secondaryColor) or PlayerVisualProfile.shellColor or {1.0, 0.84, 0.0}
     local offPants = {0.95, 0.95, 0.95}
     
     for _, p in ipairs(FieldAnimator.offense) do

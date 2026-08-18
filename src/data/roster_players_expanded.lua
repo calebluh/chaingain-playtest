@@ -279,14 +279,21 @@ end
 function RosterPlayersExpanded.getRandomPlayer(posFilter)
     local filtered = {}
     for _, p in ipairs(rosterCatalog) do
-        if not posFilter or p.pos == posFilter then
+        if not posFilter or p.pos == posFilter or (p.pos and posFilter and p.pos:find(posFilter)) then
             table.insert(filtered, p)
         end
     end
     
-    local template = filtered[math.random(#filtered)]
+    if #filtered == 0 then
+        filtered = rosterCatalog
+    end
     
-    local player = PlayerCard.new(template.name, template.pos, template.rarity, template.mult, template.chip)
+    local template = filtered[math.random(#filtered)]
+    if not template then
+        template = { name = "Rookie Prospect", pos = posFilter or "WR", rarity = "Silver", ovr = 75, chip = 1, mult = 0.1, tag = "STARTER", desc = "+1 YDS" }
+    end
+    
+    local player = PlayerCard.new(template.name, template.pos or posFilter or "WR", template.rarity, template.mult, template.chip)
     player.overall = template.ovr
     player.archetypeTag = template.tag
     player.abilityDesc = template.desc

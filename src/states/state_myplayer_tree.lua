@@ -254,6 +254,12 @@ function StateMyPlayerTree:draw()
         end
     end
     
+    -- Back button
+    local hBack = checkHover(20, 498, 110, 32)
+    love.graphics.setColor(hBack and {1, 0.3, 0.3} or {0.8, 0.2, 0.2})
+    love.graphics.rectangle("fill", 20, 498, 110, 32, 5, 5)
+    drawShadowText("B  back", 20, 505, 1, 1, 1, 0.95, "center", 110)
+    
     -- Draw zoom buttons
     local hoverZIn = checkHover(640, 502, 65, 25)
     love.graphics.setColor(hoverZIn and {0.0, 0.76, 1.0} or {0.129, 0.149, 0.192})
@@ -269,12 +275,17 @@ function StateMyPlayerTree:draw()
     love.graphics.rectangle("line", 710, 502, 65, 25, 4, 4)
     drawShadowText("ZOOM -", 710, 506, 1, 1, 1, 0.8, "center", 65)
     
-    drawShadowText(self.message, 20, 510, 1, 1, 1, 1.2)
-    drawShadowText("Press [ESC] to Return", 800, 510, 1, 1, 1, 1.0)
+    drawShadowText(self.message, 140, 510, 1, 1, 1, 1.0)
 end
 
 function StateMyPlayerTree:mousepressed(x, y, button)
     if button == 1 then
+        if checkHover(20, 498, 110, 32) then
+            SoundManager.playSFX("click")
+            local StateMyPlayer = require("src.states.state_myplayer")
+            StateManager.switch(StateMyPlayer)
+            return
+        end
         if checkHover(640, 502, 65, 25) then
             self.targetZoom = math.clamp(self.targetZoom + 0.25, 0.4, 2.5)
             SoundManager.playSFX("click")
@@ -309,7 +320,8 @@ function StateMyPlayerTree:mousepressed(x, y, button)
 end
 
 function StateMyPlayerTree:keypressed(key)
-    if key == "escape" then
+    if key == "escape" or key == "b" then
+        SoundManager.playSFX("click")
         local StateMyPlayer = require("src.states.state_myplayer")
         StateManager.switch(StateMyPlayer)
     elseif key == "c" then

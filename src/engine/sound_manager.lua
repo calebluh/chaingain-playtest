@@ -110,10 +110,12 @@ function SoundManager.playSFX(name, pitch)
     
     -- Fallback synthetic SFX
     if sfxCache[name] then
-        sfxCache[name]:stop()
-        sfxCache[name]:setVolume(sfxVol)
-        sfxCache[name]:setPitch(pitch or 1.0)
-        sfxCache[name]:play()
+        pcall(function()
+            sfxCache[name]:stop()
+            sfxCache[name]:setVolume(sfxVol)
+            sfxCache[name]:setPitch(pitch or 1.0)
+            sfxCache[name]:play()
+        end)
     end
 end
 
