@@ -91,5 +91,33 @@ return {
         cost = 10,
         description = "Touchdown payout is increased by +$4 Cap Space.",
         apply = function(gameState) gameState.touchdownBonusCash = (gameState.touchdownBonusCash or 0) + 4 end
+    },
+    -- ── 3 NEW VOUCHERS (v2.0 Update) ────────────────────────────────
+    {
+        id = "draft_day_trade",
+        name = "Draft Day Trade",
+        cost = 10,
+        description = "All Play Card packs bought in the Shop cost $2 less Cap Space.",
+        apply = function(gameState)
+            gameState.playPackDiscount = (gameState.playPackDiscount or 0) + 2
+        end
+    },
+    {
+        id = "clutch_gene",
+        name = "Clutch Gene",
+        cost = 10,
+        description = "On 4th Down plays, all cards gain +5 bonus Base Yards.",
+        apply = function(gameState)
+            gameState.clutchGenePerk = true
+        end
+    },
+    {
+        id = "film_room",
+        name = "Film Room",
+        cost = 10,
+        description = "At the start of each game, reveals the full Defensive Scheme description.",
+        apply = function(gameState)
+            gameState.hasFilmRoom = true
+        end
     }
 }

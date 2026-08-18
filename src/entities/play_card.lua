@@ -3,7 +3,7 @@
 local PlayCard = {}
 PlayCard.__index = PlayCard
 
-function PlayCard.new(name, playType, baseYards, baseMomentum, level)
+function PlayCard.new(name, playType, baseYards, baseMomentum, level, tag)
     local self = setmetatable({}, PlayCard)
     self.name = name or "Play"
     self.type = playType or "Run" -- "Run", "Short Pass", "Medium Pass", "Deep Pass", "Play Action", "Trick", "Field Goal"
@@ -11,6 +11,7 @@ function PlayCard.new(name, playType, baseYards, baseMomentum, level)
     self.baseMult = baseMomentum or 1.5 -- Drive Momentum (kept as baseMult internally for engine compatibility)
     self.level = level or 1
     self.selected = false
+    self.tag = tag or nil  -- Special behavior tag: "clutch_rush", "no_int_risk", "spike_ball", "bypasses_blitz", "trick_play_risk"
     
     -- Physics / Visual Offset Variables
     self.xOffset = nil

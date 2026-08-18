@@ -20,6 +20,10 @@ ScoringEvaluator.currentMult = 0
 ScoringEvaluator.displayedChips = 0
 ScoringEvaluator.displayedMult = 0
 
+-- Chain Combo System: tracks consecutive positive plays (first downs / TDs)
+ScoringEvaluator.chainCombo = 0
+ScoringEvaluator.chainComboDisplay = 0  -- smoothed display value
+
 function ScoringEvaluator.start(playCard, gameState, isTurnover, turnoverType)
     ScoringEvaluator.active = true
     ScoringEvaluator.phase = 1
@@ -29,13 +33,93 @@ function ScoringEvaluator.start(playCard, gameState, isTurnover, turnoverType)
     ScoringEvaluator.isTurnover = isTurnover
     ScoringEvaluator.turnoverType = turnoverType
     
+    -- Spike Ball: just resets clock and gives an audible refund, no scoring
+    if playCard.tag == "spike_ball" then
+        gameState.playClock = gameState.maxPlayClock
+        gameState.audiblesRemaining = (gameState.audiblesRemaining or 0) + 1
+        FxManager.addFloatingText("SPIKE! CLOCK RESET! +1 AUDIBLE!", 480, 240, 0.2, 0.8, 1.0, 2.0)
+        SoundManager.playSFX("whistle")
+        ScoringEvaluator.active = false
+        gameState.resetPlayClock()
+        DefenseManager.callDefensivePlay()
+        return
+    end
+
     local chips = playCard.baseChips
     local mult = playCard.baseMult
+    
+    -- Trick Play consumable boost
+    if gameState and gameState.trickPlayNextCard then
+        chips = chips + 12
+        mult = mult + 1.5
+        gameState.trickPlayNextCard = false
+        FxManager.addFloatingText("TRICK PLAY ACTIVATED! +12 YDS +1.5 MTM!", 480, 160, 1.0, 0.84, 0.0, 1.8)
+        SoundManager.playSFX("coin")
+        -- Burn the card from playbook if it has trick_play_risk tag
+        if playCard.tag == "trick_play_risk" then
+            local DeckManager = require("src.engine.deck_manager")
+            DeckManager.destroyCard(playCard)
+            FxManager.addFloatingText("TRICK BURNED FROM PLAYBOOK!", 480, 140, 1.0, 0.3, 0.3, 1.4)
+        end
+    end
+    
+    -- Clutch Gene perk: +5 YDS on 4th down
+    if gameState and gameState.clutchGenePerk and gameState.down == 4 then
+        chips = chips + 5
+        FxManager.addFloatingText("CLUTCH GENE! +5 YDS!", 480, 160, 0.2, 1.0, 0.6, 1.5)
+    end
+    
+    -- Chain Combo Bonus (consecutive successful plays)
+    if ScoringEvaluator.chainCombo >= 7 then
+        mult = mult + 1.5
+        FxManager.addFloatingText("🔗 CHAIN x" .. ScoringEvaluator.chainCombo .. "! +1.5 MTM!", 480, 200, 1.0, 0.84, 0.0, 2.2)
+        SoundManager.playSFX("coin")
+    elseif ScoringEvaluator.chainCombo >= 5 then
+        mult = mult + 1.0
+        FxManager.addFloatingText("🔗 CHAIN x" .. ScoringEvaluator.chainCombo .. "! +1.0 MTM!", 480, 200, 1.0, 0.84, 0.0, 2.0)
+        SoundManager.playSFX("coin")
+    elseif ScoringEvaluator.chainCombo >= 3 then
+        mult = mult + 0.5
+        FxManager.addFloatingText("🔗 CHAIN x" .. ScoringEvaluator.chainCombo .. "! +0.5 MTM!", 480, 200, 1.0, 0.84, 0.0, 1.8)
+    end
     
     -- StadiumPulse tier bonuses
     local pulseBonuses = StadiumPulse.getBonuses()
     chips = chips + (pulseBonuses.chips or 0)
     mult = mult + (pulseBonuses.mult or 0)
+    
+    -- Momentum / Heat Streak bonus
+    if gameState and gameState.momentumStreak then
+        if gameState.momentumStreak >= 3 then
+            mult = mult + 0.5
+            FxManager.addFloatingText("ON FIRE! 🔥 +0.5 MTM", 480, 160, 1.0, 0.45, 0.0, 1.8)
+            FxManager.addBurstParticles(480, 160, 20, 1.0, 0.5, 0.0)
+        elseif gameState.momentumStreak == 2 then
+            mult = mult + 0.2
+            FxManager.addFloatingText("HEATING UP! +0.2 MTM", 480, 160, 1.0, 0.8, 0.2, 1.4)
+        end
+    end
+    
+    -- Weather Gameplay Impacts
+    if gameState and gameState.weather then
+        if gameState.weather == "rain" then
+            if playCard.type == "Run" then
+                chips = chips + 2
+                FxManager.addFloatingText("MUDDER'S TURF! +2 YDS", 480, 140, 0.4, 0.7, 0.9, 1.2)
+            elseif playCard.type == "Deep Pass" then
+                chips = math.max(1, chips - 2)
+                FxManager.addFloatingText("SLIPPERY BALL! -2 YDS", 480, 140, 0.4, 0.7, 0.9, 1.2)
+            end
+        elseif gameState.weather == "snow" then
+            if playCard.type == "Short Pass" then
+                chips = chips + 2
+                FxManager.addFloatingText("SLIPPERY CUTS! +2 YDS", 480, 140, 0.8, 0.9, 1.0, 1.2)
+            elseif playCard.type == "Play Action" or playCard.type == "Deep Pass" then
+                mult = math.max(0.1, mult - 0.2)
+                FxManager.addFloatingText("FREEZING WIND! -0.2 MTM", 480, 140, 0.8, 0.9, 1.0, 1.2)
+            end
+        end
+    end
     
     if playCard.enhancement == "Glass" then
         mult = mult * 2.0
@@ -304,7 +388,8 @@ function ScoringEvaluator.calculateYardsGained(chips, mult, gs, playCard)
     local zoneScale = 1.0
     if gs.yardLine >= 80 then
         if not gs.ignoreRedZonePenalty then
-            zoneScale = (gs.stakeTier == "gold") and 0.45 or 0.55
+            -- Balanced red zone: 55% at gold, 65% at standard (was 45%/55%)
+            zoneScale = (gs.stakeTier == "gold") and 0.55 or 0.65
         end
     elseif gs.yardLine >= 50 then
         zoneScale = 0.85
@@ -318,8 +403,17 @@ function ScoringEvaluator.calculateYardsGained(chips, mult, gs, playCard)
         yardsGained = math.floor(math.min(80, 5 + rawYards * 0.35))
     end
     
+    -- QB Scramble: bonus yards on 3rd/4th down
+    if playCard.tag == "clutch_rush" and gs.down >= 3 then
+        yardsGained = yardsGained + 8
+        FxManager.addFloatingText("QB SCRAMBLE! CLUTCH RUSH +8!", 480, 220, 0.2, 1.0, 0.6, 1.6)
+    end
+    
     local DefenseManager = require("src.engine.defense_manager")
-    if DefenseManager.activeBlind and DefenseManager.activeBlind.id == "blitz_heavy" and playCard.type == "Play Action" then
+    -- Wildcat bypasses blitz-type penalties
+    if playCard.tag == "bypasses_blitz" then
+        -- No blitz penalties apply
+    elseif DefenseManager.activeBlind and DefenseManager.activeBlind.id == "blitz_heavy" and playCard.type == "Play Action" then
         yardsGained = yardsGained - 3
     end
     
@@ -439,6 +533,7 @@ function ScoringEvaluator.finalizeDriveSlam()
     gs.yardLine = math.max(1, gs.yardLine + yardsGained)
 
     if yardsGained < 0 then
+        gs.momentumStreak = 0
         SoundManager.playSFX("tackle")
         StadiumPulse.addPulse(-10)
         gs.distance = gs.distance - yardsGained
@@ -467,6 +562,7 @@ function ScoringEvaluator.finalizeDriveSlam()
             gs.lastPlayResult = gs.lastPlayResult .. " TURNOVER ON DOWNS (-$3 CASH)!"
         end
     elseif gs.yardLine >= 100 then
+        gs.momentumStreak = (gs.momentumStreak or 0) + 2
         gs.currentPoints = gs.currentPoints + 7
         gs.drivesRemaining = gs.drivesRemaining - 1
         StadiumPulse.addPulse(25)
@@ -536,6 +632,15 @@ function ScoringEvaluator.finalizeDriveSlam()
             gs.distance = 10
             gs.lastPlayResult = string.format("FIRST DOWN! +%d YDS", yardsGained)
             
+            -- Momentum increment
+            gs.momentumStreak = (gs.momentumStreak or 0) + 1
+            if gs.momentumStreak == 2 then
+                FxManager.addFloatingText("HEATING UP! (2 STREAK)", 480, 260, 1.0, 0.8, 0.2, 1.6)
+            elseif gs.momentumStreak >= 3 then
+                FxManager.addFloatingText("ON FIRE! 🔥 (" .. gs.momentumStreak .. " STREAK)", 480, 260, 1.0, 0.45, 0.0, 2.0)
+                SoundManager.playSFX("coin", 1.4)
+            end
+            
             if prevDown == 4 and ScoringEvaluator.playCard.type == "Run" and _G.GAME_MODE == "roguelite" then
                 local MyPlayerProfile = require("src.data.myplayer_profile")
                 if MyPlayerProfile.hasNode("rush_4") then
@@ -550,6 +655,7 @@ function ScoringEvaluator.finalizeDriveSlam()
             gs.lastPlayResult = string.format("+%d YDS", yardsGained)
             
             if gs.down > 4 then
+                gs.momentumStreak = 0
                 gs.capCash = math.max(0, (gs.capCash or 0) - 3)
                 gs.clockPenaltyNextDrive = 3
                 gs.drivesRemaining = gs.drivesRemaining - 1

@@ -48,11 +48,17 @@ function CardRender.drawPlayCard(x, y, card, isSelected, time)
     local isMastered = card.name and SaveManager.isCardMastered(card.name)
 
     if isSelected then
-        love.graphics.setColor(C_BORDER_SELECTED)
-        love.graphics.rectangle("fill", cx - 3, cy - 3, w + 6, h + 6, 10, 10)
+        local pulse = 0.5 + 0.5 * math.sin((time or 0) * 8)
+        love.graphics.setColor(0.0, 0.76 + pulse * 0.2, 1.0, 0.9 + pulse * 0.1)
+        love.graphics.rectangle("fill", cx - 4, cy - 4, w + 8, h + 8, 10, 10)
     elseif isMastered then
-        love.graphics.setColor(1.0, 0.84, 0.0) -- Gold border
+        local pulse = 0.5 + 0.5 * math.sin((time or 0) * 4)
+        love.graphics.setColor(1.0, 0.84 + pulse * 0.16, 0.0, 0.9) -- Gold border
         love.graphics.rectangle("fill", cx - 3, cy - 3, w + 6, h + 6, 10, 10)
+    elseif card.isHovered then
+        local pulse = 0.5 + 0.5 * math.sin((time or 0) * 6)
+        love.graphics.setColor(0.0, 0.76, 1.0, 0.5 + pulse * 0.3)
+        love.graphics.rectangle("fill", cx - 3, cy - 3, w + 6, h + 6, 9, 9)
     else
         love.graphics.setColor(C_BORDER_NORMAL)
         love.graphics.rectangle("fill", cx - 2, cy - 2, w + 4, h + 4, 8, 8)

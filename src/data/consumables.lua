@@ -170,5 +170,73 @@ return {
             end
             return "No cards in hand to decal!"
         end
+    },
+    -- ── 5 NEW CONSUMABLES (v2.0 Update) ──────────────────────────────
+    {
+        id = "coaches_challenge",
+        name = "Coach's Challenge",
+        type = "Consumable",
+        cost = 5,
+        description = "Completely negates all Turnover Risk on the very next play you call.",
+        use = function(gameState)
+            gameState.turnoverImmunityNextPlay = true
+            return "Challenge thrown! No turnovers on your next play!"
+        end
+    },
+    {
+        id = "trick_play",
+        name = "Trick Play",
+        type = "Consumable",
+        cost = 4,
+        description = "Next play card gains +12 Base Yards and +1.5 MTM, then it's burned from the playbook.",
+        use = function(gameState)
+            gameState.trickPlayNextCard = true
+            return "Trick Play dialed in! Next call gets +12 YDS & +1.5 MTM!"
+        end
+    },
+    {
+        id = "two_minute_drill",
+        name = "Two-Minute Drill",
+        type = "Consumable",
+        cost = 3,
+        description = "Instantly resets the Play Clock to its maximum value for this drive.",
+        use = function(gameState)
+            gameState.playClock = gameState.maxPlayClock
+            return "Two-Minute Drill! Play clock reset to " .. math.floor(gameState.maxPlayClock) .. " seconds!"
+        end
+    },
+    {
+        id = "momentum_shift",
+        name = "Momentum Shift",
+        type = "Consumable",
+        cost = 4,
+        description = "Convert 30 Stadium Pulse energy into +3.0 temporary Drive Momentum.",
+        use = function(gameState)
+            local StadiumPulse = require("src.engine.stadium_pulse")
+            if StadiumPulse.pulse >= 30 then
+                StadiumPulse.pulse = StadiumPulse.pulse - 30
+                gameState.tempMultBoost = (gameState.tempMultBoost or 0) + 3.0
+                return "MOMENTUM SHIFT! -30 Pulse → +3.0 MTM on next play!"
+            else
+                return "Not enough crowd energy! Need 30+ Pulse."
+            end
+        end
+    },
+    {
+        id = "film_study",
+        name = "Film Study",
+        type = "Consumable",
+        cost = 3,
+        description = "Reveals which play type scores bonus yards against the current Defense.",
+        use = function(gameState)
+            local DefenseManager = require("src.engine.defense_manager")
+            local FxManager = require("src.engine.fx_manager")
+            if DefenseManager.currentPlay then
+                local counter = DefenseManager.currentPlay.counter or "Run"
+                FxManager.addFloatingText("FILM STUDY: " .. counter:upper() .. " IS THE COUNTER PLAY!", 480, 200, 0.2, 0.8, 1, 1.4)
+                return "Film Study complete! " .. counter .. " beats their coverage!"
+            end
+            return "Nothing to study yet!"
+        end
     }
 }

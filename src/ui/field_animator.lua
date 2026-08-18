@@ -106,6 +106,9 @@ function FieldAnimator.startPlay(playType, yardsGained, yardLine, distanceToFirs
     FieldAnimator.distanceToFirst = distanceToFirst
     FieldAnimator.isIntercepted = isIntercepted
     FieldAnimator.isFumbled = isFumbled
+    FieldAnimator.commentaryText = "Ball is snapped! Play underway..."
+    FieldAnimator.liveGain = 0
+    FieldAnimator.firstDownTriggered = false
     
     local losX = (yardLine + 10) * YARD_PX
     local midY = FIELD_Y + FIELD_HEIGHT / 2
@@ -123,32 +126,105 @@ function FieldAnimator.startPlay(playType, yardsGained, yardLine, distanceToFirs
     local function capX(val) return math.min(110 * YARD_PX, math.max(10 * YARD_PX, val)) end
 
     local Formations = {
+        -- I-Formation: Run plays. FB in front of HB, 4 DL to stop the run.
+        i_formation = {
+            { role = "OL_C",  x =  0,    depth =  0,    team = "off" },
+            { role = "OL_L",  x = -2.5,  depth =  0,    team = "off" },
+            { role = "OL_R",  x =  2.5,  depth =  0,    team = "off" },
+            { role = "TE",    x = -5.0,  depth =  0,    team = "off" },
+            { role = "TE2",   x =  5.0,  depth =  0,    team = "off" },
+            { role = "QB",    x =  0,    depth = -1.5,  team = "off" },
+            { role = "FB",    x =  0,    depth = -4.0,  team = "off" },
+            { role = "RB",    x =  0,    depth = -6.5,  team = "off" },
+            { role = "WR1",   x = -22.0, depth = -0.5,  team = "off" },
+            { role = "WR2",   x =  22.0, depth = -0.5,  team = "off" },
+            { role = "SLOT",  x = -11.0, depth = -1.0,  team = "off" },
+            { role = "DL_C",  x = -2.0,  depth =  1.5,  team = "def" },
+            { role = "DL_R",  x =  2.0,  depth =  1.5,  team = "def" },
+            { role = "DL_L",  x = -6.0,  depth =  1.5,  team = "def" },
+            { role = "DL_4",  x =  6.0,  depth =  1.5,  team = "def" },
+            { role = "LB1",   x = -3.0,  depth =  5.0,  team = "def" },
+            { role = "LB2",   x =  3.0,  depth =  5.0,  team = "def" },
+            { role = "LB3",   x =  0,    depth =  5.0,  team = "def" },
+            { role = "DB1",   x = -20.0, depth =  7.0,  team = "def" },
+            { role = "DB2",   x =  20.0, depth =  7.0,  team = "def" },
+            { role = "FS",    x = -8.0,  depth = 12.0,  team = "def" },
+            { role = "SS",    x =  8.0,  depth = 10.0,  team = "def" },
+        },
+        -- Shotgun Spread: short/medium passes. Classic nickel look.
         gun_spread = {
-            -- Offense
-            { role = "OL_C", x = 0,     depth = 0,    team = "off" },
-            { role = "OL_L", x = -2.5,  depth = 0,    team = "off" },
-            { role = "OL_R", x = 2.5,   depth = 0,    team = "off" },
-            { role = "TE",   x = -5.0,  depth = 0,    team = "off" },
-            { role = "TE2",  x = 5.0,   depth = 0,    team = "off" },
-            { role = "QB",   x = 0,     depth = -4.5, team = "off" },
-            { role = "RB",   x = -3.0,  depth = -4.5, team = "off" },
-            { role = "WR1",  x = -20.0, depth = -0.5, team = "off" },
-            { role = "WR2",  x = 20.0,  depth = -0.5, team = "off" },
-            { role = "SLOT", x = -11.0, depth = -1.0, team = "off" },
-            { role = "TE3",  x = 7.5,   depth = 0,    team = "off" },
-
-            -- Defense
-            { role = "DL_C", x = -2.0,  depth = 1.5,  team = "def" },
-            { role = "DL_R", x = 2.0,   depth = 1.5,  team = "def" },
-            { role = "DL_L", x = -6.0,  depth = 1.5,  team = "def" },
-            { role = "LB1",  x = 6.0,   depth = 1.5,  team = "def" },
-            { role = "LB2",  x = 0,     depth = 5.0,  team = "def" },
-            { role = "LB3",  x = -4.5,  depth = 5.0,  team = "def" },
-            { role = "DB1",  x = -20.0, depth = 7.0,  team = "def" },
-            { role = "DB2",  x = 20.0,  depth = 7.0,  team = "def" },
-            { role = "FS",   x = -8.0,  depth = 14.0, team = "def" },
-            { role = "SS",   x = 8.0,   depth = 14.0, team = "def" }
-        }
+            { role = "OL_C",  x =  0,    depth =  0,    team = "off" },
+            { role = "OL_L",  x = -2.5,  depth =  0,    team = "off" },
+            { role = "OL_R",  x =  2.5,  depth =  0,    team = "off" },
+            { role = "TE",    x = -5.0,  depth =  0,    team = "off" },
+            { role = "TE2",   x =  5.0,  depth =  0,    team = "off" },
+            { role = "QB",    x =  0,    depth = -4.5,  team = "off" },
+            { role = "RB",    x = -3.0,  depth = -4.5,  team = "off" },
+            { role = "WR1",   x = -20.0, depth = -0.5,  team = "off" },
+            { role = "WR2",   x =  20.0, depth = -0.5,  team = "off" },
+            { role = "SLOT",  x = -11.0, depth = -1.0,  team = "off" },
+            { role = "TE3",   x =  7.5,  depth =  0,    team = "off" },
+            { role = "DL_C",  x = -2.0,  depth =  1.5,  team = "def" },
+            { role = "DL_R",  x =  2.0,  depth =  1.5,  team = "def" },
+            { role = "DL_L",  x = -6.0,  depth =  1.5,  team = "def" },
+            { role = "LB1",   x =  6.0,  depth =  1.5,  team = "def" },
+            { role = "LB2",   x =  0,    depth =  5.0,  team = "def" },
+            { role = "LB3",   x = -4.5,  depth =  5.0,  team = "def" },
+            { role = "DB1",   x = -20.0, depth =  7.0,  team = "def" },
+            { role = "DB2",   x =  20.0, depth =  7.0,  team = "def" },
+            { role = "FS",    x = -8.0,  depth = 14.0,  team = "def" },
+            { role = "SS",    x =  8.0,  depth = 14.0,  team = "def" },
+        },
+        -- Empty 4-Wide: deep passes. 5 receivers, QB deep, dime defense.
+        empty_4wide = {
+            { role = "OL_C",  x =  0,    depth =  0,    team = "off" },
+            { role = "OL_L",  x = -2.5,  depth =  0,    team = "off" },
+            { role = "OL_R",  x =  2.5,  depth =  0,    team = "off" },
+            { role = "TE",    x = -5.0,  depth =  0,    team = "off" },
+            { role = "TE2",   x =  5.0,  depth =  0,    team = "off" },
+            { role = "QB",    x =  0,    depth = -5.5,  team = "off" },
+            { role = "WR1",   x = -22.0, depth = -0.5,  team = "off" },
+            { role = "WR2",   x =  22.0, depth = -0.5,  team = "off" },
+            { role = "WR3",   x = -14.0, depth = -1.0,  team = "off" },
+            { role = "WR4",   x =  14.0, depth = -1.0,  team = "off" },
+            { role = "SLOT",  x =  0,    depth = -4.5,  team = "off" },
+            { role = "DL_C",  x = -2.0,  depth =  1.5,  team = "def" },
+            { role = "DL_R",  x =  2.0,  depth =  1.5,  team = "def" },
+            { role = "DL_L",  x = -6.0,  depth =  1.5,  team = "def" },
+            { role = "LB1",   x =  6.0,  depth =  1.5,  team = "def" },
+            { role = "LB2",   x =  0,    depth =  4.5,  team = "def" },
+            { role = "DB1",   x = -22.0, depth =  7.0,  team = "def" },
+            { role = "DB2",   x =  22.0, depth =  7.0,  team = "def" },
+            { role = "DB3",   x = -14.0, depth =  8.0,  team = "def" },
+            { role = "DB4",   x =  14.0, depth =  8.0,  team = "def" },
+            { role = "FS",    x = -6.0,  depth = 16.0,  team = "def" },
+            { role = "SS",    x =  6.0,  depth = 16.0,  team = "def" },
+        },
+        -- Play Action: I-form look (fake run, then pass), defense bites the run fake.
+        play_action = {
+            { role = "OL_C",  x =  0,    depth =  0,    team = "off" },
+            { role = "OL_L",  x = -2.5,  depth =  0,    team = "off" },
+            { role = "OL_R",  x =  2.5,  depth =  0,    team = "off" },
+            { role = "TE",    x = -5.0,  depth =  0,    team = "off" },
+            { role = "TE2",   x =  5.0,  depth =  0,    team = "off" },
+            { role = "QB",    x =  0,    depth = -1.5,  team = "off" },
+            { role = "FB",    x =  0,    depth = -4.0,  team = "off" },
+            { role = "RB",    x = -2.0,  depth = -3.0,  team = "off" },
+            { role = "WR1",   x = -22.0, depth = -0.5,  team = "off" },
+            { role = "WR2",   x =  22.0, depth = -0.5,  team = "off" },
+            { role = "SLOT",  x = -11.0, depth = -1.0,  team = "off" },
+            { role = "DL_C",  x = -2.0,  depth =  1.5,  team = "def" },
+            { role = "DL_R",  x =  2.0,  depth =  1.5,  team = "def" },
+            { role = "DL_L",  x = -6.0,  depth =  1.5,  team = "def" },
+            { role = "DL_4",  x =  6.0,  depth =  1.5,  team = "def" },
+            { role = "LB1",   x = -3.0,  depth =  5.0,  team = "def" },
+            { role = "LB2",   x =  3.0,  depth =  5.0,  team = "def" },
+            { role = "LB3",   x =  0,    depth =  5.0,  team = "def" },
+            { role = "DB1",   x = -20.0, depth =  7.0,  team = "def" },
+            { role = "DB2",   x =  20.0, depth =  7.0,  team = "def" },
+            { role = "FS",    x = -8.0,  depth = 13.0,  team = "def" },
+            { role = "SS",    x =  8.0,  depth = 13.0,  team = "def" },
+        },
     }
 
     local function getPlayerProfile(posName)
@@ -184,7 +260,19 @@ function FieldAnimator.startPlay(playType, yardsGained, yardLine, distanceToFirs
         }
     end
 
-    local spread = Formations.gun_spread
+    -- Select formation based on play type
+    local formationKey
+    if playType == "Run" then
+        formationKey = "i_formation"
+    elseif playType == "Deep Pass" then
+        formationKey = "empty_4wide"
+    elseif playType == "Play Action" then
+        formationKey = "play_action"
+    else
+        formationKey = "gun_spread"  -- Short Pass, Medium Pass, default
+    end
+    local spread = Formations[formationKey]
+    FieldAnimator.formationName = formationKey  -- expose for HUD display
     for _, p in ipairs(spread) do
         -- Map yard offsets to world coordinates
         -- Depth is yards from LOS. 10 pixels per yard.
@@ -301,14 +389,51 @@ function FieldAnimator.update(dt)
         end
     end
     
-    if t >= 1.0 and not FieldAnimator.completed then
-        FieldAnimator.completed = true
+    local losX = (FieldAnimator.yardLine + 10) * YARD_PX
+    FieldAnimator.liveGain = math.floor((FieldAnimator.ball.x - losX) / YARD_PX)
+    
+    -- First Down crossing celebration
+    if FieldAnimator.distanceToFirst and FieldAnimator.liveGain >= FieldAnimator.distanceToFirst and not FieldAnimator.firstDownTriggered and not FieldAnimator.isIntercepted then
+        FieldAnimator.firstDownTriggered = true
         local FxManager = require("src.engine.fx_manager")
-        FxManager.addBurstParticles(FieldAnimator.ball.x, FieldAnimator.ball.y, 35, 1.0, 1.0, 1.0)
         local SoundManager = require("src.engine.sound_manager")
-        SoundManager.playSFX("tackle")
-        if _G.triggerScreenShake then _G.triggerScreenShake(20, 0.4) end
-        if _G.triggerHitStop then _G.triggerHitStop(0.15) end
+        FxManager.addBurstParticles(FieldAnimator.ball.x, FieldAnimator.ball.y, 25, 1.0, 0.84, 0.0)
+        SoundManager.playSFX("coin", 1.2)
+    end
+    
+    -- Dynamic Broadcast Commentary Ticker
+    if FieldAnimator.isIntercepted then
+        FieldAnimator.commentaryText = "INTERCEPTED! Defense comes away with the football!"
+    elseif FieldAnimator.isFumbled then
+        FieldAnimator.commentaryText = "FUMBLE! Ball is bouncing loose on the turf!"
+    elseif FieldAnimator.completed then
+        if FieldAnimator.liveGain >= (100 - FieldAnimator.yardLine) or FieldAnimator.ball.x >= 1100 then
+            FieldAnimator.commentaryText = "TOUCHDOWN! HE'S IN FOR THE SCORE!"
+        elseif FieldAnimator.distanceToFirst and FieldAnimator.liveGain >= FieldAnimator.distanceToFirst then
+            FieldAnimator.commentaryText = "FIRST DOWN CHAIN GAIN! Moved the sticks for +" .. FieldAnimator.liveGain .. " YDS!"
+        elseif FieldAnimator.liveGain > 0 then
+            FieldAnimator.commentaryText = "Tackled after a solid gain of " .. FieldAnimator.liveGain .. " yards."
+        else
+            FieldAnimator.commentaryText = "STUFFED AT THE LINE! Defense swarms for no gain."
+        end
+    else
+        if FieldAnimator.playType:match("Pass") then
+            if t < 0.4 then
+                FieldAnimator.commentaryText = "QB drops into the pocket, surveying coverage..."
+            elseif t < 0.8 then
+                FieldAnimator.commentaryText = "Fires deep downfield... BALL IN THE AIR!"
+            else
+                FieldAnimator.commentaryText = "HAULED IN! Turning upfield for extra yardage!"
+            end
+        else
+            if t < 0.35 then
+                FieldAnimator.commentaryText = "Handoff to the runner... hitting the designated gap!"
+            elseif FieldAnimator.liveGain > 4 then
+                FieldAnimator.commentaryText = "BREAKS A TACKLE! Into open field for +" .. FieldAnimator.liveGain .. " YDS!"
+            else
+                FieldAnimator.commentaryText = "Powering forward through the defensive line!"
+            end
+        end
     end
     
     -- Update Dust & Snow Particles
@@ -869,9 +994,47 @@ function FieldAnimator.draw()
         love.graphics.setLineWidth(1)
         
         drawShadowText("PRESS [SPACE]", targetX - 100, targetY - 25, 1, 1, 1, 0.8, "center", 200)
-        -- translate to offset center alignment manually since x is center
-        -- actually drawShadowText doesn't auto-center unless limit is used at x. 
-        -- If x is center, we need to pass x - limit/2
+    end
+    
+    -- 10. Live Broadcast Telemetry & Commentary Banner (shown during animation)
+    if FieldAnimator.active then
+        local barY = 300
+        local barH = 32
+        
+        -- Dark Glassmorphism Banner
+        love.graphics.setColor(0.04, 0.06, 0.09, 0.90)
+        love.graphics.rectangle("fill", 15, barY, 930, barH, 6, 6)
+        
+        -- Neon Top Accent Line
+        love.graphics.setColor(0.0, 0.76, 1.0, 0.6)
+        love.graphics.setLineWidth(1.5)
+        love.graphics.rectangle("line", 15, barY, 930, barH, 6, 6)
+        love.graphics.setLineWidth(1)
+        
+        -- Down & Distance Pill (Left)
+        local downNum = GameStateData.down or 1
+        local distNum = FieldAnimator.distanceToFirst or (GameStateData.distance or 10)
+        local downSuffix = (downNum == 1 and "ST") or (downNum == 2 and "ND") or (downNum == 3 and "RD") or "TH"
+        local downStr = tostring(downNum) .. downSuffix .. " & " .. tostring(distNum)
+        
+        love.graphics.setColor(0.15, 0.22, 0.32, 1.0)
+        love.graphics.rectangle("fill", 22, barY + 4, 110, barH - 8, 4, 4)
+        love.graphics.setColor(1.0, 0.84, 0.0, 1.0)
+        drawShadowText(downStr, 22, barY + 8, 1.0, 0.84, 0.0, 0.85, "center", 110)
+        
+        -- Live Gain Pill (Right)
+        local gain = FieldAnimator.liveGain or 0
+        local gainStr = (gain >= 0 and "+" or "") .. tostring(gain) .. " YDS"
+        local gainR, gainG, gainB = 0.2, 0.9, 0.3
+        if gain < 0 then gainR, gainG, gainB = 1.0, 0.25, 0.25 end
+        
+        love.graphics.setColor(0.12, 0.18, 0.25, 1.0)
+        love.graphics.rectangle("fill", 828, barY + 4, 110, barH - 8, 4, 4)
+        drawShadowText(gainStr, 828, barY + 8, gainR, gainG, gainB, 0.9, "center", 110)
+        
+        -- Dynamic Commentary (Center)
+        local commentary = FieldAnimator.commentaryText or "Play in progress..."
+        drawShadowText(commentary, 140, barY + 8, 0.95, 0.95, 0.95, 0.85, "left", 680)
     end
     
     love.graphics.pop()

@@ -264,6 +264,7 @@ function StateGame:update(dt)
         
         local isHovered = (mx >= targetX - CARD_W/2 and mx <= targetX + CARD_W/2
             and my >= baseTargetY - 89 and my <= baseTargetY + 89)
+        card.isHovered = isHovered
         local relX = mx - targetX
         if card.update then card:update(dt, isHovered, relX) end
         
@@ -420,15 +421,37 @@ function StateGame:draw()
     -- Red X
     drawShadowText("X", 500, panelY + 24, 1, 0.3, 0.3, 1.2, "center", 20)
     
-    -- Red Multiplier Pill
-    love.graphics.setColor(0.7, 0.2, 0.2, 1)
+    -- Red Multiplier Pill (with Momentum / Fire glow)
+    local streak = GameStateData.momentumStreak or 0
+    local isFire = streak >= 3
+    local isHeat = streak == 2
+    
+    local multBgColor = {0.7, 0.2, 0.2, 1}
+    local multBorderColor = {0.9, 0.4, 0.4, 1}
+    if isFire then
+        local pulse = 0.5 + 0.5 * math.sin(self.time * 8)
+        multBgColor = {0.85, 0.25 + pulse * 0.15, 0.0, 1}
+        multBorderColor = {1.0, 0.84, 0.2, 1}
+    elseif isHeat then
+        multBgColor = {0.75, 0.35, 0.1, 1}
+        multBorderColor = {1.0, 0.7, 0.3, 1}
+    end
+    
+    love.graphics.setColor(multBgColor)
     love.graphics.rectangle("fill", 531, panelY + 10, 104, 48, 8, 8)
-    love.graphics.setColor(0.9, 0.4, 0.4, 1)
-    love.graphics.setLineWidth(2)
+    love.graphics.setColor(multBorderColor)
+    love.graphics.setLineWidth(isFire and 2.5 or 2)
     love.graphics.rectangle("line", 531, panelY + 10, 104, 48, 8, 8)
     love.graphics.setLineWidth(1)
+    
     drawShadowText(string.format("x%.1f MTM", previewMult), 531, panelY + 18, 1, 1, 1, 1.1, "center", 104)
-    drawShadowText(string.format("x%.1f MTM", previewMult), 531, panelY + 36, 1, 1, 1, 0.7, "center", 104)
+    if isFire then
+        drawShadowText("🔥 ON FIRE!", 531, panelY + 36, 1.0, 0.84, 0.0, 0.75, "center", 104)
+    elseif isHeat then
+        drawShadowText("⚡ HEATING UP", 531, panelY + 36, 1.0, 0.8, 0.3, 0.75, "center", 104)
+    else
+        drawShadowText(string.format("x%.1f MTM", previewMult), 531, panelY + 36, 1, 1, 1, 0.7, "center", 104)
+    end
 
     -- 4. ADJUSTMENTS (Width: 140)
     drawHDPanel(651, panelY, 140, 68, {1.0, 0.84, 0.0, 1})
@@ -450,14 +473,16 @@ function StateGame:draw()
 
     -- 5. CLOCK AND DOWN/DISTANCE (Width: 120)
     local clockSecs = math.max(0, math.ceil(GameStateData.playClock))
-    local isLowClock = clockSecs <= 5
-    drawHDPanel(799, panelY, 120, 68, isLowClock and {1.0, 0.2, 0.2, 1} or {0.2, 0.8, 0.8, 1})
+    local isLowClock = clockSecs <= 8
+    local clockPulse = isLowClock and (0.6 + 0.4 * math.sin(self.time * 10)) or 1.0
+    local clockBorderColor = isLowClock and {1.0, 0.2 * clockPulse, 0.2 * clockPulse, 1} or {0.2, 0.8, 0.8, 1}
+    drawHDPanel(799, panelY, 120, 68, clockBorderColor)
     drawShadowText("CLOCK", 799, panelY + 6, 0.8, 0.8, 0.8, 0.85, "left", 60, 10)
     
-    -- Green glowing numbers
-    love.graphics.setColor(0, 1, 0, isLowClock and 0.2 or 0.8)
-    if isLowClock then love.graphics.setColor(1, 0, 0, 0.8) end
-    drawShadowText(string.format("%02d", clockSecs), 799, panelY + 24, 0, 1, 0, 2.0, "left", 60, 10)
+    -- Clock digits (Green normal, Red pulsing when low)
+    local clockR, clockG, clockB = 0, 1, 0
+    if isLowClock then clockR, clockG, clockB = 1, 0.2 * clockPulse, 0.2 * clockPulse end
+    drawShadowText(string.format("%02d", clockSecs), 799, panelY + 24, clockR, clockG, clockB, isLowClock and (2.0 + 0.1 * clockPulse) or 2.0, "left", 60, 10)
     
     local ballStr = GameStateData.yardLine < 50 and ("O" .. GameStateData.yardLine) or ("D" .. (100 - GameStateData.yardLine))
     drawShadowText("D:" .. GameStateData.down, 860, panelY + 12, 1, 1, 1, 0.8)

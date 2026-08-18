@@ -138,23 +138,24 @@ function TDReplay.draw()
         love.graphics.setLineWidth(1)
 
         -- TOUCHDOWN! headline
-        local sc = 3.2 + math.sin(t * 4) * 0.08
+        local sc = 2.4 + math.sin(t * 4) * 0.08
         love.graphics.setColor(0, 0, 0, fo * 0.9)
-        love.graphics.printf("TOUCHDOWN!", 72, bY + 14, 820, "center", 0, sc, sc)
+        love.graphics.printf("TOUCHDOWN!", 72, bY + 16, 820 / sc, "center", 0, sc, sc)
         love.graphics.setColor(1.0, 0.84, 0.0, fo)
-        love.graphics.printf("TOUCHDOWN!", 70, bY + 12, 820, "center", 0, sc, sc)
+        love.graphics.printf("TOUCHDOWN!", 70, bY + 14, 820 / sc, "center", 0, sc, sc)
 
         -- player name
+        local nameSc = 1.3
         love.graphics.setColor(0, 0, 0, fo * 0.8)
-        love.graphics.printf(TDReplay.playerName:upper(), 71, bY + 86, 820, "center", 0, 1.5, 1.5)
+        love.graphics.printf(TDReplay.playerName:upper(), 71, bY + 86, 820 / nameSc, "center", 0, nameSc, nameSc)
         love.graphics.setColor(1, 1, 1, fo)
-        love.graphics.printf(TDReplay.playerName:upper(), 70, bY + 84, 820, "center", 0, 1.5, 1.5)
+        love.graphics.printf(TDReplay.playerName:upper(), 70, bY + 84, 820 / nameSc, "center", 0, nameSc, nameSc)
 
         -- score info
         local info = string.format("+7 PTS  |  SCORE: %d / %d  |  CLICK TO CONTINUE",
             TDReplay.totalPoints, TDReplay.targetPoints)
         love.graphics.setColor(0.0, 0.76, 1.0, fo * 0.9)
-        love.graphics.printf(info, 70, bY + 142, 820, "center", 0, 0.9, 0.9)
+        love.graphics.printf(info, 70, bY + 142, 820, "center", 0, 1.0, 1.0)
     end
 
     love.graphics.setColor(1, 1, 1, 1)
