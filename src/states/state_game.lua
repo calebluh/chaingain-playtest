@@ -476,6 +476,7 @@ function StateGame:draw()
 
     -- Play Cards
     self.hoveredPlayCard = nil
+    local mx, my = love.mouse.getPosition()
     for i, card in ipairs(DeckManager.hand) do
         local cardY = self.playbookShelfY + 70
         card.yOffset = PhysicsUtils.lerp(card.yOffset or cardY, cardY, 15 * (love.timer.getDelta() or 0.016))
