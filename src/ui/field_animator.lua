@@ -814,12 +814,12 @@ function FieldAnimator.keypressed(key)
         
         if progress >= 0.75 and progress <= 0.95 then
             FieldAnimator.skillCheckSuccess = true
-            GameStateData.targetYards = GameStateData.targetYards + 2
+            FieldAnimator.skillBonus = (FieldAnimator.skillBonus or 0) + 2
             FxManager.addFloatingText("PERFECT " .. FieldAnimator.skillCheckType .. "! +2 YDS", 480, 200, 0.2, 0.9, 0.2, 1.8)
             SoundManager.playSFX("coin")
         elseif progress >= 0.5 then
             FieldAnimator.skillCheckSuccess = true
-            GameStateData.targetYards = GameStateData.targetYards + 1
+            FieldAnimator.skillBonus = (FieldAnimator.skillBonus or 0) + 1
             FxManager.addFloatingText("GOOD " .. FieldAnimator.skillCheckType .. "! +1 YDS", 480, 200, 0.9, 0.9, 0.2, 1.4)
             SoundManager.playSFX("click")
         else

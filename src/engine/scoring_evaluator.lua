@@ -61,6 +61,12 @@ function ScoringEvaluator.start(playCard, gameState, isTurnover, turnoverType)
         end
     end
     
+    local FieldAnimator = require("src.ui.field_animator")
+    if FieldAnimator.skillBonus and FieldAnimator.skillBonus > 0 then
+        chips = chips + FieldAnimator.skillBonus
+        FieldAnimator.skillBonus = 0
+    end
+    
     if gameState and gameState.stakeTier == "purple" then
         chips = math.floor(chips * 0.90) -- Purple Stake: -10% Base Yards
     end
