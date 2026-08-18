@@ -377,7 +377,7 @@ function AssetManager.drawRetroPlayer(x, y, jerseyColor, pantsColor, helmetColor
     
     -- HD Chibi Vector Rendering
     love.graphics.setLineStyle("smooth")
-    love.graphics.setLineJoin("round")
+    love.graphics.setLineJoin("bevel")
     
     local isFacingDown = isOffense
     
