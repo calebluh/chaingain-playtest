@@ -81,9 +81,11 @@ function AssetManager.init()
     fontCache = {}
 end
 
-function AssetManager.getImage(relativePath)
-    if images[relativePath] ~= nil then
-        return images[relativePath]
+function AssetManager.getImage(relativePath, filterMode)
+    -- Cache key includes filter mode so "linear" and "nearest" versions don't collide
+    local cacheKey = relativePath .. (filterMode and (":" .. filterMode) or "")
+    if images[cacheKey] ~= nil then
+        return images[cacheKey]
     end
 
     local candidatePaths = buildAssetCandidates(relativePath)
@@ -91,14 +93,15 @@ function AssetManager.getImage(relativePath)
         if love.filesystem and love.filesystem.getInfo and love.filesystem.getInfo(fullPath) then
             local ok, img = pcall(love.graphics.newImage, fullPath)
             if ok and img then
-                img:setFilter("nearest", "nearest")
-                images[relativePath] = img
+                local f = filterMode or "nearest"
+                img:setFilter(f, f)
+                images[cacheKey] = img
                 return img
             end
         end
     end
 
-    images[relativePath] = false
+    images[cacheKey] = false
     return false
 end
 

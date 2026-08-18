@@ -66,11 +66,12 @@ function FieldAnimator.to25D(worldX, worldY, worldZ)
     -- worldX is in pixels. 10 pixels = 1 yard.
     local yard_depth = (worldX - FieldAnimator.cameraX) / 10.0
     
-    local top_y = 110
-    local bottom_y = 520
+    -- Field occupies screen Y from 115 (distant/top) to 510 (near/bottom)
+    local top_y = 115
+    local bottom_y = 510
     local center_x = 480
-    local top_width = 340
-    local bottom_width = 680
+    local top_width = 320   -- narrower at distance → stronger perspective
+    local bottom_width = 700
     local yard_min = 0
     local yard_max = 50
     
@@ -84,7 +85,8 @@ function FieldAnimator.to25D(worldX, worldY, worldZ)
     local yard_x = (worldY - 180) / 4.887
     
     local screen_x = center_x + (yard_x / 26.6) * (current_width / 2)
-    local scale = 1.0 - (t * 0.4)
+    -- Scale players 70%–100% based on depth (softer than before)
+    local scale = 1.0 - (t * 0.30)
     scale = math.max(0.1, scale)
     
     return screen_x, screen_y, scale
@@ -195,6 +197,8 @@ function FieldAnimator.startPlay(playType, yardsGained, yardLine, distanceToFirs
                 role = p.role,
                 x = wX, y = wY,
                 startX = wX, startY = wY,
+                -- targetX is relative to each player's own start so WRs/slots
+                -- route to where THEY are, not always from LOS
                 breakX = capX(wX + (yardsGained * 0.45) * YARD_PX), breakY = wY,
                 targetX = capX(wX + math.max(2, yardsGained) * YARD_PX), targetY = wY,
                 profile = getPlayerProfile(p.role:sub(1,2))
@@ -743,30 +747,67 @@ function FieldAnimator.draw()
     -- Y-Depth Sorting: Draw players further up on screen first, so front players overlap correctly!
     table.sort(renderQueue, function(a, b) return a.screenY < b.screenY end)
     
-    -- Draw Render Queue
+    -- Cache sprite images once per frame (nil = not loaded, false = missing)
+    local spriteHome = AssetManager.getImage("sprites/player_home.png", "linear")
+    local spriteAway = AssetManager.getImage("sprites/player_away.png", "linear")
+    
+    -- PASS 1: Draw all drop shadows first so no shadow appears on top of a player
     for _, entity in ipairs(renderQueue) do
-        -- Flattened Cast Shadow on 2.5D Turf
-        love.graphics.setColor(0, 0, 0, 0.4)
-        love.graphics.ellipse("fill", entity.screenX, entity.screenY + 4, 18 * (entity.scale / 2.0), 6 * (entity.scale / 2.0))
+        love.graphics.setColor(0, 0, 0, 0.35)
+        love.graphics.ellipse("fill", entity.screenX, entity.screenY + 4,
+            18 * (entity.scale / 2.0), 6 * (entity.scale / 2.0))
+    end
+    
+    -- PASS 2: Draw players — PNG sprite first, procedural fallback if missing
+    for _, entity in ipairs(renderQueue) do
+        local sprite = entity.isOffense and spriteHome or spriteAway
         
-        -- Upright Paper Cutout Sprite
-        if entity.isOffense then
-            love.graphics.setColor(1, 1, 1, 1)
-            AssetManager.drawRetroPlayer(entity.screenX, entity.screenY - 12, offJersey, {0.95, 0.95, 0.95}, offHelmet, entity.vx, entity.vy, true, love.timer.getTime(), entity.isTackled, entity.profile, entity.scale)
+        if sprite then
+            -- Render premade PNG sprite, anchored at feet (bottom-center)
+            local ox = sprite:getWidth() / 2
+            local oy = sprite:getHeight()
+            local drawScale = entity.scale * 0.5
+            if entity.isTackled then
+                love.graphics.setColor(1, 1, 1, 0.75)
+                love.graphics.draw(sprite, entity.screenX, entity.screenY,
+                    math.pi / 2, drawScale, drawScale, ox, oy)
+            else
+                love.graphics.setColor(1, 1, 1, 1)
+                love.graphics.draw(sprite, entity.screenX, entity.screenY,
+                    0, drawScale, drawScale, ox, oy)
+            end
+            -- Defense tint (facing away, slightly darker)
+            if not entity.isOffense then
+                love.graphics.setColor(0.6, 0.6, 0.6, 0.3)
+                love.graphics.draw(sprite, entity.screenX, entity.screenY,
+                    0, drawScale, drawScale, ox, oy)
+            end
         else
-            -- Darken defense sprites to make them look distinct (facing away)
-            love.graphics.setColor(0.6, 0.6, 0.6, 1)
-            AssetManager.drawRetroPlayer(entity.screenX, entity.screenY - 12, defJersey, defPants, defHelmet, entity.vx, entity.vy, false, love.timer.getTime(), entity.isTackled, entity.profile, entity.scale)
-            love.graphics.setColor(1, 1, 1, 1)
+            -- Procedural fallback: existing chibi retro renderer
+            if entity.isOffense then
+                love.graphics.setColor(1, 1, 1, 1)
+                AssetManager.drawRetroPlayer(entity.screenX, entity.screenY - 12,
+                    offJersey, {0.95, 0.95, 0.95}, offHelmet,
+                    entity.vx, entity.vy, true, love.timer.getTime(),
+                    entity.isTackled, entity.profile, entity.scale)
+            else
+                love.graphics.setColor(0.6, 0.6, 0.6, 1)
+                AssetManager.drawRetroPlayer(entity.screenX, entity.screenY - 12,
+                    defJersey, defPants, defHelmet,
+                    entity.vx, entity.vy, false, love.timer.getTime(),
+                    entity.isTackled, entity.profile, entity.scale)
+                love.graphics.setColor(1, 1, 1, 1)
+            end
         end
         
-        -- QB Cadence Speech Bubble
+        -- QB Cadence Speech Bubble (always drawn over the player)
         if entity.role == "QB" and FieldAnimator.cadenceText ~= "" then
             love.graphics.setColor(1, 1, 1, 0.95)
             love.graphics.rectangle("fill", entity.screenX - 30, entity.screenY - 60, 60, 22, 6, 6)
             love.graphics.setColor(0, 0.76, 1)
             love.graphics.rectangle("line", entity.screenX - 30, entity.screenY - 60, 60, 22, 6, 6)
-            drawShadowText(FieldAnimator.cadenceText, entity.screenX - 30, entity.screenY - 55, 0, 0, 0, 0.9, "center", 60)
+            drawShadowText(FieldAnimator.cadenceText, entity.screenX - 30, entity.screenY - 55,
+                0, 0, 0, 0.9, "center", 60)
         end
     end
     

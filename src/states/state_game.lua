@@ -85,10 +85,12 @@ function StateGame:enter()
     -- Ensure visual state for play cards is initialized so draw() won't error
     do
         local N = #DeckManager.hand
-        local startX = 480 - ((N - 1) * 95) / 2
+        local CARD_W = 128
+        local gap = (N > 1) and math.max(8, math.min(52, (860 - N * CARD_W) / (N - 1))) or 0
+        local startX = 480 - ((N - 1) * (CARD_W + gap)) / 2
         for i, card in ipairs(DeckManager.hand) do
-            local targetX = startX + (i - 1) * 95
-            local targetY = 390
+            local targetX = startX + (i - 1) * (CARD_W + gap)
+            local targetY = 430
             card.xOffset = card.xOffset or targetX
             card.yOffset = card.yOffset or targetY
             card.rot = card.rot or 0
@@ -236,15 +238,22 @@ function StateGame:update(dt)
 
     local mx, my = love.mouse.getPosition()
     local N = #DeckManager.hand
-    local startX = 480 - ((N - 1) * 140) / 2
+    -- Vertical card tray: cards are 128px wide with a computed gap so they fill ~900px centered
+    local CARD_W = 128
+    local gap = (N > 1)
+        and math.max(8, math.min(52, (860 - N * CARD_W) / (N - 1)))
+        or 0
+    local startX = 480 - ((N - 1) * (CARD_W + gap)) / 2
+    local TRAY_BASE_Y = 430  -- cards sit in the bottom tray region
     
     for i, card in ipairs(DeckManager.hand) do
-        local targetX = startX + (i - 1) * 140
+        local targetX = startX + (i - 1) * (CARD_W + gap)
         
-        local baseTargetY = self.playbookShelfY + 70
+        local baseTargetY = TRAY_BASE_Y
         local targetY = baseTargetY
         
-        local isHovered = (mx >= targetX - 65 and mx <= targetX + 65 and my >= targetY - 87 and my <= targetY + 87)
+        local isHovered = (mx >= targetX - CARD_W/2 and mx <= targetX + CARD_W/2
+            and my >= baseTargetY - 89 and my <= baseTargetY + 89)
         local relX = mx - targetX
         if card.update then card:update(dt, isHovered, relX) end
         
@@ -255,11 +264,11 @@ function StateGame:update(dt)
             local dx = mx - self.dragLastX
             baseRot = dx * 0.015
         elseif i == self.selectedPlayIndex then
-            targetY = baseTargetY - 60
+            targetY = baseTargetY - 55  -- lift selected card
             baseRot = math.sin(self.time * 4) * 0.03
         elseif isHovered then
-            targetY = baseTargetY - 40
-            baseRot = (i - (N + 1) / 2) * 0.05
+            targetY = baseTargetY - 28  -- subtle hover lift
+            baseRot = (i - (N + 1) / 2) * 0.04
         end
         
         card.xOffset = card.xOffset or targetX
@@ -301,6 +310,19 @@ function StateGame:draw()
     
     local weatherType = GameStateData.weather or "clear"
     FxManager.draw(weatherType)
+
+    -- ── Card Tray Shelf Background ───────────────────────────────────────
+    -- Drawn BEFORE the HUD panels so the shelf never bleeds over the score bar.
+    love.graphics.setColor(0.05, 0.06, 0.09, 0.93)
+    love.graphics.rectangle("fill", 0, 335, 960, 205)
+    -- Accent top edge line
+    love.graphics.setColor(0.0, 0.76, 1.0, 0.35)
+    love.graphics.setLineWidth(2)
+    love.graphics.line(0, 337, 960, 337)
+    love.graphics.setLineWidth(1)
+    -- Subtle tray label
+    love.graphics.setColor(0.3, 0.35, 0.45, 0.7)
+    love.graphics.printf("PLAYBOOK", 0, 340, 960, "center", 0, 0.72, 0.72)
 
     local previewChips = 0
     local previewMult = 0
@@ -494,22 +516,19 @@ function StateGame:draw()
         drawShadowText("PUNT BALL", 650, 248, 1, 1, 1, 0.9, "center", 140)
     end
 
-    -- Playbook Slide-Up Shelf Drawer Background
-    if self.playbookShelfY < 530 then
-        love.graphics.setColor(0.08, 0.1, 0.14, 0.94)
-        love.graphics.rectangle("fill", 0, self.playbookShelfY, 960, 160, 10, 10)
-        love.graphics.setColor(C_NEON_BORDER)
-        love.graphics.setLineWidth(2)
-        love.graphics.rectangle("line", 0, self.playbookShelfY, 960, 160, 10, 10)
-        love.graphics.setLineWidth(1)
-        drawShadowText("PLAYBOOK & PRE-SNAP CALLS [Q: AUDIBLE (" .. (GameStateData.audiblesRemaining or 3) .. " LEFT)]", 20, self.playbookShelfY + 6, 1, 0.84, 0, 0.85)
-    end
+    -- (Playbook slide-up shelf background is now replaced by the permanent tray shelf drawn above)
 
-    -- Play Cards
+
+    -- Play Cards (vertical tray)
     self.hoveredPlayCard = nil
     local mx, my = love.mouse.getPosition()
+    local N_draw = #DeckManager.hand
+    local CARD_W_DRAW = 128
+    local CARD_H_DRAW = 178
     for i, card in ipairs(DeckManager.hand) do
-        local isHover = mx >= card.xOffset - 65 and mx <= card.xOffset + 65 and my >= card.yOffset - 87 and my <= card.yOffset + 87
+        -- Hit test uses the card's animated position (half-width/half-height)
+        local isHover = mx >= card.xOffset - CARD_W_DRAW/2 and mx <= card.xOffset + CARD_W_DRAW/2
+            and my >= card.yOffset - CARD_H_DRAW/2 and my <= card.yOffset + CARD_H_DRAW/2
         if isHover then
             self.hoveredPlayCard = card
         end
@@ -916,7 +935,8 @@ function StateGame:mousereleased(x, y, button, istouch, presses)
             dragDist = math.sqrt(dx*dx + dy*dy)
         end
         
-        if y < 280 then
+        -- Drag card above the tray boundary (Y=335) to call the play
+        if y < 320 then
             self.selectedPlayIndex = self.draggingCardIndex
             self:callPlay()
         elseif dragDist < 8 and not self.justSelectedThisClick and self.draggingCardIndex == self.selectedPlayIndex then
