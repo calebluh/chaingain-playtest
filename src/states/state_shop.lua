@@ -404,6 +404,7 @@ function StateShop:keypressed(key)
         else
             GameStateData.nextRound("standard")
         end
+        DeckManager.shuffle()
         DeckManager.drawHand()
         StateManager.switch(StateGame)
     end

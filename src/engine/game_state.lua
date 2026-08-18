@@ -251,10 +251,8 @@ function GameState.nextRound(defenseType)
         GameState.maxDrives = 4
     end
     
-    if not GameState.drivesRemaining or GameState.drivesRemaining <= 0 then
-        GameState.drivesRemaining = GameState.maxDrives
-        GameState.currentPoints = 0
-    end
+    GameState.drivesRemaining = GameState.maxDrives
+    GameState.currentPoints = 0
     
     GameState.totalYardsGained = 0
     GameState.status = "PLAYING"
