@@ -236,10 +236,10 @@ function StateGame:update(dt)
 
     local mx, my = love.mouse.getPosition()
     local N = #DeckManager.hand
-    local startX = 480 - ((N - 1) * 95) / 2
+    local startX = 480 - ((N - 1) * 140) / 2
     
     for i, card in ipairs(DeckManager.hand) do
-        local targetX = startX + (i - 1) * 95
+        local targetX = startX + (i - 1) * 140
         
         local baseTargetY = self.playbookShelfY + 70
         local targetY = baseTargetY

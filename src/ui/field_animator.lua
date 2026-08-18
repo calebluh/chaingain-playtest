@@ -61,35 +61,33 @@ FieldAnimator.targetCameraX = 0
 
 local YARD_PX = 10 -- pixels per yard
 
--- 2.5D Vertical "Madden" Perspective Projection Matrix
 function FieldAnimator.to25D(worldX, worldY, worldZ)
     worldZ = worldZ or 0
-    -- relX is yards downfield relative to the camera
-    local relX = worldX - FieldAnimator.cameraX
+    -- worldX is in pixels. 10 pixels = 1 yard.
+    local yard_depth = (worldX - FieldAnimator.cameraX) / 10.0
     
-    local screenCenterX = 480
-    -- Line of scrimmage will be anchored near the bottom
-    local screenBaseY = 400
+    local top_y = 110
+    local bottom_y = 520
+    local center_x = 480
+    local top_width = 340
+    local bottom_width = 680
+    local yard_min = 0
+    local yard_max = 50
     
-    -- In the old system, worldY was 50 to 310 (center 180).
-    local relY = worldY - 180
+    local t = (yard_depth - yard_min) / (yard_max - yard_min)
     
-    -- Dist downfield. positive relX means moving towards opponent endzone (UP the screen)
-    local distDownfield = relX
+    local screen_y = bottom_y - t * (bottom_y - top_y) - (worldZ * 1.1)
+    local current_width = bottom_width - t * (bottom_width - top_width)
     
-    -- Perspective: objects further downfield shrink, and horizontal spread narrows
-    local perspectiveStr = math.clamp(1.0 - (distDownfield * 0.001), 0.35, 1.2)
+    -- worldY is 50 to 310, center 180. NFL width is 53.3 yards (-26.6 to +26.6).
+    -- So yard_x = (worldY - 180) / (130 / 26.6) = (worldY - 180) / 4.887
+    local yard_x = (worldY - 180) / 4.887
     
-    -- Screen X is the sideline position.
-    -- Multiply by 2.5 to spread the 260 width (50 to 310) across the 960 screen
-    local screenX = screenCenterX + (relY * 2.5) * perspectiveStr
+    local screen_x = center_x + (yard_x / 26.6) * (current_width / 2)
+    local scale = 1.0 - (t * 0.4)
+    scale = math.max(0.1, scale)
     
-    -- Screen Y goes UP as you go downfield.
-    local screenY = screenBaseY - (distDownfield * 1.5) * perspectiveStr - worldZ * 1.1
-    
-    local scaleFactor = math.clamp(1.0 - (distDownfield * 0.0015), 0.45, 1.3)
-    
-    return screenX, screenY, scaleFactor
+    return screen_x, screen_y, scale
 end
 
 function FieldAnimator.startPlay(playType, yardsGained, yardLine, distanceToFirst, isIntercepted, isFumbled)
@@ -119,20 +117,34 @@ function FieldAnimator.startPlay(playType, yardsGained, yardLine, distanceToFirs
     FieldAnimator.skillCheckSuccess = nil
     FieldAnimator.skillCheckTriggered = false
 
-    -- Helper to cap coordinates inside the back line (1185px)
-    local function capX(xVal)
-        return math.min(1185, math.max(15, xVal))
-    end
+    local Formations = {
+        gun_spread = {
+            -- Offense
+            { role = "OL_C", x = 0,     depth = 0,    team = "off" },
+            { role = "OL_L", x = -2.5,  depth = 0,    team = "off" },
+            { role = "OL_R", x = 2.5,   depth = 0,    team = "off" },
+            { role = "TE",   x = -5.0,  depth = 0,    team = "off" },
+            { role = "TE2",  x = 5.0,   depth = 0,    team = "off" },
+            { role = "QB",   x = 0,     depth = -4.5, team = "off" },
+            { role = "RB",   x = -3.0,  depth = -4.5, team = "off" },
+            { role = "WR1",  x = -20.0, depth = -0.5, team = "off" },
+            { role = "WR2",  x = 20.0,  depth = -0.5, team = "off" },
+            { role = "SLOT", x = -11.0, depth = -1.0, team = "off" },
+            { role = "TE3",  x = 7.5,   depth = 0,    team = "off" },
 
-    -- 1. Create Offensive Linemen (OL) Center, Left Guard, Right Guard
-    table.insert(FieldAnimator.offense, { role = "OL_C", x = losX - 1.5 * YARD_PX, y = midY, targetX = capX(losX - 0.5 * YARD_PX), targetY = midY })
-    table.insert(FieldAnimator.offense, { role = "OL_L", x = losX - 1.5 * YARD_PX, y = midY - 18, targetX = capX(losX - 0.5 * YARD_PX), targetY = midY - 18 })
-    table.insert(FieldAnimator.offense, { role = "OL_R", x = losX - 1.5 * YARD_PX, y = midY + 18, targetX = capX(losX - 0.5 * YARD_PX), targetY = midY + 18 })
-
-    -- 2. Create Defensive Linemen (DL) Center, Left, Right
-    table.insert(FieldAnimator.defense, { role = "DL_C", x = losX + 1 * YARD_PX, y = midY, targetX = capX(losX - 0.5 * YARD_PX), targetY = midY, speed = 15 })
-    table.insert(FieldAnimator.defense, { role = "DL_L", x = losX + 1 * YARD_PX, y = midY - 18, targetX = capX(losX - 0.5 * YARD_PX), targetY = midY - 18, speed = 15 })
-    table.insert(FieldAnimator.defense, { role = "DL_R", x = losX + 1 * YARD_PX, y = midY + 18, targetX = capX(losX - 0.5 * YARD_PX), targetY = midY + 18, speed = 15 })
+            -- Defense
+            { role = "DL_C", x = -2.0,  depth = 1.5,  team = "def" },
+            { role = "DL_R", x = 2.0,   depth = 1.5,  team = "def" },
+            { role = "DL_L", x = -6.0,  depth = 1.5,  team = "def" },
+            { role = "LB1",  x = 6.0,   depth = 1.5,  team = "def" },
+            { role = "LB2",  x = 0,     depth = 5.0,  team = "def" },
+            { role = "LB3",  x = -4.5,  depth = 5.0,  team = "def" },
+            { role = "DB1",  x = -20.0, depth = 7.0,  team = "def" },
+            { role = "DB2",  x = 20.0,  depth = 7.0,  team = "def" },
+            { role = "FS",   x = -8.0,  depth = 14.0, team = "def" },
+            { role = "SS",   x = 8.0,   depth = 14.0, team = "def" }
+        }
+    }
 
     local function getPlayerProfile(posName)
         if GameStateData.rosterSlots and GameStateData.rosterSlots[posName] and GameStateData.rosterSlots[posName].cards[1] then
@@ -140,8 +152,6 @@ function FieldAnimator.startPlay(playType, yardsGained, yardLine, distanceToFirs
             if card.isMyPlayer then return true end
             return card.visualProfile
         end
-        
-        -- Fallback profile for empty slots
         return {
             skinTone = math.random(1, 8),
             visor = "clear",
@@ -152,7 +162,7 @@ function FieldAnimator.startPlay(playType, yardsGained, yardLine, distanceToFirs
             archetype = "stocky"
         }
     end
-    
+
     local function genDefProfile(isHeavy)
         return {
             skinTone = math.random(1, 8),
@@ -169,78 +179,46 @@ function FieldAnimator.startPlay(playType, yardsGained, yardLine, distanceToFirs
         }
     end
 
-    -- 3. Create Quarterback (QB)
-    local qb = { role = "QB", x = losX - 4 * YARD_PX, y = midY, targetX = capX(losX - 8 * YARD_PX), targetY = midY, profile = getPlayerProfile("QB") }
-    table.insert(FieldAnimator.offense, qb)
-    FieldAnimator.ball.carrier = qb
-
-    if playType:match("Pass") then
-        -- 4. Create Skill Players (Pass Play)
-        local targetY1 = midY - 45 + math.random(-10, 10)
-        local wr1 = { 
-            role = "WR1", x = losX - 1 * YARD_PX, y = midY - 65,
-            targetX = capX(losX + yardsGained * YARD_PX), targetY = targetY1,
-            startX = losX - 1 * YARD_PX, startY = midY - 65,
-            breakX = capX(losX + (yardsGained * 0.45) * YARD_PX), breakY = midY - 65,
-            profile = getPlayerProfile("WR1")
-        }
-        table.insert(FieldAnimator.offense, wr1)
+    local spread = Formations.gun_spread
+    for _, p in ipairs(spread) do
+        -- Map yard offsets to world coordinates
+        -- Depth is yards from LOS. 10 pixels per yard.
+        local wX = losX + p.depth * YARD_PX
+        -- X is horizontal yard offset. We map it back to worldY to work with the old system smoothly.
+        -- worldY = 180 + yard_x * 4.887
+        local wY = 180 + p.x * 4.887
         
-        local targetY2 = midY + 45 + math.random(-10, 10)
-        local wr2 = { 
-            role = "WR2", x = losX - 1 * YARD_PX, y = midY + 65,
-            targetX = capX(losX + (yardsGained - 3) * YARD_PX), targetY = targetY2,
-            startX = losX - 1 * YARD_PX, startY = midY + 65,
-            breakX = capX(losX + ((yardsGained - 3) * 0.45) * YARD_PX), breakY = midY + 65,
-            profile = getPlayerProfile("WR2")
-        }
-        table.insert(FieldAnimator.offense, wr2)
-
-        local te = {
-            role = "TE", x = losX - 1.5 * YARD_PX, y = midY + 30,
-            targetX = capX(losX + (yardsGained * 0.7) * YARD_PX), targetY = midY + 15,
-            startX = losX - 1.5 * YARD_PX, startY = midY + 30,
-            breakX = capX(losX + (yardsGained * 0.3) * YARD_PX), breakY = midY + 30,
-            profile = getPlayerProfile("FLEX")
-        }
-        table.insert(FieldAnimator.offense, te)
-
-        local rb = { role = "RB", x = losX - 6 * YARD_PX, y = midY + 10, targetX = capX(losX - 4 * YARD_PX), targetY = midY + 35, profile = getPlayerProfile("RB") }
-        table.insert(FieldAnimator.offense, rb)
-
-        -- Dynamic Target Receiver Selection based on Play Type
-        local receivers = { wr1, wr2, te }
-        if playType == "Screen Pass" then
-            receivers = { rb, te, wr2 }
-        elseif playType == "Short Pass" or playType == "Quick Slant" then
-            receivers = { wr2, te, wr1 }
-        elseif playType == "Deep Pass" or playType == "Hail Mary" then
-            receivers = { wr1, wr2 }
+        if p.team == "off" then
+            local pDat = {
+                role = p.role,
+                x = wX, y = wY,
+                targetX = capX(wX + math.max(2, yardsGained) * YARD_PX), targetY = wY,
+                profile = getPlayerProfile(p.role:sub(1,2))
+            }
+            if p.role == "QB" then
+                FieldAnimator.ball.carrier = pDat
+            end
+            table.insert(FieldAnimator.offense, pDat)
+        else
+            local pDat = {
+                role = p.role,
+                x = wX, y = wY,
+                targetX = wX, targetY = wY,
+                speed = 36 + math.random(0, 10),
+                profile = genDefProfile(p.depth < 3)
+            }
+            table.insert(FieldAnimator.defense, pDat)
         end
-        FieldAnimator.targetReceiver = receivers[math.random(#receivers)]
-
-        -- 5. Create Defenders (Pass Play)
-        table.insert(FieldAnimator.defense, { role = "DB1", x = losX + 6 * YARD_PX, y = midY - 65, targetX = wr1.targetX, targetY = wr1.targetY, speed = 44, profile = genDefProfile(false) })
-        table.insert(FieldAnimator.defense, { role = "DB2", x = losX + 6 * YARD_PX, y = midY + 65, targetX = wr2.targetX, targetY = wr2.targetY, speed = 44, profile = genDefProfile(false) })
-        table.insert(FieldAnimator.defense, { role = "DB3", x = losX + 12 * YARD_PX, y = midY, targetX = losX + 15 * YARD_PX, targetY = midY, speed = 40, profile = genDefProfile(false) })
-        table.insert(FieldAnimator.defense, { role = "LB1", x = losX + 4 * YARD_PX, y = midY - 25, targetX = te.targetX, targetY = te.targetY, speed = 36, profile = genDefProfile(true) })
-        table.insert(FieldAnimator.defense, { role = "LB2", x = losX + 4 * YARD_PX, y = midY + 25, targetX = rb.targetX, targetY = rb.targetY, speed = 36, profile = genDefProfile(true) })
-    else
-        -- Run Play
-        local rbProfile = getPlayerProfile("RB")
-        if not rbProfile then rbProfile = getPlayerProfile("FLEX") end
-        local rb = { role = "RB", x = losX - 6 * YARD_PX, y = midY, targetX = capX(losX + yardsGained * YARD_PX), targetY = midY + math.random(-15, 15), profile = rbProfile }
-        table.insert(FieldAnimator.offense, rb)
-
-        table.insert(FieldAnimator.offense, { role = "WR1", x = losX - 1 * YARD_PX, y = midY - 65, targetX = capX(losX + (yardsGained * 0.8) * YARD_PX), targetY = midY - 45, profile = getPlayerProfile("WR1") })
-        table.insert(FieldAnimator.offense, { role = "WR2", x = losX - 1 * YARD_PX, y = midY + 65, targetX = capX(losX + (yardsGained * 0.8) * YARD_PX), targetY = midY + 45, profile = getPlayerProfile("WR2") })
-        table.insert(FieldAnimator.offense, { role = "TE", x = losX - 1.5 * YARD_PX, y = midY + 30, targetX = capX(losX + 3 * YARD_PX), targetY = midY + 20, profile = getPlayerProfile("FLEX") })
-
-        table.insert(FieldAnimator.defense, { role = "LB1", x = losX + 4 * YARD_PX, y = midY - 25, speed = 48, profile = genDefProfile(true) })
-        table.insert(FieldAnimator.defense, { role = "LB2", x = losX + 4 * YARD_PX, y = midY + 25, speed = 48, profile = genDefProfile(true) })
-        table.insert(FieldAnimator.defense, { role = "DB1", x = losX + 7 * YARD_PX, y = midY - 55, speed = 45, profile = genDefProfile(false) })
-        table.insert(FieldAnimator.defense, { role = "DB2", x = losX + 7 * YARD_PX, y = midY + 55, speed = 45, profile = genDefProfile(false) })
     end
+    
+    -- Pick a target receiver randomly for passing plays
+    local wrList = {}
+    for _, o in ipairs(FieldAnimator.offense) do
+        if o.role:match("WR") or o.role:match("TE") or o.role:match("SLOT") then
+            table.insert(wrList, o)
+        end
+    end
+    FieldAnimator.targetReceiver = #wrList > 0 and wrList[math.random(#wrList)] or FieldAnimator.offense[1]
     
     FieldAnimator.targetCameraX = FieldAnimator.ball.x - 50
     FieldAnimator.cameraX = FieldAnimator.targetCameraX
