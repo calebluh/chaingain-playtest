@@ -25,4 +25,12 @@ function PhysicsUtils.spring(current, target, velocity, dt, f, z, r)
     return newCurrent, newVelocity
 end
 
+math.clamp = math.clamp or function(val, min, max)
+    return math.max(min, math.min(max, val))
+end
+
+function PhysicsUtils.clamp(val, min, max)
+    return math.clamp(val, min, max)
+end
+
 return PhysicsUtils

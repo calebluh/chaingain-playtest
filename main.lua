@@ -1,4 +1,8 @@
 -- main.lua
+math.clamp = math.clamp or function(val, min, max)
+    return math.max(min, math.min(max, val))
+end
+
 local StateManager = require("src.states.state_manager")
 local StateMenu = require("src.states.state_menu")
 local AssetManager = require("src.engine.asset_manager")
@@ -20,40 +24,43 @@ local shakeTimer = 0
 local hitStopTimer = 0
 
 function love.load(arg)
-    -- Copy icon from artifacts if it exists
-    local sourcePath = "C:/Users/caleb/.gemini/antigravity-ide/brain/805280e1-4677-4396-8435-a3d908f93326/icon_1786114119555.png"
-    local destPath = "assets/icon.png"
-    local sf = io.open(sourcePath, "rb")
-    if sf then
-        local df = io.open(destPath, "wb")
-        if df then
-            df:write(sf:read("*all"))
-            df:close()
+    -- Safe Local Environment Asset Copy Block
+    pcall(function()
+        local sourcePath = "C:/Users/caleb/.gemini/antigravity-ide/brain/805280e1-4677-4396-8435-a3d908f93326/icon_1786114119555.png"
+        local destPath = "assets/icon.png"
+        local sf = io.open(sourcePath, "rb")
+        if sf then
+            local df = io.open(destPath, "wb")
+            if df then
+                df:write(sf:read("*all"))
+                df:close()
+            end
+            sf:close()
         end
-        sf:close()
-    end
 
-    -- Copy generated player assets from artifact directory
-    local playerAssets = {
-        { src = "C:/Users/caleb/.gemini/antigravity-ide/brain/70f523a0-7b3d-4dd8-88a0-6de40c012252/player_marcus_vance_pixel_1787069185076.png", dsts = {"assets/players/player_marcus_vance.png", "assets/images/players/player_marcus_vance.png"} },
-        { src = "C:/Users/caleb/.gemini/antigravity-ide/brain/70f523a0-7b3d-4dd8-88a0-6de40c012252/player_jalen_carter_pixel_1787069194670.png", dsts = {"assets/players/player_jalen_carter.png", "assets/images/players/player_jalen_carter.png"} },
-    }
-    os.execute('mkdir "assets\\players" 2>nul')
-    os.execute('mkdir "assets\\images\\players" 2>nul')
-    for _, item in ipairs(playerAssets) do
-        local psf = io.open(item.src, "rb")
-        if psf then
-            local data = psf:read("*all")
-            psf:close()
-            for _, dpath in ipairs(item.dsts) do
-                local pdf = io.open(dpath, "wb")
-                if pdf then
-                    pdf:write(data)
-                    pdf:close()
+        local playerAssets = {
+            { src = "C:/Users/caleb/.gemini/antigravity-ide/brain/70f523a0-7b3d-4dd8-88a0-6de40c012252/player_marcus_vance_pixel_1787069185076.png", dsts = {"assets/players/player_marcus_vance.png", "assets/images/players/player_marcus_vance.png"} },
+            { src = "C:/Users/caleb/.gemini/antigravity-ide/brain/70f523a0-7b3d-4dd8-88a0-6de40c012252/player_jalen_carter_pixel_1787069194670.png", dsts = {"assets/players/player_jalen_carter.png", "assets/images/players/player_jalen_carter.png"} },
+        }
+        if os and os.execute then
+            pcall(os.execute, 'mkdir "assets\\players" 2>nul')
+            pcall(os.execute, 'mkdir "assets\\images\\players" 2>nul')
+        end
+        for _, item in ipairs(playerAssets) do
+            local psf = io.open(item.src, "rb")
+            if psf then
+                local data = psf:read("*all")
+                psf:close()
+                for _, dpath in ipairs(item.dsts) do
+                    local pdf = io.open(dpath, "wb")
+                    if pdf then
+                        pdf:write(data)
+                        pdf:close()
+                    end
                 end
             end
         end
-    end
+    end)
 
     love.window.setMode(1920, 1080, {fullscreen = true, vsync = true})
     love.window.setTitle("Chain Gain")
