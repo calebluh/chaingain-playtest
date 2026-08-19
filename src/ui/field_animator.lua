@@ -490,56 +490,56 @@ function FieldAnimator.update(dt)
         if p.role == "QB" then
             if FieldAnimator.playType:match("Pass") then
                 local qbT = math.min(1.0, t * 5.0)
-                p.x = PhysicsUtils.lerp(losX - 4 * YARD_PX, p.targetX, qbT)
-                p.y = PhysicsUtils.lerp(midY, p.targetY, qbT)
+                p.x = PhysicsUtils.lerp(p.startX, p.targetX, qbT)
+                p.y = PhysicsUtils.lerp(p.startY, p.targetY, qbT)
             else
                 local handoffT = math.min(1.0, t * 5.0)
                 if handoffT < 1.0 then
-                    p.x = PhysicsUtils.lerp(losX - 4 * YARD_PX, losX - 5 * YARD_PX, handoffT)
+                    p.x = PhysicsUtils.lerp(p.startX, p.startX - 1 * YARD_PX, handoffT)
                 else
-                    p.x = losX - 5 * YARD_PX
+                    p.x = p.startX - 1 * YARD_PX
                 end
             end
-        elseif p.role == "RB" then
+        elseif p.role == "RB" or p.role == "FB" then
             if FieldAnimator.playType:match("Pass") then
                 local rbT = math.min(1.0, t * 1.5)
-                p.x = PhysicsUtils.lerp(losX - 6 * YARD_PX, p.targetX, rbT)
-                p.y = PhysicsUtils.lerp(midY + 10, p.targetY, rbT)
+                p.x = PhysicsUtils.lerp(p.startX, p.targetX, rbT)
+                p.y = PhysicsUtils.lerp(p.startY, p.targetY, rbT)
             else
                 local handoffT = math.min(1.0, t * 5.0)
                 if handoffT < 1.0 then
-                    p.x = PhysicsUtils.lerp(losX - 6 * YARD_PX, losX - 5 * YARD_PX, handoffT)
-                    p.y = PhysicsUtils.lerp(midY, midY, handoffT)
+                    p.x = PhysicsUtils.lerp(p.startX, p.startX + 1 * YARD_PX, handoffT)
+                    p.y = PhysicsUtils.lerp(p.startY, p.startY, handoffT)
                 else
                     local runT = (t - 0.2) / 0.8
-                    p.x = PhysicsUtils.lerp(losX - 5 * YARD_PX, p.targetX, runT)
-                    p.y = PhysicsUtils.lerp(midY, p.targetY, runT)
+                    p.x = PhysicsUtils.lerp(p.startX + 1 * YARD_PX, p.targetX, runT)
+                    p.y = PhysicsUtils.lerp(p.startY, p.targetY, runT)
                 end
             end
-        elseif p.role == "WR1" or p.role == "WR2" or p.role == "TE" then
+        elseif p.role:match("WR") or p.role:match("TE") or p.role:match("SLOT") then
             if FieldAnimator.playType:match("Pass") then
                 local wrT = t
                 if wrT < 0.4 then
                     local bt = wrT / 0.4
                     p.x = PhysicsUtils.lerp(p.startX, p.breakX, bt)
                     p.y = PhysicsUtils.lerp(p.startY, p.breakY, bt)
-                else
-                    local ft = (wrT - 0.4) / 0.6
+                elseif wrT < 0.85 then
+                    local ft = (wrT - 0.4) / 0.45
                     p.x = PhysicsUtils.lerp(p.breakX, p.targetX, ft)
                     p.y = PhysicsUtils.lerp(p.breakY, p.targetY, ft)
+                else
+                    p.x = p.targetX
+                    p.y = p.targetY
                 end
             else
                 local blockT = math.min(1.0, t * 1.5)
-                local startX = (p.role == "TE") and (losX - 1.5 * YARD_PX) or (losX - 1 * YARD_PX)
-                local startY = (p.role == "TE") and (midY + 30) or ((p.role == "WR1") and (midY - 65) or (midY + 65))
-                p.x = PhysicsUtils.lerp(startX, p.targetX, blockT)
-                p.y = PhysicsUtils.lerp(startY, p.targetY, blockT)
+                p.x = PhysicsUtils.lerp(p.startX, p.targetX, blockT)
+                p.y = PhysicsUtils.lerp(p.startY, p.targetY, blockT)
             end
         elseif p.role:match("OL") then
             local olT = math.min(1.0, t * 3.0)
-            local startY = (p.role == "OL_C") and midY or ((p.role == "OL_L") and (midY - 18) or (midY + 18))
-            p.x = PhysicsUtils.lerp(losX - 1.5 * YARD_PX, p.targetX, olT)
-            p.y = startY
+            p.x = PhysicsUtils.lerp(p.startX, p.targetX, olT)
+            p.y = p.startY
         end
         
         if dt > 0 then
@@ -556,11 +556,11 @@ function FieldAnimator.update(dt)
     -- Ball Flight
     if FieldAnimator.playType:match("Pass") then
         local passTarget = FieldAnimator.targetReceiver or wr1
-        if t < 0.25 then
+        if t < 0.45 then
             FieldAnimator.ball.carrier = qb
-        elseif t < 0.9 then
+        elseif t < 0.85 then
             FieldAnimator.ball.carrier = nil
-            local throwT = (t - 0.25) / 0.65
+            local throwT = (t - 0.45) / 0.40
             if FieldAnimator.isIntercepted then
                 local db1
                 for _, d in ipairs(FieldAnimator.defense) do if d.role == "DB1" then db1 = d; break end end
