@@ -34,181 +34,125 @@ end
 function CardRender.drawPlayCard(x, y, card, isSelected, time)
     love.graphics.push()
     love.graphics.translate(x, y)
-    if card and card.rot and math.abs(card.rot) > 0.001 then
-        love.graphics.rotate(card.rot)
-    end
     
-    local w, h = 130, 175
+    local w, h = 280, 160
     local cx, cy = -w/2, -h/2
     
-    love.graphics.setColor(0, 0, 0, 0.8)
-    love.graphics.rectangle("fill", cx + 4, cy + 4, w, h, 8, 8)
-    
-    local SaveManager = require("src.engine.save_manager")
-    local isMastered = card.name and SaveManager.isCardMastered(card.name)
-
-    if isSelected then
-        local pulse = 0.5 + 0.5 * math.sin((time or 0) * 8)
-        love.graphics.setColor(0.0, 0.76 + pulse * 0.2, 1.0, 0.9 + pulse * 0.1)
-        love.graphics.rectangle("fill", cx - 4, cy - 4, w + 8, h + 8, 10, 10)
-    elseif isMastered then
-        local pulse = 0.5 + 0.5 * math.sin((time or 0) * 4)
-        love.graphics.setColor(1.0, 0.84 + pulse * 0.16, 0.0, 0.9) -- Gold border
-        love.graphics.rectangle("fill", cx - 3, cy - 3, w + 6, h + 6, 10, 10)
-    elseif card.isHovered then
-        local pulse = 0.5 + 0.5 * math.sin((time or 0) * 6)
-        love.graphics.setColor(0.0, 0.76, 1.0, 0.5 + pulse * 0.3)
-        love.graphics.rectangle("fill", cx - 3, cy - 3, w + 6, h + 6, 9, 9)
-    else
-        love.graphics.setColor(C_BORDER_NORMAL)
-        love.graphics.rectangle("fill", cx - 2, cy - 2, w + 4, h + 4, 8, 8)
-    end
-    
-    love.graphics.setColor(C_SLATE_CARD)
+    -- Background panel
+    love.graphics.setColor(0, 0, 0, 0.85)
     love.graphics.rectangle("fill", cx, cy, w, h, 6, 6)
-
-    love.graphics.setColor(0.07, 0.15, 0.18, 0.95)
-    love.graphics.rectangle("fill", cx + 4, cy + 4, w - 8, h - 8, 5, 5)
     
-    love.graphics.setColor(0.12, 0.15, 0.20, 1)
-    love.graphics.rectangle("fill", cx, cy, w, 28, 6, 6)
-    love.graphics.rectangle("fill", cx, cy + 22, w, 6)
-
+    -- Top Header Tab
     local accentTint = C_NEON_CYAN
     if card.type == "Run" then accentTint = C_NEON_GREEN end
     if card.type == "Deep Pass" or card.type == "Kick" or card.type == "Punt" then accentTint = C_NEON_YELLOW end
-    if card.type == "Defense" or card.type == "Special" then accentTint = C_NEON_PURPLE end
-    love.graphics.setColor(accentTint[1], accentTint[2], accentTint[3], 0.18)
-    love.graphics.rectangle("fill", cx + 8, cy + 32, w - 16, 90, 4, 4)
     
-    drawShadowText(card.name, cx + 6, cy + 4, 1, 1, 1, 0.95)
-    drawShadowText(card.type:upper(), cx + 6, cy + 16, 0.7, 0.75, 0.8, 0.75)
+    love.graphics.setColor(0.12, 0.15, 0.20, 0.95)
+    love.graphics.rectangle("fill", cx, cy, w, 28, 6, 6)
+    love.graphics.rectangle("fill", cx, cy + 22, w, 6)
     
-    local frameX, frameY = cx + 8, cy + 32
-    local frameW, frameH = w - 16, 90
+    -- Left colored bar indicator for play type
+    love.graphics.setColor(accentTint[1], accentTint[2], accentTint[3], 1)
+    love.graphics.rectangle("fill", cx, cy, 6, 28, 6, 6)
+    love.graphics.rectangle("fill", cx, cy + 22, 6, 6)
     
-    love.graphics.setColor(0.06, 0.08, 0.11, 1)
-    love.graphics.rectangle("fill", frameX, frameY, frameW, frameH, 4, 4)
+    -- Play Name and Type text
+    drawShadowText(card.name, cx + 14, cy + 4, 1, 1, 1, 0.95)
+    drawShadowText(card.type:upper(), cx + 14, cy + 16, 0.7, 0.75, 0.8, 0.75)
     
-    -- Draw Enhancements Background Shading
-    if card.enhancement == "Glass" then
-        love.graphics.setColor(0.9, 0.9, 1.0, 0.4)
-        love.graphics.rectangle("fill", frameX, frameY, frameW, frameH, 4, 4)
-    elseif card.enhancement == "Steel" then
-        love.graphics.setColor(0.6, 0.65, 0.7, 0.5)
-        love.graphics.rectangle("fill", frameX, frameY, frameW, frameH, 4, 4)
-    elseif card.enhancement == "Gold" then
-        love.graphics.setColor(1.0, 0.84, 0.0, 0.3)
-        love.graphics.rectangle("fill", frameX, frameY, frameW, frameH, 4, 4)
-    elseif card.enhancement == "Stone" then
-        love.graphics.setColor(0.3, 0.3, 0.3, 0.8)
-        love.graphics.rectangle("fill", frameX, frameY, frameW, frameH, 4, 4)
-    end
-    
-    local img = card.name and AssetManager.getImage("cards/card_" .. string.lower(string.gsub(card.name, "%s+", "_")) .. ".png")
-    if img then
-        love.graphics.setColor(1, 1, 1, 1)
-        love.graphics.draw(img, frameX, frameY, 0, frameW / img:getWidth(), frameH / img:getHeight())
-    else
-        love.graphics.setLineWidth(2)
-        love.graphics.setColor(0.4, 0.45, 0.5, 0.6)
-        for d = 0, 3 do
-            local dx = frameX + 18 + (d * 24)
-            local dy = frameY + 30
-            love.graphics.line(dx-4, dy-4, dx+4, dy+4)
-            love.graphics.line(dx-4, dy+4, dx+4, dy-4)
-        end
-        
-        for o = 0, 3 do
-            local ox = frameX + 18 + (o * 24)
-            local oy = frameY + 65
-            love.graphics.circle("line", ox, oy, 4)
-        end
-        
-        if card.type == "Run" then
-            love.graphics.setColor(C_NEON_GREEN)
-            love.graphics.line(frameX + 42, frameY + 65, frameX + 42, frameY + 20, frameX + 66, frameY + 12)
-            love.graphics.polygon("fill", frameX + 66, frameY + 12, frameX + 58, frameY + 10, frameX + 62, frameY + 18)
-        elseif card.type == "Short Pass" or card.type == "Medium Pass" then
-            love.graphics.setColor(card.type == "Short Pass" and C_NEON_CYAN or C_NEON_YELLOW)
-            love.graphics.line(frameX + 18, frameY + 65, frameX + 18, frameY + 40, frameX + 80, frameY + 40)
-            love.graphics.polygon("fill", frameX + 80, frameY + 40, frameX + 72, frameY + 35, frameX + 72, frameY + 45)
-        elseif card.type == "Deep Pass" then
-            love.graphics.setColor(C_NEON_YELLOW)
-            love.graphics.line(frameX + 18, frameY + 65, frameX + 18, frameY + 10)
-            love.graphics.line(frameX + 90, frameY + 65, frameX + 90, frameY + 10)
-            love.graphics.polygon("fill", frameX + 18, frameY + 10, frameX + 13, frameY + 18, frameX + 23, frameY + 18)
-            love.graphics.polygon("fill", frameX + 90, frameY + 10, frameX + 85, frameY + 18, frameX + 95, frameY + 18)
-        elseif card.type == "Kick" then
-            love.graphics.setLineWidth(2)
-            love.graphics.setColor(C_NEON_YELLOW)
-            love.graphics.line(frameX + 24, frameY + 20, frameX + 24, frameY + 55)
-            love.graphics.line(frameX + 76, frameY + 20, frameX + 76, frameY + 55)
-            love.graphics.line(frameX + 24, frameY + 45, frameX + 76, frameY + 45)
-            love.graphics.line(frameX + 50, frameY + 45, frameX + 50, frameY + 75)
-            love.graphics.setColor(C_BORDER_SELECTED)
-            love.graphics.circle("fill", frameX + 50, frameY + 12, 3)
-        elseif card.type == "Punt" then
-            love.graphics.setLineWidth(2)
-            love.graphics.setColor(C_NEON_CYAN)
-            love.graphics.line(frameX + 18, frameY + 65, frameX + 50, frameY + 15)
-            love.graphics.line(frameX + 50, frameY + 15, frameX + 82, frameY + 65)
-            love.graphics.circle("line", frameX + 50, frameY + 15, 3)
-        else
-            love.graphics.setColor(C_NEON_PURPLE)
-            love.graphics.line(frameX + 42, frameY + 65, frameX + 25, frameY + 50, frameX + 75, frameY + 15)
-            love.graphics.polygon("fill", frameX + 75, frameY + 15, frameX + 66, frameY + 15, frameX + 73, frameY + 23)
-        end
-        love.graphics.setLineWidth(1)
-    end
-    
-    local pillY = cy + 128
+    -- YDS and MTM badges in the header
+    local badgeX = cx + w - 105
     love.graphics.setColor(C_CHIP_BLUE)
-    love.graphics.rectangle("fill", cx + 6, pillY, 56, 38, 5, 5)
-    drawShadowText(card.baseChips .. " YDS", cx + 6, pillY + 12, 1, 1, 1, 0.9, "center", 56)
+    love.graphics.rectangle("fill", badgeX, cy + 4, 45, 20, 3, 3)
+    drawShadowText(card.baseChips .. " YDS", badgeX, cy + 8, 1, 1, 1, 0.75, "center", 45)
     
     love.graphics.setColor(C_MULT_RED)
-    love.graphics.rectangle("fill", cx + 68, pillY, 56, 38, 5, 5)
-    drawShadowText("x" .. string.format("%.1f", card.baseMult) .. " MTM", cx + 68, pillY + 12, 1, 1, 1, 0.8, "center", 56)
+    love.graphics.rectangle("fill", badgeX + 50, cy + 4, 45, 20, 3, 3)
+    drawShadowText("x" .. string.format("%.1f", card.baseMult), badgeX + 50, cy + 8, 1, 1, 1, 0.75, "center", 45)
     
-    if card.enhancement then
-        love.graphics.setColor(0, 0, 0, 0.8)
-        love.graphics.rectangle("fill", cx + 10, frameY - 14, 100, 20, 4, 4)
-        local er, eg, eb = 1, 1, 1
-        if card.enhancement == "Glass" then er, eg, eb = 0.9, 0.9, 1.0
-        elseif card.enhancement == "Steel" then er, eg, eb = 0.7, 0.7, 0.8
-        elseif card.enhancement == "Gold" then er, eg, eb = 1.0, 0.84, 0.0
-        elseif card.enhancement == "Stone" then er, eg, eb = 0.6, 0.6, 0.6 end
-        local dispName = card.enhancement:upper() .. " PLAY"
-        if card.enhancement == "Glass" then dispName = "HIGH-OCTANE"
-        elseif card.enhancement == "Steel" then dispName = "REINFORCED"
-        elseif card.enhancement == "Gold" then dispName = "SPONSOR"
-        elseif card.enhancement == "Stone" then dispName = "HEAVY STUD" end
-        drawShadowText(dispName, cx + 10, frameY - 10, er, eg, eb, 0.9, "center", 100)
+    -- Highlight borders
+    love.graphics.setLineWidth(2)
+    if isSelected then
+        local pulse = 0.5 + 0.5 * math.sin((time or 0) * 8)
+        love.graphics.setColor(0.0, 0.76 + pulse * 0.2, 1.0, 0.9 + pulse * 0.1)
+        love.graphics.rectangle("line", cx, cy, w, h, 6, 6)
+    elseif card.isHovered then
+        love.graphics.setColor(1, 1, 1, 0.4)
+        love.graphics.rectangle("line", cx, cy, w, h, 6, 6)
+    else
+        love.graphics.setColor(0.2, 0.2, 0.2, 0.8)
+        love.graphics.rectangle("line", cx, cy, w, h, 6, 6)
+    end
+    love.graphics.setLineWidth(1)
+    
+    local frameX, frameY = cx + 8, cy + 34
+    local frameW, frameH = w - 16, h - 42
+    
+    -- Draw field background
+    love.graphics.setColor(0.1, 0.1, 0.15, 0.7)
+    love.graphics.rectangle("fill", frameX, frameY, frameW, frameH, 2, 2)
+    
+    -- Hash marks and numbers
+    love.graphics.setColor(1, 1, 1, 0.15)
+    for yard = 1, 3 do
+        local lineY = frameY + frameH - (yard * 30)
+        love.graphics.line(frameX, lineY, frameX + frameW, lineY)
+        for hx = frameX + 20; hx < frameX + frameW; hx = hx + 40 do
+            love.graphics.line(hx, lineY - 2, hx, lineY + 2)
+        end
+        drawShadowText(tostring(yard * 10), frameX + 4, lineY - 14, 1, 1, 1, 0.6)
     end
     
-    if card.seal then
-        local sr, sg, sb = 1, 1, 1
-        if card.seal == "Red" then sr, sg, sb = 1.0, 0.2, 0.2
-        elseif card.seal == "Gold" then sr, sg, sb = 1.0, 0.84, 0.0
-        elseif card.seal == "Blue" then sr, sg, sb = 0.0, 0.58, 1.0 end
-        
-        local sx, sy = cx + w - 16, cy + 30
-        love.graphics.setColor(0, 0, 0, 0.9)
-        love.graphics.circle("fill", sx, sy, 12)
-        love.graphics.setColor(sr, sg, sb)
-        love.graphics.circle("fill", sx, sy, 10)
-        love.graphics.setLineWidth(2)
-        love.graphics.setColor(1, 1, 1, 0.8)
-        love.graphics.circle("line", sx, sy, 10)
-        love.graphics.setLineWidth(1)
-        drawShadowText("D", sx - 5, sy - 8, 1, 1, 1, 1.2)
+    love.graphics.setLineWidth(3)
+    local losY = frameY + frameH - 15
+    
+    local function drawArrow(ax, ay, bx, by)
+        love.graphics.line(ax, ay, bx, by)
+        local angle = math.atan2(by - ay, bx - ax)
+        local headSize = 8
+        love.graphics.polygon("fill", 
+            bx, by, 
+            bx - headSize * math.cos(angle - 0.5), by - headSize * math.sin(angle - 0.5),
+            bx - headSize * math.cos(angle + 0.5), by - headSize * math.sin(angle + 0.5))
     end
     
-    -- Glass Specular Glare Overlay Sweep
-    love.graphics.setColor(1, 1, 1, 0.12)
-    love.graphics.polygon("fill", cx + 10, cy, cx + w, cy + h - 40, cx + w, cy + h, cx + 40, cy)
+    -- Offensive Line circles
+    love.graphics.setColor(0.7, 0.7, 0.7, 0.6)
+    for ox = frameX + frameW/2 - 30; ox <= frameX + frameW/2 + 30; ox = ox + 15 do
+        love.graphics.circle("line", ox, losY + 2, 3)
+    end
     
+    -- QB
+    love.graphics.circle("fill", frameX + frameW/2, losY + 12, 3)
+    
+    -- Route Art
+    if card.type == "Run" then
+        love.graphics.setColor(C_NEON_GREEN)
+        love.graphics.circle("fill", frameX + frameW/2, losY + 22, 4)
+        drawArrow(frameX + frameW/2, losY + 22, frameX + frameW/2 + 30, losY - 15)
+    elseif card.type == "Short Pass" then
+        love.graphics.setColor(C_NEON_CYAN)
+        drawArrow(frameX + frameW/2 - 50, losY + 2, frameX + frameW/2 - 50, losY - 30)
+        love.graphics.setColor(C_NEON_YELLOW)
+        drawArrow(frameX + frameW/2 + 50, losY + 2, frameX + frameW/2 + 70, losY - 10)
+    elseif card.type == "Medium Pass" then
+        love.graphics.setColor(C_NEON_CYAN)
+        love.graphics.line(frameX + frameW/2 - 50, losY + 2, frameX + frameW/2 - 50, losY - 50)
+        drawArrow(frameX + frameW/2 - 50, losY - 50, frameX + frameW/2 - 20, losY - 50)
+        love.graphics.setColor(C_NEON_YELLOW)
+        drawArrow(frameX + frameW/2 + 50, losY + 2, frameX + frameW/2 + 20, losY - 70)
+    elseif card.type == "Deep Pass" then
+        love.graphics.setColor(C_MULT_RED)
+        drawArrow(frameX + frameW/2 - 50, losY + 2, frameX + frameW/2 - 20, frameY + 10)
+        love.graphics.setColor(C_NEON_YELLOW)
+        drawArrow(frameX + frameW/2 + 50, losY + 2, frameX + frameW/2 + 50, frameY + 10)
+    else
+        -- Special Teams / Defense Fallback
+        love.graphics.setColor(C_NEON_PURPLE)
+        drawArrow(frameX + frameW/2, losY + 2, frameX + frameW/2, frameY + 20)
+    end
+    
+    love.graphics.setLineWidth(1)
     love.graphics.pop()
 end
 

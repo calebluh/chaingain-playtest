@@ -7,14 +7,14 @@ DeckManager.playbook = {}
 DeckManager.drawPile = {}
 DeckManager.discardPile = {}
 DeckManager.hand = {}
-DeckManager.handSize = 5
+DeckManager.handSize = 3
 
 function DeckManager.init(schemeId)
     DeckManager.playbook = {}
     DeckManager.drawPile = {}
     DeckManager.discardPile = {}
     DeckManager.hand = {}
-    DeckManager.handSize = 5
+    DeckManager.handSize = 3
     
     if schemeId then
         local PlaybookExpanded = require("src.data.playbook_expanded")
@@ -58,7 +58,7 @@ function DeckManager.drawHand()
         table.insert(DeckManager.discardPile, table.remove(DeckManager.hand))
     end
     
-    for i = 1, (DeckManager.handSize or 5) do
+    for i = 1, (DeckManager.handSize or 3) do
         if #DeckManager.drawPile == 0 then
             if #DeckManager.discardPile > 0 then
                 for _, card in ipairs(DeckManager.discardPile) do
@@ -135,7 +135,7 @@ function DeckManager.fillHand()
     DeckManager.discardPile = DeckManager.discardPile or {}
     DeckManager.drawPile = DeckManager.drawPile or {}
     
-    while #DeckManager.hand < (DeckManager.handSize or 5) do
+    while #DeckManager.hand < (DeckManager.handSize or 3) do
         if #DeckManager.drawPile == 0 then
             if #DeckManager.discardPile > 0 then
                 for _, card in ipairs(DeckManager.discardPile) do

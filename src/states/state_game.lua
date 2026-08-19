@@ -248,64 +248,42 @@ function StateGame:update(dt)
 
     local mx, my = love.mouse.getPosition()
     local N = #DeckManager.hand
-    -- Vertical card tray: cards are 128px wide with a computed gap so they fill ~900px centered
-    local CARD_W = 128
-    local gap = (N > 1)
-        and math.max(8, math.min(52, (860 - N * CARD_W) / (N - 1)))
-        or 0
+    local CARD_W = 280
+    local CARD_H = 160
+    local gap = 30
     local startX = 480 - ((N - 1) * (CARD_W + gap)) / 2
-    local TRAY_BASE_Y = self.playbookShelfY + 95  -- cards float 95px below the shelf top
+    local TRAY_BASE_Y = self.playbookShelfY + 85  -- cards float inside the shelf
     
     for i, card in ipairs(DeckManager.hand) do
         local targetX = startX + (i - 1) * (CARD_W + gap)
-        
-        local baseTargetY = TRAY_BASE_Y
-        local targetY = baseTargetY
+        local targetY = TRAY_BASE_Y
         
         local isHovered = (mx >= targetX - CARD_W/2 and mx <= targetX + CARD_W/2
-            and my >= baseTargetY - 89 and my <= baseTargetY + 89)
+            and my >= targetY - CARD_H/2 and my <= targetY + CARD_H/2)
         card.isHovered = isHovered
-        local relX = mx - targetX
-        if card.update then card:update(dt, isHovered, relX) end
         
-        local baseRot = 0
-        if self.draggingCardIndex == i then
-            targetX = mx
-            targetY = my
-            local dx = mx - self.dragLastX
-            baseRot = dx * 0.015
-        elseif i == self.selectedPlayIndex then
-            targetY = baseTargetY - 55  -- lift selected card
-            baseRot = math.sin(self.time * 4) * 0.03
+        if card.update then card:update(dt, isHovered, mx - targetX) end
+        
+        if i == self.selectedPlayIndex then
+            targetY = TRAY_BASE_Y - 20
         elseif isHovered then
-            targetY = baseTargetY - 28  -- subtle hover lift
-            baseRot = (i - (N + 1) / 2) * 0.04
+            targetY = TRAY_BASE_Y - 10
         end
         
         card.xOffset = card.xOffset or targetX
         card.yOffset = card.yOffset or targetY
-        card.rot = card.rot or baseRot
         card.scale = card.scale or 1.0
         
         card.xVelocity = card.xVelocity or 0
         card.yVelocity = card.yVelocity or 0
-        card.rotVelocity = card.rotVelocity or 0
         card.scaleVelocity = card.scaleVelocity or 0
         
-        local targetScale = (i == self.selectedPlayIndex or self.draggingCardIndex == i) and 1.15 or 1.0
+        local targetScale = (i == self.selectedPlayIndex) and 1.05 or 1.0
         
-        card.xOffset, card.xVelocity = PhysicsUtils.spring(card.xOffset, targetX, card.xVelocity, dt, 4, 0.7, 0)
-        card.yOffset, card.yVelocity = PhysicsUtils.spring(card.yOffset, targetY, card.yVelocity, dt, 4, 0.6, 0)
-        local desiredRot = baseRot + (card.rotOffset or 0)
-        -- Clamp desired rotation to sane visual bounds
-        desiredRot = math.clamp(desiredRot, -0.28, 0.28)
-        -- Use a slightly faster, more damped spring for rotation so it floats but doesn't oscillate
-        card.rot, card.rotVelocity = PhysicsUtils.spring(card.rot, desiredRot, card.rotVelocity, dt, 6, 1.1, 0)
-        -- Prevent runaway angular velocity
-        if card.rotVelocity and math.abs(card.rotVelocity) > 8 then
-            card.rotVelocity = card.rotVelocity * 0.2
-        end
-        card.scale, card.scaleVelocity = PhysicsUtils.spring(card.scale, targetScale, card.scaleVelocity, dt, 4, 0.6, 0)
+        card.xOffset, card.xVelocity = PhysicsUtils.spring(card.xOffset, targetX, card.xVelocity, dt, 6, 0.9, 0)
+        card.yOffset, card.yVelocity = PhysicsUtils.spring(card.yOffset, targetY, card.yVelocity, dt, 6, 0.9, 0)
+        card.scale, card.scaleVelocity = PhysicsUtils.spring(card.scale, targetScale, card.scaleVelocity, dt, 6, 0.9, 0)
+        card.rot = 0
     end
     
     self.dragLastX = mx
@@ -400,26 +378,20 @@ function StateGame:draw()
         drawShadowText(DefenseManager.activeBlind.name, 50, panelY + 42, 1, 1, 1, 0.85, "left")
     end
 
-    -- 2. POINTS SCORE (Width: 165)
-    drawHDPanel(210, panelY, 165, 68)
-    drawShadowText("POINTS SCORE", 210, panelY + 6, 0.8, 0.8, 0.8, 0.85, "center", 165)
-    drawShadowText(GameStateData.currentPoints .. " / " .. GameStateData.targetPoints .. " PTS", 210, panelY + 24, 1, 0.84, 0, 1.25, "center", 165)
-    drawShadowText("DRIVES LEFT: " .. GameStateData.drivesRemaining, 210, panelY + 46, 1, 1, 1, 0.85, "center", 165)
-
-    -- 3. YARDS & MULTIPLIER (Width: 260)
-    drawHDPanel(383, panelY, 260, 68, {0.3, 0.45, 0.6})
+    -- 2. YARDS & MULTIPLIER (Width: 260) (Moved left to fill space)
+    drawHDPanel(210, panelY, 260, 68, {0.3, 0.45, 0.6})
     
     -- Blue Yards Pill
     love.graphics.setColor(0.2, 0.4, 0.7, 1)
-    love.graphics.rectangle("fill", 391, panelY + 10, 100, 48, 8, 8)
+    love.graphics.rectangle("fill", 218, panelY + 10, 100, 48, 8, 8)
     love.graphics.setColor(0.4, 0.6, 0.9, 1)
     love.graphics.setLineWidth(2)
-    love.graphics.rectangle("line", 391, panelY + 10, 100, 48, 8, 8)
+    love.graphics.rectangle("line", 218, panelY + 10, 100, 48, 8, 8)
     love.graphics.setLineWidth(1)
-    drawShadowText(tostring(previewChips) .. " YDS", 391, panelY + 24, 1, 1, 1, 1.2, "center", 100)
+    drawShadowText(tostring(previewChips) .. " YDS", 218, panelY + 24, 1, 1, 1, 1.2, "center", 100)
     
     -- Red X
-    drawShadowText("X", 500, panelY + 24, 1, 0.3, 0.3, 1.2, "center", 20)
+    drawShadowText("X", 327, panelY + 24, 1, 0.3, 0.3, 1.2, "center", 20)
     
     -- Red Multiplier Pill (with Momentum / Fire glow)
     local streak = GameStateData.momentumStreak or 0
@@ -438,26 +410,26 @@ function StateGame:draw()
     end
     
     love.graphics.setColor(multBgColor)
-    love.graphics.rectangle("fill", 531, panelY + 10, 104, 48, 8, 8)
+    love.graphics.rectangle("fill", 358, panelY + 10, 104, 48, 8, 8)
     love.graphics.setColor(multBorderColor)
     love.graphics.setLineWidth(isFire and 2.5 or 2)
-    love.graphics.rectangle("line", 531, panelY + 10, 104, 48, 8, 8)
+    love.graphics.rectangle("line", 358, panelY + 10, 104, 48, 8, 8)
     love.graphics.setLineWidth(1)
     
-    drawShadowText(string.format("x%.1f MTM", previewMult), 531, panelY + 18, 1, 1, 1, 1.1, "center", 104)
+    drawShadowText(string.format("x%.1f MTM", previewMult), 358, panelY + 18, 1, 1, 1, 1.1, "center", 104)
     if isFire then
-        drawShadowText("🔥 ON FIRE!", 531, panelY + 36, 1.0, 0.84, 0.0, 0.75, "center", 104)
+        drawShadowText("🔥 ON FIRE!", 358, panelY + 36, 1.0, 0.84, 0.0, 0.75, "center", 104)
     elseif isHeat then
-        drawShadowText("⚡ HEATING UP", 531, panelY + 36, 1.0, 0.8, 0.3, 0.75, "center", 104)
+        drawShadowText("⚡ HEATING UP", 358, panelY + 36, 1.0, 0.8, 0.3, 0.75, "center", 104)
     else
-        drawShadowText(string.format("x%.1f MTM", previewMult), 531, panelY + 36, 1, 1, 1, 0.7, "center", 104)
+        drawShadowText(string.format("x%.1f MTM", previewMult), 358, panelY + 36, 1, 1, 1, 0.7, "center", 104)
     end
 
-    -- 4. ADJUSTMENTS (Width: 140)
-    drawHDPanel(651, panelY, 140, 68, {1.0, 0.84, 0.0, 1})
-    drawShadowText("ADJUST", 651, panelY + 4, 1, 0.84, 0, 0.85, "center", 140)
+    -- 3. ADJUSTMENTS (Width: 140) (Moved left to fill space)
+    drawHDPanel(480, panelY, 140, 68, {1.0, 0.84, 0.0, 1})
+    drawShadowText("ADJUST", 480, panelY + 4, 1, 0.84, 0, 0.85, "center", 140)
     for ci = 1, GameStateData.maxConsumables do
-        local cx = 659 + (ci - 1) * 64
+        local cx = 488 + (ci - 1) * 64
         local cy = panelY + 20
         local item = GameStateData.consumables[ci]
         love.graphics.setColor(item and {0.8, 0.3, 0.1} or {0.18, 0.22, 0.28})
@@ -471,23 +443,34 @@ function StateGame:draw()
         end
     end
 
-    -- 5. CLOCK AND DOWN/DISTANCE (Width: 120)
+    -- 4. SCORE & CLOCK BOTTOM FOOTER
+    -- White/Grey Bar Background
+    love.graphics.setColor(0.9, 0.9, 0.9, 1)
+    love.graphics.rectangle("fill", 0, 505, 960, 35)
+    
+    -- Bottom Footer Team Backgrounds
+    love.graphics.setColor(0.06, 0.24, 0.15) -- Home Team Color (Eagles-esque)
+    love.graphics.rectangle("fill", 150, 505, 120, 35)
+    love.graphics.setColor(0.12, 0.18, 0.3) -- Away Team Color
+    love.graphics.rectangle("fill", 450, 505, 120, 35)
+    
+    -- Footer Scores
+    drawShadowText("CG", 160, 513, 1, 1, 1, 1.2)
+    drawShadowText(tostring(GameStateData.currentPoints), 235, 513, 1, 1, 1, 1.2)
+    
+    drawShadowText("OPP", 460, 513, 1, 1, 1, 1.2)
+    drawShadowText(tostring(GameStateData.targetPoints), 535, 513, 1, 1, 1, 1.2)
+    
+    -- Footer Clock
     local clockSecs = math.max(0, math.ceil(GameStateData.playClock))
-    local isLowClock = clockSecs <= 8
-    local clockPulse = isLowClock and (0.6 + 0.4 * math.sin(self.time * 10)) or 1.0
-    local clockBorderColor = isLowClock and {1.0, 0.2 * clockPulse, 0.2 * clockPulse, 1} or {0.2, 0.8, 0.8, 1}
-    drawHDPanel(799, panelY, 120, 68, clockBorderColor)
-    drawShadowText("CLOCK", 799, panelY + 6, 0.8, 0.8, 0.8, 0.85, "left", 60, 10)
+    local clockStr = string.format("4th  0:%02d", clockSecs)
+    drawShadowText(clockStr, 650, 513, 0.1, 0.1, 0.1, 1.2)
     
-    -- Clock digits (Green normal, Red pulsing when low)
-    local clockR, clockG, clockB = 0, 1, 0
-    if isLowClock then clockR, clockG, clockB = 1, 0.2 * clockPulse, 0.2 * clockPulse end
-    drawShadowText(string.format("%02d", clockSecs), 799, panelY + 24, clockR, clockG, clockB, isLowClock and (2.0 + 0.1 * clockPulse) or 2.0, "left", 60, 10)
-    
-    local ballStr = GameStateData.yardLine < 50 and ("O" .. GameStateData.yardLine) or ("D" .. (100 - GameStateData.yardLine))
-    drawShadowText("D:" .. GameStateData.down, 860, panelY + 12, 1, 1, 1, 0.8)
-    drawShadowText("Y:" .. GameStateData.distance, 860, panelY + 28, 1, 1, 1, 0.8)
-    drawShadowText(ballStr, 860, panelY + 44, 1, 0.84, 0, 0.8)
+    -- Footer Down & Distance
+    local downSuffix = {"st", "nd", "rd", "th"}
+    local ddStr = GameStateData.down .. downSuffix[math.min(4, GameStateData.down)] .. " & " .. GameStateData.distance
+    drawShadowText(ddStr, 800, 513, 0.1, 0.1, 0.1, 1.2)
+
 
     -- 6. SPEED TOGGLE (Width: 36)
     local hoverSpeed = checkHover(927, panelY, 36, 68)
@@ -557,14 +540,12 @@ function StateGame:draw()
     -- (Playbook slide-up shelf background is now replaced by the permanent tray shelf drawn above)
 
 
-    -- Play Cards (vertical tray)
+    -- Play Cards (Wide Madden-style panels)
     self.hoveredPlayCard = nil
     local mx, my = love.mouse.getPosition()
-    local N_draw = #DeckManager.hand
-    local CARD_W_DRAW = 128
-    local CARD_H_DRAW = 178
+    local CARD_W_DRAW = 280
+    local CARD_H_DRAW = 160
     for i, card in ipairs(DeckManager.hand) do
-        -- Hit test uses the card's animated position (half-width/half-height)
         local isHover = mx >= card.xOffset - CARD_W_DRAW/2 and mx <= card.xOffset + CARD_W_DRAW/2
             and my >= card.yOffset - CARD_H_DRAW/2 and my <= card.yOffset + CARD_H_DRAW/2
         if isHover then
@@ -573,13 +554,6 @@ function StateGame:draw()
         
         love.graphics.push()
         love.graphics.translate(card.xOffset, card.yOffset)
-        love.graphics.rotate(card.rot)
-        
-        -- Pseudo-3D velocity tilt
-        local tiltX = (card.xVelocity or 0) * 0.0005
-        local tiltY = (card.yVelocity or 0) * -0.0005
-        love.graphics.shear(tiltY, tiltX)
-        
         love.graphics.scale(card.scale or 1.0, card.scale or 1.0)
         
         CardRender.drawPlayCard(0, 0, card, i == self.selectedPlayIndex, self.time)
@@ -942,7 +916,7 @@ function StateGame:mousepressed(x, y, button, istouch, presses)
 
             local clickedCardIdx = nil
             for i, c in ipairs(DeckManager.hand) do
-                if checkHover(c.xOffset - 65, c.yOffset - 87, 130, 175) then
+                if checkHover(c.xOffset - 140, c.yOffset - 80, 280, 160) then
                     clickedCardIdx = i
                     break
                 end

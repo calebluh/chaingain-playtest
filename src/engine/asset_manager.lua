@@ -79,6 +79,108 @@ end
 function AssetManager.init()
     images = {}
     fontCache = {}
+    
+    -- Dynamically generate modular player layers at runtime
+    AssetManager.initModularPlayer()
+end
+
+function AssetManager.initModularPlayer()
+    local candidatePaths = buildAssetCandidates("players/player_home.png")
+    local fullPath = nil
+    for _, p in ipairs(candidatePaths) do
+        if love.filesystem.getInfo(p) then fullPath = p; break end
+    end
+    
+    if not fullPath then return end
+    
+    local ok, imgData = pcall(love.image.newImageData, fullPath)
+    if not ok or not imgData then return end
+    
+    local w, h = imgData:getDimensions()
+    
+    local layers = {
+        jersey = love.image.newImageData(w, h),
+        helmet = love.image.newImageData(w, h),
+        pants = love.image.newImageData(w, h),
+        skin = love.image.newImageData(w, h),
+        visor = love.image.newImageData(w, h),
+        outline = love.image.newImageData(w, h)
+    }
+    
+    local function RGBtoHSL(r, g, b)
+        local max = math.max(r, g, b)
+        local min = math.min(r, g, b)
+        local h, s, l = 0, 0, (max + min) / 2
+        if max ~= min then
+            local d = max - min
+            s = l > 0.5 and d / (2 - max - min) or d / (max + min)
+            if max == r then h = (g - b) / d + (g < b and 6 or 0)
+            elseif max == g then h = (b - r) / d + 2
+            elseif max == b then h = (r - g) / d + 4
+            end
+            h = h / 6
+        end
+        return h, s, l
+    end
+    
+    for y = 0, h - 1 do
+        for x = 0, w - 1 do
+            local r, g, b, a = imgData:getPixel(x, y)
+            if a > 0 then
+                local hue, sat, light = RGBtoHSL(r, g, b)
+                
+                local targetLayer = nil
+                local isHelmetArea = y < (h * 0.4)
+                
+                if light < 0.15 and sat < 0.2 then
+                    if isHelmetArea and y > (h * 0.15) and x > (w * 0.25) then
+                        targetLayer = layers.visor
+                    else
+                        targetLayer = layers.outline
+                    end
+                elseif sat < 0.15 and light > 0.5 then
+                    if isHelmetArea then
+                        targetLayer = layers.helmet
+                    else
+                        targetLayer = layers.pants
+                    end
+                elseif hue > 0.02 and hue < 0.15 and sat > 0.3 then
+                    targetLayer = layers.skin
+                elseif hue > 0.4 and hue < 0.6 then
+                    if isHelmetArea then
+                        targetLayer = layers.helmet
+                    else
+                        targetLayer = layers.jersey
+                    end
+                else
+                    targetLayer = layers.jersey
+                end
+                
+                local outR, outG, outB = 1, 1, 1
+                if targetLayer == layers.outline or targetLayer == layers.visor then
+                    outR, outG, outB = r, g, b
+                elseif targetLayer == layers.skin then
+                    -- Convert original skin to a grayscale intensity factor so we can tint it
+                    local intensity = light / 0.3
+                    outR, outG, outB = intensity, intensity, intensity
+                elseif targetLayer == layers.jersey or targetLayer == layers.helmet or targetLayer == layers.pants then
+                    -- The original midnight green has a lightness around 0.25.
+                    -- We scale it up so multiplying it by a new team color doesn't make it pitch black.
+                    local intensity = math.min(1.0, light * 2.5)
+                    outR, outG, outB = intensity, intensity, intensity
+                end
+                
+                targetLayer:setPixel(x, y, outR, outG, outB, a)
+            end
+        end
+    end
+    
+    AssetManager._modularImages = {}
+    for name, ld in pairs(layers) do
+        local img = love.graphics.newImage(ld)
+        img:setFilter("nearest", "nearest")
+        AssetManager._modularImages[name] = img
+    end
 end
 
 function AssetManager.getImage(relativePath, filterMode)
@@ -475,6 +577,84 @@ function AssetManager.drawRetroPlayer(x, y, jerseyColor, pantsColor, helmetColor
     love.graphics.setLineWidth(1)
     love.graphics.pop()
 end
+
+-- ─── Modular Player Renderer ────────────────────────────────────
+function AssetManager.drawModularPlayer(x, y, scaleOverride, profile, teamColors, isOffense, time, isTackled)
+    local scale = scaleOverride or 1.0
+    
+    love.graphics.push()
+    love.graphics.translate(x, y)
+    love.graphics.scale(scale, scale)
+    
+    if isTackled then
+        love.graphics.rotate(math.pi / 2)
+        love.graphics.translate(0, -6)
+    end
+    
+    local bobY = 0
+    if time then
+        bobY = math.sin(time * 4) * 0.5
+    end
+    love.graphics.translate(0, bobY)
+    
+    if AssetManager._modularImages then
+        -- Default to some colors
+        local jColor = (teamColors and teamColors.primary) or {0.06, 0.24, 0.15}
+        local hColor = (teamColors and teamColors.secondary) or {0.06, 0.24, 0.15}
+        local skinColor = {0.85, 0.65, 0.45}
+        local visorColor = {0.1, 0.1, 0.1, 0.85}
+        local pColor = {0.9, 0.9, 0.9, 1}
+        
+        if profile then
+            local PlayerVisualProfile = require("src.data.player_visual_profile")
+            if profile.skinTone then skinColor = PlayerVisualProfile.skinTones[profile.skinTone] or skinColor
+            elseif profile.getSkinColor then skinColor = profile.getSkinColor() end
+            
+            if profile.visor == "dark" then visorColor = {0.08, 0.08, 0.08, 0.95}
+            elseif profile.visor == "gold_mirror" then visorColor = {1.0, 0.8, 0.0, 0.85}
+            elseif profile.visor == "clear" then visorColor = {0,0,0,0}
+            elseif profile.visor == "iridescent" then
+                local t = love.timer.getTime()
+                visorColor = {0.5 + 0.5*math.sin(t*2), 0.5 + 0.5*math.sin(t*2+2.1), 0.5 + 0.5*math.sin(t*2+4.2), 0.8}
+            end
+            
+            if profile.primaryColor then jColor = profile.primaryColor end
+            if profile.shellColor then hColor = profile.shellColor end
+        end
+        
+        local cx = -AssetManager._modularImages.jersey:getWidth()/2
+        local cy = -AssetManager._modularImages.jersey:getHeight() + 4
+        
+        -- Outline
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.draw(AssetManager._modularImages.outline, cx, cy)
+        
+        -- Skin
+        love.graphics.setColor(skinColor)
+        love.graphics.draw(AssetManager._modularImages.skin, cx, cy)
+        
+        -- Pants
+        love.graphics.setColor(pColor)
+        love.graphics.draw(AssetManager._modularImages.pants, cx, cy)
+        
+        -- Jersey
+        love.graphics.setColor(jColor)
+        love.graphics.draw(AssetManager._modularImages.jersey, cx, cy)
+        
+        -- Helmet
+        love.graphics.setColor(hColor)
+        love.graphics.draw(AssetManager._modularImages.helmet, cx, cy)
+        
+        -- Visor
+        if visorColor[4] and visorColor[4] > 0 then
+            love.graphics.setColor(visorColor)
+            love.graphics.draw(AssetManager._modularImages.visor, cx, cy)
+        end
+    end
+    
+    love.graphics.pop()
+end
+
 
 -- ─── Bust Portrait Renderer ─────────────────────────────────────
 -- Renders head/shoulders closeup for Player Editor and Lineup Editor

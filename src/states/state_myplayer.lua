@@ -149,17 +149,19 @@ function StateMyPlayer:draw()
     love.graphics.setColor(0.15, 0.08, 0.18, 0.6)
     love.graphics.rectangle("fill", bustX, bustY, bustW, bustH * 0.5, 6, 6)
     
-    -- Draw bust portrait
+    -- Draw bust portrait (using clipping to keep it in the box)
     local teamColors = { primary = PlayerVisualProfile.primaryColor, secondary = PlayerVisualProfile.shellColor }
     if _G.GameStateData and _G.GameStateData.config and _G.GameStateData.config.team then
         teamColors.primary = _G.GameStateData.config.team.primaryColor or teamColors.primary
         teamColors.secondary = _G.GameStateData.config.team.secondaryColor or teamColors.secondary
     end
-    AssetManager.drawRetroPlayerBust(
-        bustX + bustW / 2, bustY + bustH / 2 + 10,
-        teamColors.primary, teamColors.secondary,
-        PlayerVisualProfile, 8
+    
+    love.graphics.setScissor(bustX, bustY, bustW, bustH)
+    AssetManager.drawModularPlayer(
+        bustX + bustW / 2, bustY + bustH + 40,
+        12.0, PlayerVisualProfile, teamColors
     )
+    love.graphics.setScissor()
     
     love.graphics.setColor(C_NEON_CYAN[1], C_NEON_CYAN[2], C_NEON_CYAN[3], 0.6)
     love.graphics.setLineWidth(2)
@@ -216,10 +218,10 @@ function StateMyPlayer:draw()
     
     -- Full body player sprite
     local time = love.timer.getTime()
-    AssetManager.drawRetroPlayer(
+    AssetManager.drawModularPlayer(
         stageX + stageW/2, self.camY,
-        teamColors.primary, {0.9, 0.9, 0.9}, teamColors.secondary,
-        0, 0, true, time, false, true, self.camScale
+        self.camScale * 0.8, PlayerVisualProfile, teamColors,
+        true, time, false
     )
     
     love.graphics.setColor(C_NEON_CYAN[1], C_NEON_CYAN[2], C_NEON_CYAN[3], 0.3)

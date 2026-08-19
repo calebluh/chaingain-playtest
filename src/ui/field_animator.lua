@@ -441,8 +441,9 @@ function FieldAnimator.update(dt)
         if dp.life <= 0 then table.remove(FieldAnimator.dustParticles, i) end
     end
     
-    -- Trigger Skill Check
-    if not FieldAnimator.skillCheckTriggered and FieldAnimator.timer > 0.1 then
+    -- Trigger Skill Check based on animation phase
+    local triggerT = FieldAnimator.playType:match("Pass") and 0.35 or 0.20
+    if not FieldAnimator.skillCheckTriggered and t > triggerT then
         FieldAnimator.skillCheckTriggered = true
         FieldAnimator.skillCheckActive = true
         FieldAnimator.skillCheckTimer = 0
@@ -880,35 +881,23 @@ function FieldAnimator.draw()
             18 * (entity.scale / 2.0), 6 * (entity.scale / 2.0))
     end
     
-    -- PASS 2: Draw players — PNG sprite first
+    -- PASS 2: Draw players — Modular PNG sprite first
+    local offTeamColors = {primary = offJersey, secondary = offHelmet}
+    local defTeamColors = {primary = defJersey, secondary = defHelmet}
+    
     for _, entity in ipairs(renderQueue) do
-        local sprite = entity.isOffense and spriteHome or spriteAway
+        local teamCols = entity.isOffense and offTeamColors or defTeamColors
         
-        if sprite then
-            -- Render premade PNG sprite, anchored at feet (bottom-center)
-            local ox = sprite:getWidth() / 2
-            local oy = sprite:getHeight()
-            
-            -- Target height for players is ~22 pixels at scale=1.0 (approx 6 feet on field)
-            local targetHeight = 22 * entity.scale
-            local drawScale = targetHeight / sprite:getHeight()
-            
-            if entity.isTackled then
-                love.graphics.setColor(1, 1, 1, 0.75)
-                love.graphics.draw(sprite, entity.screenX, entity.screenY,
-                    math.pi / 2, drawScale, drawScale, ox, oy)
-            else
-                love.graphics.setColor(1, 1, 1, 1)
-                love.graphics.draw(sprite, entity.screenX, entity.screenY,
-                    0, drawScale, drawScale, ox, oy)
-            end
-            -- Defense tint (facing away, slightly darker)
-            if not entity.isOffense then
-                love.graphics.setColor(1.0, 0.2, 0.2, 0.5)
-                love.graphics.draw(sprite, entity.screenX, entity.screenY,
-                    0, drawScale, drawScale, ox, oy)
-            end
-        end
+        -- Target height for players is ~22 pixels at scale=1.0 (approx 6 feet on field)
+        -- Since modular sprite jersey height is 16 pixels, we'll scale accordingly.
+        local drawScale = (22 * entity.scale) / 16.0
+        local targetHeight = 22 * entity.scale
+        
+        AssetManager.drawModularPlayer(
+            entity.screenX, entity.screenY, 
+            drawScale, entity.profile, teamCols, 
+            not entity.isOffense, 0, entity.isTackled
+        )
         
         -- QB Cadence Speech Bubble (always drawn over the player)
         if entity.role == "QB" and FieldAnimator.cadenceText ~= "" then
