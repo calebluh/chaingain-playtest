@@ -175,7 +175,7 @@ function StateModeSelect:draw()
         
         love.graphics.setColor(C_BTN_BLUE)
         love.graphics.rectangle("fill", mx + 430, actY, 170, 35, 6, 6)
-        drawShadowText("Select Stake >", mx + 430, actY + 8, 1, 1, 1, 1.0, "center", 170)
+        drawShadowText("Select Difficulty >", mx + 430, actY + 8, 1, 1, 1, 1.0, "center", 170)
     elseif self.phase == "DAILY" then
         love.graphics.setColor(C_BTN_GREEN)
         love.graphics.rectangle("fill", mx + 430, actY, 170, 35, 6, 6)
@@ -183,7 +183,7 @@ function StateModeSelect:draw()
     else
         love.graphics.setColor(C_BTN_BLUE)
         love.graphics.rectangle("fill", mx + 20, actY, 160, 35, 6, 6)
-        drawShadowText("< Select Deck", mx + 20, actY + 8, 1, 1, 1, 1.0, "center", 160)
+        drawShadowText("< Select Playbook", mx + 20, actY + 8, 1, 1, 1, 1.0, "center", 160)
         
         love.graphics.setColor(C_BTN_GREEN)
         love.graphics.rectangle("fill", mx + 430, actY, 170, 35, 6, 6)
@@ -367,8 +367,8 @@ function StateModeSelect:drawRightPanel(x, y, w, h)
         drawShadowText(team.name:upper(), x - 10, cy + cardH + 15, 1, 1, 1, 0.9, "center", w + 20)
         drawShadowText(team.perk, x + 5, cy + cardH + 40, 0.8, 0.85, 0.9, 0.75, "center", w - 10)
         
-    elseif self.phase == "SCHEME" then
-        local arch = self.archetypes[self.selectedArchIdx]
+    elseif self.phase == "DECK" or self.phase == "SCHEME" then
+        local arch = self.decks and self.decks[self.selectedDeckIdx]
         if not arch then return end
         
         drawShadowText("Playbook\nScheme", x, y + 10, 0.6, 0.65, 0.7, 1.4, "center", w)
@@ -386,7 +386,7 @@ function StateModeSelect:drawRightPanel(x, y, w, h)
         love.graphics.setLineWidth(1)
         
         drawShadowText(arch.name:upper(), x - 10, cy + cardH + 15, 1, 1, 1, 1.0, "center", w + 20)
-        drawShadowText(arch.desc, x + 5, cy + cardH + 40, 0.8, 0.85, 0.9, 0.75, "center", w - 10)
+        drawShadowText(arch.desc or "", x + 5, cy + cardH + 40, 0.8, 0.85, 0.9, 0.75, "center", w - 10)
         
     elseif self.phase == "STAKE" then
         local stake = self.stakes[self.selectedStakeIdx]

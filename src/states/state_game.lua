@@ -502,7 +502,9 @@ function StateGame:draw()
     love.graphics.setColor(C_NEON_BORDER)
     love.graphics.rectangle("line", 12, 82, 915, 18, 4, 4)
     
-    local ydsToEndZone = math.max(0, 100 - GameStateData.yardLine)
+    local yl = GameStateData.yardLine or 25
+    local ballStr = (yl < 50) and ("OWN " .. yl) or (yl == 50 and "50 YD LINE" or ("OPP " .. (100 - yl)))
+    local ydsToEndZone = math.max(0, 100 - yl)
     drawShadowText("FIELD POSITION: " .. ballStr .. " (" .. ydsToEndZone .. " YDS TO END ZONE)", 12, 84, 1, 1, 1, 0.85, "center", 915)
 
     -- Stadium Pulse Meter

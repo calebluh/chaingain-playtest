@@ -157,9 +157,11 @@ function StateMyPlayer:draw()
     end
     
     love.graphics.setScissor(bustX, bustY, bustW, bustH)
-    AssetManager.drawModularPlayer(
-        bustX + bustW / 2, bustY + bustH + 40,
-        12.0, PlayerVisualProfile, teamColors
+    AssetManager.drawRetroPlayerBust(
+        bustX + bustW / 2, bustY + bustH / 2 + 10,
+        PlayerVisualProfile.primaryColor or teamColors.primary,
+        PlayerVisualProfile.shellColor or teamColors.secondary,
+        PlayerVisualProfile, 9.0
     )
     love.graphics.setScissor()
     
@@ -218,10 +220,12 @@ function StateMyPlayer:draw()
     
     -- Full body player sprite
     local time = love.timer.getTime()
-    AssetManager.drawModularPlayer(
-        stageX + stageW/2, self.camY,
-        self.camScale * 0.8, PlayerVisualProfile, teamColors,
-        true, time, false
+    AssetManager.drawRetroPlayer(
+        stageX + stageW/2, stageY + stageH - 55,
+        PlayerVisualProfile.primaryColor or teamColors.primary,
+        {0.9, 0.9, 0.9},
+        PlayerVisualProfile.shellColor or teamColors.secondary,
+        0, 0, true, time, false, PlayerVisualProfile, 7.0
     )
     
     love.graphics.setColor(C_NEON_CYAN[1], C_NEON_CYAN[2], C_NEON_CYAN[3], 0.3)
