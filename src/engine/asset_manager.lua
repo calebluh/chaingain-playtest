@@ -85,102 +85,7 @@ function AssetManager.init()
 end
 
 function AssetManager.initModularPlayer()
-    local candidatePaths = buildAssetCandidates("sprites/player_home.png")
-    local fullPath = nil
-    for _, p in ipairs(candidatePaths) do
-        if love.filesystem.getInfo(p) then fullPath = p; break end
-    end
-    
-    if not fullPath then return end
-    
-    local ok, imgData = pcall(love.image.newImageData, fullPath)
-    if not ok or not imgData then return end
-    
-    local w, h = imgData:getDimensions()
-    
-    local layers = {
-        jersey = love.image.newImageData(w, h),
-        helmet = love.image.newImageData(w, h),
-        pants = love.image.newImageData(w, h),
-        skin = love.image.newImageData(w, h),
-        visor = love.image.newImageData(w, h),
-        outline = love.image.newImageData(w, h)
-    }
-    
-    local function RGBtoHSL(r, g, b)
-        local max = math.max(r, g, b)
-        local min = math.min(r, g, b)
-        local h, s, l = 0, 0, (max + min) / 2
-        if max ~= min then
-            local d = max - min
-            s = l > 0.5 and d / (2 - max - min) or d / (max + min)
-            if max == r then h = (g - b) / d + (g < b and 6 or 0)
-            elseif max == g then h = (b - r) / d + 2
-            elseif max == b then h = (r - g) / d + 4
-            end
-            h = h / 6
-        end
-        return h, s, l
-    end
-    
-    for y = 0, h - 1 do
-        for x = 0, w - 1 do
-            local r, g, b, a = imgData:getPixel(x, y)
-            if a > 0 then
-                local hue, sat, light = RGBtoHSL(r, g, b)
-                
-                local targetLayer = nil
-                local isHelmetArea = y < (h * 0.4)
-                
-                if light < 0.15 and sat < 0.2 then
-                    if isHelmetArea and y > (h * 0.15) and x > (w * 0.25) then
-                        targetLayer = layers.visor
-                    else
-                        targetLayer = layers.outline
-                    end
-                elseif sat < 0.15 and light > 0.5 then
-                    if isHelmetArea then
-                        targetLayer = layers.helmet
-                    else
-                        targetLayer = layers.pants
-                    end
-                elseif hue > 0.02 and hue < 0.15 and sat > 0.3 then
-                    targetLayer = layers.skin
-                elseif hue > 0.4 and hue < 0.6 then
-                    if isHelmetArea then
-                        targetLayer = layers.helmet
-                    else
-                        targetLayer = layers.jersey
-                    end
-                else
-                    targetLayer = layers.jersey
-                end
-                
-                local outR, outG, outB = 1, 1, 1
-                if targetLayer == layers.outline or targetLayer == layers.visor then
-                    outR, outG, outB = r, g, b
-                elseif targetLayer == layers.skin then
-                    -- Convert original skin to a grayscale intensity factor so we can tint it
-                    local intensity = light / 0.3
-                    outR, outG, outB = intensity, intensity, intensity
-                elseif targetLayer == layers.jersey or targetLayer == layers.helmet or targetLayer == layers.pants then
-                    -- The original midnight green has a lightness around 0.25.
-                    -- We scale it up so multiplying it by a new team color doesn't make it pitch black.
-                    local intensity = math.min(1.0, light * 2.5)
-                    outR, outG, outB = intensity, intensity, intensity
-                end
-                
-                targetLayer:setPixel(x, y, outR, outG, outB, a)
-            end
-        end
-    end
-    
-    AssetManager._modularImages = {}
-    for name, ld in pairs(layers) do
-        local img = love.graphics.newImage(ld)
-        img:setFilter("nearest", "nearest")
-        AssetManager._modularImages[name] = img
-    end
+    -- Replaced by dynamic shader rendering in drawModularPlayer to prevent massive game freeze on start
 end
 
 function AssetManager.getImage(relativePath, filterMode)
@@ -597,8 +502,87 @@ function AssetManager.drawModularPlayer(x, y, scaleOverride, profile, teamColors
     end
     love.graphics.translate(0, bobY)
     
-    if AssetManager._modularImages then
-        -- Default to some colors
+    local img = AssetManager.getImage("sprites/player_home.png", "nearest")
+    if img then
+        if not AssetManager._modularShader then
+            AssetManager._modularShader = love.graphics.newShader[[
+                extern vec3 primaryColor;
+                extern vec3 secondaryColor;
+                extern vec3 pantsColor;
+                extern vec3 skinColor;
+                extern vec4 visorColor;
+                
+                vec3 RGBtoHSL(vec3 c) {
+                    float cMax = max(max(c.r, c.g), c.b);
+                    float cMin = min(min(c.r, c.g), c.b);
+                    float delta = cMax - cMin;
+                    vec3 hsl = vec3(0.0, 0.0, (cMax + cMin) / 2.0);
+                    if (delta != 0.0) {
+                        hsl.y = hsl.z < 0.5 ? delta / (cMax + cMin) : delta / (2.0 - cMax - cMin);
+                        if (cMax == c.r) {
+                            hsl.x = (c.g - c.b) / delta + (c.g < c.b ? 6.0 : 0.0);
+                        } else if (cMax == c.g) {
+                            hsl.x = (c.b - c.r) / delta + 2.0;
+                        } else {
+                            hsl.x = (c.r - c.g) / delta + 4.0;
+                        }
+                        hsl.x /= 6.0;
+                    }
+                    return hsl;
+                }
+
+                vec4 effect(vec4 color, Image tex, vec2 tc, vec2 sc) {
+                    vec4 pix = Texel(tex, tc);
+                    if (pix.a == 0.0) return pix;
+                    
+                    vec3 hsl = RGBtoHSL(pix.rgb);
+                    bool isHelmetArea = tc.y < 0.4;
+                    
+                    vec4 outColor = pix;
+                    
+                    if (hsl.z < 0.15 && hsl.y < 0.2) {
+                        if (isHelmetArea && tc.y > 0.15 && tc.x > 0.25) {
+                            // Visor
+                            if (visorColor.a > 0.0) {
+                                outColor = vec4(visorColor.rgb, visorColor.a * pix.a);
+                            } else {
+                                outColor = vec4(0.0);
+                            }
+                        } else {
+                            // Outline
+                            outColor = pix;
+                        }
+                    } else if (hsl.y < 0.15 && hsl.z > 0.5) {
+                        // White parts
+                        float intensity = min(1.0, hsl.z * 2.5);
+                        if (isHelmetArea) {
+                            outColor = vec4(secondaryColor * intensity, pix.a);
+                        } else {
+                            outColor = vec4(pantsColor * intensity, pix.a);
+                        }
+                    } else if (hsl.x > 0.02 && hsl.x < 0.15 && hsl.y > 0.3) {
+                        // Skin
+                        float intensity = hsl.z / 0.3;
+                        outColor = vec4(skinColor * intensity, pix.a);
+                    } else if (hsl.x > 0.4 && hsl.x < 0.6) {
+                        // Midnight green (original team color)
+                        float intensity = min(1.0, hsl.z * 2.5);
+                        if (isHelmetArea) {
+                            outColor = vec4(secondaryColor * intensity, pix.a);
+                        } else {
+                            outColor = vec4(primaryColor * intensity, pix.a);
+                        }
+                    } else {
+                        // Default to jersey
+                        float intensity = min(1.0, hsl.z * 2.5);
+                        outColor = vec4(primaryColor * intensity, pix.a);
+                    }
+                    
+                    return outColor * color;
+                }
+            ]]
+        end
+
         local jColor = (teamColors and teamColors.primary) or {0.06, 0.24, 0.15}
         local hColor = (teamColors and teamColors.secondary) or {0.06, 0.24, 0.15}
         local skinColor = {0.85, 0.65, 0.45}
@@ -624,36 +608,22 @@ function AssetManager.drawModularPlayer(x, y, scaleOverride, profile, teamColors
             if profile.shellColor then hColor = profile.shellColor end
         end
         
-        local cx = -AssetManager._modularImages.jersey:getWidth()/2
-        local cy = -AssetManager._modularImages.jersey:getHeight() + 4
+        local cx = -img:getWidth() / 2
+        local cy = -img:getHeight() + 4
         
-        -- Outline
+        love.graphics.setShader(AssetManager._modularShader)
+        AssetManager._modularShader:send("primaryColor", {jColor[1], jColor[2], jColor[3]})
+        AssetManager._modularShader:send("secondaryColor", {hColor[1], hColor[2], hColor[3]})
+        AssetManager._modularShader:send("pantsColor", {pColor[1], pColor[2], pColor[3]})
+        AssetManager._modularShader:send("skinColor", {skinColor[1], skinColor[2], skinColor[3]})
+        AssetManager._modularShader:send("visorColor", visorColor)
+        
         love.graphics.setColor(1, 1, 1, 1)
-        love.graphics.draw(AssetManager._modularImages.outline, cx, cy)
-        
-        -- Skin
-        love.graphics.setColor(skinColor)
-        love.graphics.draw(AssetManager._modularImages.skin, cx, cy)
-        
-        -- Pants
-        love.graphics.setColor(pColor)
-        love.graphics.draw(AssetManager._modularImages.pants, cx, cy)
-        
-        -- Jersey
-        love.graphics.setColor(jColor)
-        love.graphics.draw(AssetManager._modularImages.jersey, cx, cy)
-        
-        -- Helmet
-        love.graphics.setColor(hColor)
-        love.graphics.draw(AssetManager._modularImages.helmet, cx, cy)
-        
-        -- Visor
-        if visorColor[4] and visorColor[4] > 0 then
-            love.graphics.setColor(visorColor)
-            love.graphics.draw(AssetManager._modularImages.visor, cx, cy)
-        end
+        love.graphics.draw(img, cx, cy)
+        love.graphics.setShader()
     end
     
+    love.graphics.setLineWidth(1)
     love.graphics.pop()
 end
 

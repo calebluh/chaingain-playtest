@@ -328,6 +328,8 @@ end
 function FieldAnimator.update(dt)
     if not FieldAnimator.active then return end
     
+    dt = math.min(dt, 0.1) -- Prevent animation skipping on lag spikes
+    
     FieldAnimator.timer = FieldAnimator.timer + dt
     local t = math.min(1.0, FieldAnimator.timer / FieldAnimator.duration)
     
