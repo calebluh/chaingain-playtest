@@ -85,7 +85,7 @@ function AssetManager.init()
 end
 
 function AssetManager.initModularPlayer()
-    local candidatePaths = buildAssetCandidates("players/player_home.png")
+    local candidatePaths = buildAssetCandidates("sprites/player_home.png")
     local fullPath = nil
     for _, p in ipairs(candidatePaths) do
         if love.filesystem.getInfo(p) then fullPath = p; break end
@@ -607,6 +607,8 @@ function AssetManager.drawModularPlayer(x, y, scaleOverride, profile, teamColors
         
         if profile then
             local PlayerVisualProfile = require("src.data.player_visual_profile")
+            if type(profile) ~= "table" then profile = PlayerVisualProfile end
+            
             if profile.skinTone then skinColor = PlayerVisualProfile.skinTones[profile.skinTone] or skinColor
             elseif profile.getSkinColor then skinColor = profile.getSkinColor() end
             
