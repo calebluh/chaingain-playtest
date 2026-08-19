@@ -118,7 +118,7 @@ function CardRender.drawPlayCard(x, y, card, isSelected, time)
     
     -- Offensive Line circles
     love.graphics.setColor(0.7, 0.7, 0.7, 0.6)
-    for ox = frameX + frameW/2 - 30; ox <= frameX + frameW/2 + 30; ox = ox + 15 do
+    for ox = frameX + frameW/2 - 30, frameX + frameW/2 + 30, 15 do
         love.graphics.circle("line", ox, losY + 2, 3)
     end
     
