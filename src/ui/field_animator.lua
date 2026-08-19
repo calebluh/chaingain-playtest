@@ -66,29 +66,25 @@ function FieldAnimator.to25D(worldX, worldY, worldZ)
     -- worldX is in pixels. 10 pixels = 1 yard.
     local yard_depth = (worldX - FieldAnimator.cameraX) / 10.0
     
-    -- Field occupies screen Y from 115 (distant/top) to 330 (near/bottom, just above tray)
-    -- With typical camera position, near-LOS players (t≈0.09) land at Y≈310.
     local top_y = 115
-    local bottom_y = 330
+    local bottom_y = 510
     local center_x = 480
-    local top_width = 320   -- narrower at distance → stronger perspective
-    local bottom_width = 700
+    local top_width = 340   -- narrower at distance → stronger perspective
+    local bottom_width = 680
     local yard_min = 0
     local yard_max = 50
     
     local t = (yard_depth - yard_min) / (yard_max - yard_min)
+    t = math.max(0, math.min(1, t)) -- Clamp t between 0 and 1
     
     local screen_y = bottom_y - t * (bottom_y - top_y) - (worldZ * 1.1)
     local current_width = bottom_width - t * (bottom_width - top_width)
     
-    -- worldY is 50 to 310, center 180. NFL width is 53.3 yards (-26.6 to +26.6).
-    -- So yard_x = (worldY - 180) / (130 / 26.6) = (worldY - 180) / 4.887
     local yard_x = (worldY - 180) / 4.887
     
     local screen_x = center_x + (yard_x / 26.6) * (current_width / 2)
-    -- Scale players 70%–100% based on depth (softer than before)
+    -- Scale players 70%–100% based on depth
     local scale = 1.0 - (t * 0.30)
-    scale = math.max(0.1, scale)
     
     return screen_x, screen_y, scale
 end
@@ -884,7 +880,7 @@ function FieldAnimator.draw()
             18 * (entity.scale / 2.0), 6 * (entity.scale / 2.0))
     end
     
-    -- PASS 2: Draw players — PNG sprite first, procedural fallback if missing
+    -- PASS 2: Draw players — PNG sprite first
     for _, entity in ipairs(renderQueue) do
         local sprite = entity.isOffense and spriteHome or spriteAway
         
@@ -904,25 +900,9 @@ function FieldAnimator.draw()
             end
             -- Defense tint (facing away, slightly darker)
             if not entity.isOffense then
-                love.graphics.setColor(0.6, 0.6, 0.6, 0.3)
+                love.graphics.setColor(1.0, 0.2, 0.2, 0.5)
                 love.graphics.draw(sprite, entity.screenX, entity.screenY,
                     0, drawScale, drawScale, ox, oy)
-            end
-        else
-            -- Procedural fallback: existing chibi retro renderer
-            if entity.isOffense then
-                love.graphics.setColor(1, 1, 1, 1)
-                AssetManager.drawRetroPlayer(entity.screenX, entity.screenY - 12,
-                    offJersey, {0.95, 0.95, 0.95}, offHelmet,
-                    entity.vx, entity.vy, true, love.timer.getTime(),
-                    entity.isTackled, entity.profile, entity.scale)
-            else
-                love.graphics.setColor(0.6, 0.6, 0.6, 1)
-                AssetManager.drawRetroPlayer(entity.screenX, entity.screenY - 12,
-                    defJersey, defPants, defHelmet,
-                    entity.vx, entity.vy, false, love.timer.getTime(),
-                    entity.isTackled, entity.profile, entity.scale)
-                love.graphics.setColor(1, 1, 1, 1)
             end
         end
         
@@ -935,6 +915,30 @@ function FieldAnimator.draw()
             drawShadowText(FieldAnimator.cadenceText, entity.screenX - 30, entity.screenY - 55,
                 0, 0, 0, 0.9, "center", 60)
         end
+    end
+
+    -- In-Play Route Lines
+    if FieldAnimator.playType and FieldAnimator.playType:match("Pass") then
+        love.graphics.setLineWidth(2)
+        for _, p in ipairs(FieldAnimator.offense) do
+            if p.role:match("WR") or p.role:match("TE") or p.role:match("SLOT") then
+                local sx1, sy1 = FieldAnimator.to25D(p.startX, p.startY, 0)
+                local sx2, sy2 = FieldAnimator.to25D(p.breakX, p.breakY, 0)
+                local sx3, sy3 = FieldAnimator.to25D(p.targetX, p.targetY, 0)
+                
+                love.graphics.setColor(0, 0.76, 1.0, 0.3)
+                love.graphics.line(sx1, sy1, sx2, sy2)
+                love.graphics.line(sx2, sy2, sx3, sy3)
+                
+                local angle = math.atan2(sy3 - sy2, sx3 - sx2)
+                love.graphics.polygon("fill", 
+                    sx3, sy3,
+                    sx3 - 8 * math.cos(angle - 0.5), sy3 - 8 * math.sin(angle - 0.5),
+                    sx3 - 8 * math.cos(angle + 0.5), sy3 - 8 * math.sin(angle + 0.5)
+                )
+            end
+        end
+        love.graphics.setLineWidth(1)
     end
     
     -- 7. 2.5D Pigskin Football
