@@ -889,8 +889,8 @@ function FieldAnimator.draw()
             local ox = sprite:getWidth() / 2
             local oy = sprite:getHeight()
             
-            -- Target height for players is ~110 pixels at scale=1.0
-            local targetHeight = 110 * entity.scale
+            -- Target height for players is ~22 pixels at scale=1.0 (approx 6 feet on field)
+            local targetHeight = 22 * entity.scale
             local drawScale = targetHeight / sprite:getHeight()
             
             if entity.isTackled then
@@ -912,11 +912,12 @@ function FieldAnimator.draw()
         
         -- QB Cadence Speech Bubble (always drawn over the player)
         if entity.role == "QB" and FieldAnimator.cadenceText ~= "" then
+            local bubbleY = entity.screenY - targetHeight - 25
             love.graphics.setColor(1, 1, 1, 0.95)
-            love.graphics.rectangle("fill", entity.screenX - 30, entity.screenY - 80, 60, 22, 6, 6)
+            love.graphics.rectangle("fill", entity.screenX - 30, bubbleY, 60, 22, 6, 6)
             love.graphics.setColor(0, 0.76, 1)
-            love.graphics.rectangle("line", entity.screenX - 30, entity.screenY - 80, 60, 22, 6, 6)
-            drawShadowText(FieldAnimator.cadenceText, entity.screenX - 30, entity.screenY - 75,
+            love.graphics.rectangle("line", entity.screenX - 30, bubbleY, 60, 22, 6, 6)
+            drawShadowText(FieldAnimator.cadenceText, entity.screenX - 30, bubbleY + 5,
                 0, 0, 0, 0.9, "center", 60)
         end
     end
