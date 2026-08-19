@@ -114,11 +114,13 @@ if (typeof window !== "undefined") {
     }
 }
 
-# 3.45 Disable IndexedDB stale package caching in game.js
+# 3.45 Disable IndexedDB stale package caching and add cache buster to game.data in game.js
+$ts = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 if (Test-Path "web_build/game.js") {
-    Write-Host "Bypassing stale IndexedDB cache in game.js..." -ForegroundColor Yellow
+    Write-Host "Bypassing stale IndexedDB cache and cache-busting game.data in game.js..." -ForegroundColor Yellow
     $gameJs = Get-Content "web_build/game.js" -Raw
     $gameJs = $gameJs -replace 'if \((false && )?useCached\) \{', 'if (false && useCached) {'
+    $gameJs = $gameJs -replace "var REMOTE_PACKAGE_BASE = 'game\.data(\?v=\d+)?';", ("var REMOTE_PACKAGE_BASE = 'game.data?v=" + $ts + "';")
     Set-Content "web_build/game.js" $gameJs -NoNewline
 }
 
@@ -187,7 +189,6 @@ if (Test-Path "web_build/index.html") {
     }
 
     # 3.49 Add timestamp cache buster to script tags & purge IndexedDB in index.html
-    $ts = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
     $html = $html -replace 'src="game\.js(\?v=\d+)?"', ('src="game.js?v=' + $ts + '"')
     $html = $html -replace 'src="love\.js(\?v=\d+)?"', ('src="love.js?v=' + $ts + '"')
     $html = $html -replace 'src="coi-serviceworker\.js(\?v=\d+)?"', ('src="coi-serviceworker.js?v=' + $ts + '"')
