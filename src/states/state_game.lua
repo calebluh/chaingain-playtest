@@ -732,7 +732,7 @@ function StateGame:draw()
         -- Legend
         love.graphics.setColor(0.0, 0.58, 1.0)
         love.graphics.circle("fill", 500, 46, 5)
-        drawShadowText("DECK", 510, 38, 0.7, 0.8, 0.9, 0.85)
+        drawShadowText("PLAYBOOK", 510, 38, 0.7, 0.8, 0.9, 0.85)
         
         love.graphics.setColor(0.2, 0.8, 0.4)
         love.graphics.circle("fill", 600, 46, 5)
@@ -758,7 +758,7 @@ function StateGame:draw()
             love.graphics.pop()
             
             -- Check Status
-            local status = "DECK"
+            local status = "PLAYBOOK"
             local statusColor = {0.0, 0.58, 1.0}
             for _, hc in ipairs(DeckManager.hand or {}) do
                 if hc == card then status = "HAND"; statusColor = {0.2, 0.8, 0.4} end

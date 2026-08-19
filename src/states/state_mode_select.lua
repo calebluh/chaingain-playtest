@@ -143,14 +143,22 @@ function StateModeSelect:draw()
         drawShadowText("Random Team", mx + 600, botY + 8, 1, 1, 1, 1.0, "center", 180)
     elseif self.phase == "DECK" then
         -- Random Deck
-        love.graphics.setColor(C_BTN_BLUE)
+        if checkHover(mx + 600, botY, 180, 35) then
+            love.graphics.setColor(C_BTN_ORANGE)
+        else
+            love.graphics.setColor(C_BTN_BLUE)
+        end
         love.graphics.rectangle("fill", mx + 600, botY, 180, 35, 6, 6)
-        drawShadowText("Random Deck", mx + 600, botY + 8, 1, 1, 1, 1.0, "center", 180)
+        drawShadowText("Random Playbook", mx + 600, botY + 8, 1, 1, 1, 1.0, "center", 180)
     else
         -- Random Stake
-        love.graphics.setColor(C_BTN_BLUE)
+        if checkHover(mx + 600, botY, 180, 35) then
+            love.graphics.setColor(C_BTN_ORANGE)
+        else
+            love.graphics.setColor(C_BTN_BLUE)
+        end
         love.graphics.rectangle("fill", mx + 600, botY, 180, 35, 6, 6)
-        drawShadowText("Random Stake", mx + 600, botY + 8, 1, 1, 1, 1.0, "center", 180)
+        drawShadowText("Random Difficulty", mx + 600, botY + 8, 1, 1, 1, 1.0, "center", 180)
     end
     
     -- Bottom Action Bar (Select Phase / Play)
@@ -159,7 +167,7 @@ function StateModeSelect:draw()
     if self.phase == "TEAM" then
         love.graphics.setColor(C_BTN_BLUE)
         love.graphics.rectangle("fill", mx + 430, actY, 170, 35, 6, 6)
-        drawShadowText("Select Deck >", mx + 430, actY + 8, 1, 1, 1, 1.0, "center", 170)
+        drawShadowText("Select Playbook >", mx + 430, actY + 8, 1, 1, 1, 1.0, "center", 170)
     elseif self.phase == "DECK" then
         love.graphics.setColor(C_BTN_BLUE)
         love.graphics.rectangle("fill", mx + 20, actY, 160, 35, 6, 6)
@@ -384,7 +392,7 @@ function StateModeSelect:drawRightPanel(x, y, w, h)
         local stake = self.stakes[self.selectedStakeIdx]
         if not stake then return end
         
-        drawShadowText("Stake\nDifficulty", x, y + 10, 0.6, 0.65, 0.7, 1.4, "center", w)
+        drawShadowText("Game\nDifficulty", x, y + 10, 0.6, 0.65, 0.7, 1.4, "center", w)
         
         -- Large Chip
         local cx, cy = x + w/2, y + 120

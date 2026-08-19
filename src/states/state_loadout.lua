@@ -77,10 +77,10 @@ function StateLoadout:enter()
     }
     
     self.stakes = {
-        { id = "rookie", name = "Rookie", desc = "Standard scoring targets. White Stake.", color = {0.9, 0.9, 0.9} },
-        { id = "pro", name = "Pro", desc = "-1 Audible per drive. Red Stake.", color = {0.8, 0.2, 0.2} },
-        { id = "all_pro", name = "All-Pro", desc = "Defensive targets scale 25% faster. Gold Stake.", color = {1.0, 0.84, 0.0} },
-        { id = "hof", name = "Hall of Fame", desc = "Boss Defenses have dual debuffs. Obsidian Stake.", color = {0.2, 0.2, 0.2} }
+        { id = "rookie", name = "Rookie", desc = "Standard scoring targets. White Difficulty.", color = {0.9, 0.9, 0.9} },
+        { id = "pro", name = "Pro", desc = "-1 Audible per drive. Red Difficulty.", color = {0.8, 0.2, 0.2} },
+        { id = "all_pro", name = "All-Pro", desc = "Defensive targets scale 25% faster. Gold Difficulty.", color = {1.0, 0.84, 0.0} },
+        { id = "hof", name = "Hall of Fame", desc = "Boss Defenses have dual debuffs. Obsidian Difficulty.", color = {0.2, 0.2, 0.2} }
     }
     
     self.backBtn = { id = "BACK", name = "BACK", color = C_AMBER, x = 40, y = 470, w = 120, h = 40 }
@@ -150,7 +150,7 @@ function StateLoadout:draw()
         end
         
     elseif self.step == 2 then
-        drawShadowText("SELECT DIVISION STAKE", 40, 60, 1, 1, 1, 2, "center", 880)
+        drawShadowText("SELECT DIVISION DIFFICULTY", 40, 60, 1, 1, 1, 2, "center", 880)
         
         for i, stake in ipairs(self.stakes) do
             local x = 120 + (i - 1) * 180

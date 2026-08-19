@@ -97,7 +97,7 @@ function CardRender.drawPlayCard(x, y, card, isSelected, time)
     for yard = 1, 3 do
         local lineY = frameY + frameH - (yard * 30)
         love.graphics.line(frameX, lineY, frameX + frameW, lineY)
-        for hx = frameX + 20; hx < frameX + frameW; hx = hx + 40 do
+        for hx = frameX + 20, frameX + frameW, 40 do
             love.graphics.line(hx, lineY - 2, hx, lineY + 2)
         end
         drawShadowText(tostring(yard * 10), frameX + 4, lineY - 14, 1, 1, 1, 0.6)
