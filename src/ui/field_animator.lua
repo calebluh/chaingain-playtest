@@ -888,7 +888,11 @@ function FieldAnimator.draw()
             -- Render premade PNG sprite, anchored at feet (bottom-center)
             local ox = sprite:getWidth() / 2
             local oy = sprite:getHeight()
-            local drawScale = entity.scale * 0.5
+            
+            -- Target height for players is ~110 pixels at scale=1.0
+            local targetHeight = 110 * entity.scale
+            local drawScale = targetHeight / sprite:getHeight()
+            
             if entity.isTackled then
                 love.graphics.setColor(1, 1, 1, 0.75)
                 love.graphics.draw(sprite, entity.screenX, entity.screenY,
@@ -909,10 +913,10 @@ function FieldAnimator.draw()
         -- QB Cadence Speech Bubble (always drawn over the player)
         if entity.role == "QB" and FieldAnimator.cadenceText ~= "" then
             love.graphics.setColor(1, 1, 1, 0.95)
-            love.graphics.rectangle("fill", entity.screenX - 30, entity.screenY - 60, 60, 22, 6, 6)
+            love.graphics.rectangle("fill", entity.screenX - 30, entity.screenY - 80, 60, 22, 6, 6)
             love.graphics.setColor(0, 0.76, 1)
-            love.graphics.rectangle("line", entity.screenX - 30, entity.screenY - 60, 60, 22, 6, 6)
-            drawShadowText(FieldAnimator.cadenceText, entity.screenX - 30, entity.screenY - 55,
+            love.graphics.rectangle("line", entity.screenX - 30, entity.screenY - 80, 60, 22, 6, 6)
+            drawShadowText(FieldAnimator.cadenceText, entity.screenX - 30, entity.screenY - 75,
                 0, 0, 0, 0.9, "center", 60)
         end
     end
